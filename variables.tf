@@ -13,3 +13,25 @@ variable "resource_group_name" {
   type        = string
   description = "The resource group where the resources will be deployed."
 }
+
+variable "name" {
+  type = string
+}
+
+variable "sku_name" {
+  type = string
+}
+
+variable "tags" {
+  type    = map(any)
+  default = null
+}
+
+variable "response_timeout_seconds" {
+  type    = number
+  default = 16
+}
+
+variable "location" {
+  type = string
+}
