@@ -34,4 +34,32 @@ variable "response_timeout_seconds" {
 
 variable "location" {
   type = string
+  default = null
 }
+
+variable "origin_group_name" {
+  type = string
+  default = null
+}
+
+variable "health_probe" {
+  type = map(object({
+    interval_in_seconds = number
+    path = string
+    protocol = string
+    request_type = string
+  }))
+  default = {}
+}
+
+
+variable "load_balancing" {
+  type = map(object({
+    additional_latency_in_milliseconds = number
+    sample_size = number
+    successful_samples_required = number
+  }))
+  default =  {
+      
+    }
+  }

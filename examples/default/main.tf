@@ -50,9 +50,24 @@ module "azurerm_cdn_frontdoor_profile" {
   source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
   enable_telemetry    = true
-  name                = "povencdnprofile"
+  name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
   sku_name            = "Standard_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
+  origin_group_name   = "og1"
+  health_probe = {
+    hp1 = {
+      interval_in_seconds = 240
+      path                = "/healthProbe"
+      protocol            = "Https"
+      request_type        = "HEAD"
+    }
+  }
+  load_balancing = {
+    lb1 = {
+      additional_latency_in_milliseconds = 0
+      sample_size                        = 16
+      successful_samples_required        = 3
+    }
+  }
 }
-
