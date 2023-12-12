@@ -70,4 +70,14 @@ module "azurerm_cdn_frontdoor_profile" {
       successful_samples_required        = 3
     }
   }
+  origin_name                           = "example-origin"
+  origin_enabled                        = true
+  origin_certificate_name_check_enabled = false
+
+  origin_host_name   = "contoso.com"
+  origin_http_port   = 80
+  origin_https_port  = 443
+  origin_host_header = "www.contoso.com"
+  origin_priority    = 1
+  origin_weight      = 1
 }
