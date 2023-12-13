@@ -54,30 +54,34 @@ module "azurerm_cdn_frontdoor_profile" {
   location            = azurerm_resource_group.this.location
   sku_name            = "Standard_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
-  origin_group_name   = "og1"
-  health_probe = {
-    hp1 = {
-      interval_in_seconds = 240
-      path                = "/healthProbe"
-      protocol            = "Https"
-      request_type        = "HEAD"
+  origin_groups = { og1 = {
+    name = "og1"
+    health_probe = {
+      hp1 = {
+        interval_in_seconds = 240
+        path                = "/healthProbe"
+        protocol            = "Https"
+        request_type        = "HEAD"
+      }
+    }
+    load_balancing = {
+      lb1 = {
+        additional_latency_in_milliseconds = 0
+        sample_size                        = 16
+        successful_samples_required        = 3
+      }
+    }
     }
   }
-  load_balancing = {
-    lb1 = {
-      additional_latency_in_milliseconds = 0
-      sample_size                        = 16
-      successful_samples_required        = 3
-    }
-  }
-  origin_name                           = "example-origin"
-  origin_enabled                        = true
-  origin_certificate_name_check_enabled = false
-
-  origin_host_name   = "contoso.com"
-  origin_http_port   = 80
-  origin_https_port  = 443
-  origin_host_header = "www.contoso.com"
-  origin_priority    = 1
-  origin_weight      = 1
+  origin = { origin1 = {
+    name                           = "example-origin"
+    enabled                        = true
+    certificate_name_check_enabled = false
+    host_name                      = "contoso.com"
+    http_port                      = 80
+    https_port                     = 443
+    host_header                    = "www.contoso.com"
+    priority                       = 1
+    weight                         = 1
+  } }
 }

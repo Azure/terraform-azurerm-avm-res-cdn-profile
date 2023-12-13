@@ -33,75 +33,38 @@ variable "response_timeout_seconds" {
 }
 
 variable "location" {
-  type = string
+  type    = string
   default = null
 }
 
-variable "origin_group_name" {
-  type = string
-  default = null
-}
-
-variable "health_probe" {
+variable "origin_groups" {
   type = map(object({
-    interval_in_seconds = number
-    path = string
-    protocol = string
-    request_type = string
+    name = string
+    health_probe = optional(map(object({
+      interval_in_seconds = number
+      path                = optional(string, "/")
+      protocol            = string
+      request_type        = optional(string, "HEAD")
+    })), {})
+    load_balancing = map(object({
+      additional_latency_in_milliseconds = optional(number, 50)
+      sample_size                        = optional(number, 4)
+      successful_samples_required        = optional(number, 3)
+    }))
   }))
-  default = {}
-}
-
-variable "load_balancing" {
-  type = map(object({
-    additional_latency_in_milliseconds = number
-    sample_size = number
-    successful_samples_required = number
-  }))
-  default =  {}
-  }
-
-variable "origin_name" {
-  type = string
-  default = null  
-}
-
-variable "origin_host_name" {
-  type = string
-  default = null  
-}
-
-variable "origin_certificate_name_check_enabled" {
-  type = string
-  default = true
-}
-
-variable "origin_enabled" {
-  type = string
-  default = true
-}
-
-variable "origin_http_port" {
-  type = number
-  default = 80
-}
-
-variable "origin_https_port" {
-  type = number
-  default = 443
-}
-
-variable "origin_host_header" {
-  type = string
   default = null
 }
 
-variable "origin_priority" {
-  type = number
-  default = 1
-}
-
-variable "origin_weight" {
-  type = number
-  default = 500
+variable "origin" {
+  type = map(object({
+    name                           = string
+    host_name                      = string
+    certificate_name_check_enabled = string
+    enabled                        = string
+    http_port                      = optional(number, 80)
+    https_port                     = optional(number, 443)
+    host_header                    = optional(string, null)
+    priority                       = optional(number, 1)
+    weight                         = optional(number, 500)
+  }))
 }
