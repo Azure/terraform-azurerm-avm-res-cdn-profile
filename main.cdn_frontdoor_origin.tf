@@ -1,7 +1,7 @@
 resource "azurerm_cdn_frontdoor_origin" "example" {
   for_each = var.origin
-  name                          = each.value.origin.name
-  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.example[0].id
+  name                          = each.value.name
+  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.example[each.value.origin_group_name].id
   enabled                       = each.value.enabled
 
   certificate_name_check_enabled = each.value.certificate_name_check_enabled

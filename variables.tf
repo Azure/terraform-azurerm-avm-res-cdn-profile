@@ -58,6 +58,7 @@ variable "origin_groups" {
 variable "origin" {
   type = map(object({
     name                           = string
+    origin_group_name              = string
     host_name                      = string
     certificate_name_check_enabled = string
     enabled                        = string
