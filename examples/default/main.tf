@@ -87,6 +87,32 @@ module "azurerm_cdn_frontdoor_profile" {
       priority                       = 1
       weight                         = 1
     }
+    origin2 = {
+      name                           = "origin2"
+      origin_group_name              = "og1"
+      enabled                        = true
+      certificate_name_check_enabled = false
+      host_name                      = "contoso1.com"
+      http_port                      = 80
+      https_port                     = 443
+      host_header                    = "www.contoso.com"
+      priority                       = 1
+      weight                         = 1
+    }
 
+  }
+
+  endpoints = {
+    ep1 = { name = "ep1" }
+    ep2 = { name = "ep2" }
+  }
+
+  routes = {
+    route1 = {
+      name              = "route1"
+      endpoint_name     = "ep1"
+      origin_group_name = "og1"
+      origin_names       = ["example-origin","origin2"]
+    }
   }
 }

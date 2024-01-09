@@ -51,6 +51,18 @@ variable "origin_groups" {
       sample_size                        = optional(number, 4)
       successful_samples_required        = optional(number, 3)
     }))
+  #   origins = map(object({
+  #   name                           = string
+  #   origin_group_name              = string
+  #   host_name                      = string
+  #   certificate_name_check_enabled = string
+  #   enabled                        = string
+  #   http_port                      = optional(number, 80)
+  #   https_port                     = optional(number, 443)
+  #   host_header                    = optional(string, null)
+  #   priority                       = optional(number, 1)
+  #   weight                         = optional(number, 500)
+  # }))
   }))
   default = null
 }
@@ -68,4 +80,26 @@ variable "origin" {
     priority                       = optional(number, 1)
     weight                         = optional(number, 500)
   }))
+}
+
+
+variable endpoints {
+  type = map(any)
+}
+
+variable routes {
+  type = map(any)
+}
+
+# variable "routes" {
+#     type = map(object({
+#     name                           = string
+#     origin_group_name              = string
+#     origin_names                      = list 
+#     endpoint_name                  = string
+#     forwarding_protocol           = string
+#     patterns_to_match             = list
+#     link_to_default_domain        = optional(bool)
+#     https_redirect_enabled        = optional(bool)
+#   }))
 }
