@@ -115,8 +115,18 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 
   endpoints = {
-    ep1 = { name = "ep1" }
-    ep2 = { name = "ep2" }
+    ep1 = { 
+      name = "ep1"
+      tags = {
+        ENV = "example"
+      }
+    }
+    ep2 = { 
+      name = "ep2"
+       tags = {
+        ENV = "example2"
+      }
+    }
   }
 
   routes = {
@@ -125,6 +135,19 @@ module "azurerm_cdn_frontdoor_profile" {
       endpoint_name     = "ep1"
       origin_group_name = "og1"
       origin_names      = ["example-origin", "origin3"]
+      forwarding_protocol    = "HttpsOnly"
+      https_redirect_enabled = true
+      patterns_to_match      = ["/*"]
+      supported_protocols    = ["Http", "Https"]
+      cache = {
+        cache1 = {
+      query_string_caching_behavior = "IgnoreSpecifiedQueryStrings"
+      query_strings                 = ["account", "settings"]
+      compression_enabled           = true
+      content_types_to_compress     = ["text/html", "text/javascript", "text/xml"]
+      }
+      }
     }
   }
 }
+

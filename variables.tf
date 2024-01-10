@@ -84,22 +84,66 @@ variable "origin" {
 
 
 variable endpoints {
-  type = map(any)
+  type = map(object({
+    name = string
+    enabled = optional(bool,true)
+    tags = optional(map(any))
+  }))
 }
 
-variable routes {
-  type = map(any)
+variable "routes" {
+type = map(object({
+name                           = string
+origin_group_name              = string
+origin_names                   = list(string)
+endpoint_name                  = string
+forwarding_protocol           = optional(string,"HttpsOnly")
+supported_protocols           = list(string)
+patterns_to_match             = list(string)
+link_to_default_domain        = optional(bool,true)
+https_redirect_enabled        = optional(bool,true)
+cache = optional(map(object({
+  query_string_caching_behavior = optional(string,"IgnoreQueryString")
+  query_strings = optional(list(string))
+  compression_enabled = optional(bool,false)
+  content_types_to_compress = optional(list(string))
+})), {})
+}))
 }
 
-# variable "routes" {
-#     type = map(object({
-#     name                           = string
-#     origin_group_name              = string
-#     origin_names                      = list 
-#     endpoint_name                  = string
-#     forwarding_protocol           = string
-#     patterns_to_match             = list
-#     link_to_default_domain        = optional(bool)
-#     https_redirect_enabled        = optional(bool)
-#   }))
+#variable "rule_set" {
+#  type = map(any)
 #}
+
+#variable "rules" {
+#  type = map(object({
+#    name = string
+#    order = number
+#    action = map(object({
+#      url_rewrite_action = optional(map(object({
+#        source_pattern = string
+#        destination = string
+#        preserve_unmatched_path = optional(bool,false)
+#      })), {})
+#      url_redirect_action = optional(map(object({
+#        redirect_type = string
+#        destination_hostname = string
+#        redirect_protocol = optional(string,"MatchRequest")
+#        destination_path = optional(string,"")
+#        query_string = optional(string,"")
+#        destination_fragment = optional(string,"")
+#      })), {})
+#      route_configuration_override_action = optional(map(object({
+#        cache_duration = optional(string
+#        destination_hostname = string
+#        redirect_protocol = optional(string,"MatchRequest")
+#        destination_path = optional(string,"")
+#        query_string = optional(string,"")
+#        destination_fragment = optional(string,"")
+#      })), {})
+#    }))
+#    behavior_on_match = optional(string,"continue")
+#    conditions = optional(map(object({
+#       })), {})
+#    }))
+#  }
