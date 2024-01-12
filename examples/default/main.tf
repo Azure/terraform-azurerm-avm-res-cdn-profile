@@ -149,5 +149,8 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
+
+  rule_sets = ["ruleset1","ruleset2"]
+  
 }
 

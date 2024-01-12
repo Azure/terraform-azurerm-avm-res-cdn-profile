@@ -1,5 +1,5 @@
 resource "azurerm_cdn_frontdoor_origin_group" "example" {
-  for_each = var.origin_groups
+  for_each                 = var.origin_groups
   name                     = each.value.name
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.example.id
   session_affinity_enabled = true
