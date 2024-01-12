@@ -115,15 +115,15 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 
   endpoints = {
-    ep1 = { 
+    ep1 = {
       name = "ep1"
       tags = {
         ENV = "example"
       }
     }
-    ep2 = { 
+    ep2 = {
       name = "ep2"
-       tags = {
+      tags = {
         ENV = "example2"
       }
     }
@@ -131,26 +131,54 @@ module "azurerm_cdn_frontdoor_profile" {
 
   routes = {
     route1 = {
-      name              = "route1"
-      endpoint_name     = "ep1"
-      origin_group_name = "og1"
-      origin_names      = ["example-origin", "origin3"]
+      name                   = "route1"
+      endpoint_name          = "ep1"
+      origin_group_name      = "og1"
+      origin_names           = ["example-origin", "origin3"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
       supported_protocols    = ["Http", "Https"]
       cache = {
         cache1 = {
-      query_string_caching_behavior = "IgnoreSpecifiedQueryStrings"
-      query_strings                 = ["account", "settings"]
-      compression_enabled           = true
-      content_types_to_compress     = ["text/html", "text/javascript", "text/xml"]
-      }
+          query_string_caching_behavior = "IgnoreSpecifiedQueryStrings"
+          query_strings                 = ["account", "settings"]
+          compression_enabled           = true
+          content_types_to_compress     = ["text/html", "text/javascript", "text/xml"]
+        }
       }
     }
   }
 
-  rule_sets = ["ruleset1","ruleset2"]
-  
+  rule_sets = ["ruleset1", "ruleset2"]
+
+  rules = {
+    rule1 = {
+      name              = "examplerule1"
+      order             = 1
+      behavior_on_match = "Continue"
+      rule_set_name     = "ruleset1"
+      origin_group_name = "og1"
+      actions = {
+      route_configuration_override_action = {
+      forwarding_protocol           = "HttpsOnly"
+      query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
+      query_string_parameters       = ["foo", "clientIp={client_ip}"]
+      compression_enabled           = true
+      cache_behavior                = "OverrideIfOriginMissing"
+      cache_duration                = "365.23:59:59"
+    }
+      url_redirect_action = {
+      redirect_type        = "PermanentRedirect"
+      redirect_protocol    = "MatchRequest"
+      query_string         = "clientIp={client_ip}"
+      destination_path     = "/exampleredirection"
+      destination_hostname = "contoso.com"
+      destination_fragment = "UrlRedirect"
+    }
+  }
+    }
+  }
+
 }
 
