@@ -274,4 +274,40 @@ variable "rules" {
   }))
 }
 
+#variable "secrets" {
+#  type = map(object({
+#    name = string
+#    secret = map(object({
+#      customer_certificate = map(object({
+#        subject_alternative_names = string
+#      })) 
+#    }))
+#  }))
+#} 
 
+#variable "security_policy" {
+#  type = map(object({
+#    name = string
+#    security_policies = map(object({
+#      firewall = map(object({
+#        association = map(object({
+#          domain = map(object({
+#            active = string
+#          }))
+#          patterns_to_match = list(string) 
+#        }))
+#      }))
+#    }))
+#  }))
+#}
+
+#variable "custom_domain" {
+#  type = map(object({
+#    name = string
+#    host_name = string
+#    tls = map(object({
+#      certificate_type = optional(string,"ManagedCertificate")
+#      minimum_tls_version = optional(string,"TLS12")   
+#    }))
+#  }))
+#}
