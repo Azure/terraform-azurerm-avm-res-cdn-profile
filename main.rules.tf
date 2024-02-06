@@ -13,25 +13,47 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
   behavior_on_match         = each.value.behavior_on_match
 
   actions {
-    route_configuration_override_action {
-      cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.example[each.value.origin_group_name].id
-      forwarding_protocol           = "HttpsOnly"
-      query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
-      query_string_parameters       = ["foo", "clientIp={client_ip}"]
-      compression_enabled           = true
-      cache_behavior                = "OverrideIfOriginMissing"
-      cache_duration                = "365.23:59:59"
+    #for_each = each.value.actions  #cant add foreach here.. multiple action blocks not allowed
+
+    dynamic "url_rewrite_action" {
+      for_each = { for key, value in each.value.actions : key => value
+        if key == "url_rewrite_action"
+      }
+
+      content {
+        source_pattern          = url_rewrite_action.value.source_pattern
+        destination             = url_rewrite_action.value.destination
+        preserve_unmatched_path = url_rewrite_action.value.preserve_unmatched_path
+      }
+    }
+    dynamic "route_configuration_override_action" {
+      for_each = { for key, value in each.value.actions : key => value
+        if key == "route_configuration_override_action"
+      }
+
+      content {
+        forwarding_protocol           = route_configuration_override_action.value.forwarding_protocol
+        query_string_caching_behavior = route_configuration_override_action.value.query_string_caching_behavior
+        query_string_parameters       = route_configuration_override_action.value.query_string_parameters
+        compression_enabled           = route_configuration_override_action.value.compression_enabled
+        cache_behavior                = route_configuration_override_action.value.cache_behavior
+        cache_duration                = route_configuration_override_action.value.cache_duration
+      }
+    }
+    dynamic "url_redirect_action" {
+    for_each = {for key,value in each.value.actions : key =>value 
+    if key == "url_redirect_action"
     }
 
-    url_redirect_action {
-      redirect_type        = "PermanentRedirect"
-      redirect_protocol    = "MatchRequest"
-      query_string         = "clientIp={client_ip}"
-      destination_path     = "/exampleredirection"
-      destination_hostname = "contoso.com"
-      destination_fragment = "UrlRedirect"
+    content {
+      
+      redirect_type = url_redirect_action.value.redirect_type
+      destination_hostname = url_redirect_action.value.destination_hostname
+    }
     }
   }
+
+
 
   conditions {
     host_name_condition {
@@ -68,3 +90,62 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
   }
 }
+
+
+
+
+
+# dynamic "url_rewrite_action" {
+#   #for_each = toset(each.value.actions["url_rewrite_action"]) != null ? each.value.actions["url_rewrite_action"] : null
+#   for_each = each.value.actions
+#   content {          
+#       source_pattern          = url_rewrite_action.value.source_pattern 
+#       destination             = url_rewrite_action.value.destination
+#       preserve_unmatched_path = url_rewrite_action.value.preserve_unmatched_path
+
+#     }
+#   }
+# }
+
+# for_each                = each.value.actions
+# dynamic "url_rewrite_action" {
+#   for_each = each.value.actions.url_rewrite_action
+#   content {
+#     source_pattern          = url_rewrite_action.value.source_pattern
+#     destination             = url_rewrite_action.value.destination
+#     preserve_unmatched_path = url_rewrite_action.value.preserve_unmatched_path
+#   }
+# }
+# dynamic "url_redirect_action" {
+#   for_each = each.value.actions.url_redirect_action
+#   content {
+#     redirect_type        = url_redirect_action.value.redirect_type
+#     redirect_protocol    = url_redirect_action.value.redirect_protocol
+#     query_string         = url_redirect_action.value.query_string
+#     destination_path     = url_redirect_action.value.destination_path
+#     destination_hostname = url_redirect_action.value.destination_hostname
+#     destination_fragment = url_redirect_action.value.destination_fragment
+#   }
+
+# route_configuration_override_action {
+#   cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.example[each.value.origin_group_name].id
+#   forwarding_protocol           = "HttpsOnly"
+#   query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
+#   query_string_parameters       = ["foo", "clientIp={client_ip}"]
+#   compression_enabled           = true
+#   cache_behavior                = "OverrideIfOriginMissing"
+#   cache_duration                = "365.23:59:59"
+# }
+
+
+
+# locals {
+#   ura =      for_each = [ var.rules 
+#   {for key,value in each.value.actions : key => value
+#     if key == "url_rewrite_action"
+#     }
+# }
+
+# output "orao" {
+#   value = locals.ura
+# }
