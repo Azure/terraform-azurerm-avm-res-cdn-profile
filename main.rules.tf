@@ -32,7 +32,8 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
       }
 
       content {
-        forwarding_protocol           = route_configuration_override_action.value.forwarding_protocol
+        cdn_frontdoor_origin_group_id = try(route_configuration_override_action.value.set_origin_groupid == true ? azurerm_cdn_frontdoor_origin_group.example[each.value.origin_group_name].id : null)
+        forwarding_protocol           = try(route_configuration_override_action.value.forwarding_protocol, null)
         query_string_caching_behavior = route_configuration_override_action.value.query_string_caching_behavior
         query_string_parameters       = route_configuration_override_action.value.query_string_parameters
         compression_enabled           = route_configuration_override_action.value.compression_enabled
@@ -56,11 +57,16 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
 
 
   conditions {
-    host_name_condition {
-      operator         = "Equal"
-      negate_condition = false
-      match_values     = ["www.contoso.com", "images.contoso.com", "video.contoso.com"]
-      transforms       = ["Lowercase", "Trim"]
+    dynamic "host_name_condition" {
+            for_each = { for key, value in each.value.conditions : key => value
+        if key == "host_name_condition"
+      }
+      content {
+      operator         = host_name_condition.value.operator
+      negate_condition = host_name_condition.value.negate_condition
+      match_values     = host_name_condition.value.match_values
+      transforms       = host_name_condition.value.transforms
+      }
     }
 
     is_device_condition {
