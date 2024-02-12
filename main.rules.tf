@@ -76,7 +76,7 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
       }
 
       content {
-        header_action = response_header_action_action.value.header_action
+        header_action = response_header_action.value.header_action
         header_name  = response_header_action.value.header_name
         value = response_header_action.value.value
       }

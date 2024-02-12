@@ -168,7 +168,7 @@ module "azurerm_cdn_frontdoor_profile" {
           preserve_unmatched_path = false
         }
         route_configuration_override_action = {
-          set_origin_groupid   = true
+          set_origin_groupid            = true
           actiontype                    = "route_configuration_override_action"
           forwarding_protocol           = "HttpsOnly"
           query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
@@ -185,41 +185,158 @@ module "azurerm_cdn_frontdoor_profile" {
         #   destination_hostname = "contoso.com"
         #   destination_fragment = "UrlRedirect"
         # }
+        response_header_action = {
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }
+        request_header_action = {
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }
       }
       conditions = {
-    host_name_condition ={
-      operator         = "Equal"
-      negate_condition = false
-      match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-      transforms       = ["Lowercase", "Trim"]
-    }
+        remote_address_condition = {
+          operator         = "IPMatch"
+          negate_condition = false
+          match_values     = ["10.0.0.0/23"]
+        }
 
-    is_device_condition ={
-      operator         = "Equal"
-      negate_condition = false
-      match_values     = ["Mobile"]
-    }
+        # request_method_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
+        # }
 
-    post_args_condition ={
-      post_args_name = "customerName"
-      operator       = "BeginsWith"
-      match_values   = ["J", "K"]
-      transforms     = ["Uppercase"]
-    }
+        query_string_condition = {
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }
 
-    request_method_condition ={
-      operator         = "Equal"
-      negate_condition = false
-      match_values     = ["DELETE"]
-    }
+        request_header_condition = {
+          header_name      = "headername"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }
 
-    url_filename_condition ={
-      operator         = "Equal"
-      negate_condition = false
-      match_values     = ["media.mp4"]
-      transforms       = ["Lowercase", "RemoveNulls", "Trim"]
-    }
-  }
+        request_body_condition = {
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }
+
+        request_scheme_condition = {
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["HTTP"]
+        }
+
+        url_path_condition = {
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }
+
+        url_file_extension_condition = {
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }
+
+        url_filename_condition = {
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }
+
+        http_version_condition = {
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["2.0"]
+        }
+
+        cookies_condition = {
+          cookie_name      = "cookie"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }
+
+        # socket_address_condition = {
+        #   operator         = "IPMatch"
+        #   negate_condition = false
+        #   match_values     = ["5.5.5.64/26"]
+        # }
+
+        # client_port_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["Mobile"]
+        # }
+
+        # server_port_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["80"]
+        # }
+
+        # ssl_protocol_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["TLSv1"]
+        # }
+
+        # request_uri_condition = {
+        #   negate_condition = false
+        #   operator         = "BeginsWith"
+        #   match_values     = ["J", "K"]
+        #   transforms       = ["Uppercase"]
+        # }
+
+
+        # host_name_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
+        #   transforms       = ["Lowercase", "Trim"]
+        # }
+
+        # is_device_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["Mobile"]
+        # }
+
+        # post_args_condition = {
+        #   post_args_name = "customerName"
+        #   operator       = "BeginsWith"
+        #   match_values   = ["J", "K"]
+        #   transforms     = ["Uppercase"]
+        # }
+
+        # request_method_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["DELETE"]
+        # }
+
+        # url_filename_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["media.mp4"]
+        #   transforms       = ["Lowercase", "RemoveNulls", "Trim"]
+        # }
+      }
     }
   }
 
