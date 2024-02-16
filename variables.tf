@@ -374,3 +374,10 @@ variable "managed_identities" {
   DESCRIPTION
   nullable    = false
 }
+
+variable "front_door_secret" {
+  type = object({
+    name = string
+    key_vault_certificate_id = string
+   })
+}
