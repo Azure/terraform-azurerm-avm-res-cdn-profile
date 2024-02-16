@@ -1,9 +1,8 @@
 resource "azurerm_cdn_frontdoor_origin_group" "example" {
   for_each                 = var.origin_groups
   name                     = each.value.name
-  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.example.id
+  cdn_frontdoor_profile_id = azapi_resource.front_door_profile.id
   session_affinity_enabled = true
-
   restore_traffic_time_to_healed_or_new_endpoint_in_minutes = 10
 
   dynamic "health_probe" {

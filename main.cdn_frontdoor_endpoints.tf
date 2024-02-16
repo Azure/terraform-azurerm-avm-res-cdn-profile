@@ -1,7 +1,7 @@
 resource "azurerm_cdn_frontdoor_endpoint" "endpoints" {
   for_each                 = var.endpoints
   name                     = each.value.name
-  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.example.id
+  cdn_frontdoor_profile_id = azapi_resource.front_door_profile.id
   enabled                  = each.value.enabled
   tags                     = each.value.tags
 }
