@@ -20,14 +20,13 @@ resource "azapi_resource" "front_door_profile" {
   parent_id = data.azurerm_resource_group.rg.id
   tags      = var.tags
 
-  # dynamic "identity" {
-  #   for_each = try(var.managed_identities,null)
-  #   content {
-  #     type         = identity.value.system_assigned
-  #     identity_ids = identity.value.user_assigned_resource_ids
-  #   }
-
-  #}
+  dynamic "identity" {
+    for_each = local.managed_identity_type == null ? [] : ["identity"]
+    content {
+      type         = local.managed_identity_type
+      identity_ids = var.managed_identities.user_assigned_resource_ids
+    }
+  }
   body = jsonencode({
     properties = {
       originResponseTimeoutSeconds = 20
@@ -37,3 +36,13 @@ resource "azapi_resource" "front_door_profile" {
     }
   })
 }
+
+  # Example resource implementation
+  resource "azurerm_management_lock" "this" {
+    count = var.lock != null ? 1 : 0
+  
+    lock_level = var.lock.kind
+    name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
+    scope      = azapi_resource.front_door_profile.id
+    notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+  }

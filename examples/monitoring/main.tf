@@ -68,6 +68,12 @@ module "azurerm_cdn_frontdoor_profile" {
   location            = azurerm_resource_group.this.location
   sku_name            = "Standard_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
+  tags                = { "owner" = "John Doe", "environment" = "production" }
+  lock = {
+    name = "lock-delete" # optional
+    kind = "CanNotDelete"
+  }
+
   origin_groups = {
     og1 = {
       name = "og1"
@@ -367,12 +373,12 @@ module "azurerm_cdn_frontdoor_profile" {
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
     }
   }
-  # managed_identities = {
-  #   system_assigned = true
-  #   user_assigned_resource_ids = [
-  #     "/subscriptions/a1da2822-7cbb-4c14-86f4-4e37995ef462/resourceGroups/sharedresources-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/ui1",
-  #     "/subscriptions/a1da2822-7cbb-4c14-86f4-4e37995ef462/resourceGroups/sharedresources-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/miu2"
-  #   ]
-  # }
+  managed_identities = {
+    system_assigned = true
+    user_assigned_resource_ids = [
+    ]
+  }
 }
+
+
 
