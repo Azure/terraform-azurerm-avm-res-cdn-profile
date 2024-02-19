@@ -230,4 +230,5 @@ variable "front_door_secret" {
     name = string
     key_vault_certificate_id = string
    })
+   default = null
 }

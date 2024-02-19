@@ -5,10 +5,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 3.7.0, < 4.0.0"
     }
-    azapi = {
-      source  = "Azure/azapi"
-      version = "1.12.0"
-    }
   }
 }
 
@@ -49,15 +45,22 @@ resource "azurerm_resource_group" "this" {
   location = module.regions.regions[random_integer.region_index.result].name
 }
 
-data "azurerm_log_analytics_workspace" "existingworkspace" {
-  name                = "centralworkspace"
-  resource_group_name = "sharedresources-rg"
+data "azurerm_client_config" "current" {}
+
+module "avm_storage_account" {
+  source              = "Azure/avm-res-storage-storageaccount/azurerm"
+  name                = module.naming.storage_account.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+  shared_access_key_enabled = true
 }
 
-data "azurerm_storage_account" "existingstorage" {
-  name                = "sharedstorage102030"
-  resource_group_name = "sharedresources-rg"
+
+resource "azurerm_log_analytics_workspace" "workspace" {
+  name                = module.naming.log_analytics_workspace.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
 }
+
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
@@ -68,12 +71,6 @@ module "azurerm_cdn_frontdoor_profile" {
   location            = azurerm_resource_group.this.location
   sku_name            = "Standard_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
-  tags                = { "owner" = "John Doe", "environment" = "production" }
-  lock = {
-    name = "lock-delete" # optional
-    kind = "CanNotDelete"
-  }
-
   origin_groups = {
     og1 = {
       name = "og1"
@@ -292,93 +289,41 @@ module "azurerm_cdn_frontdoor_profile" {
           transforms       = ["Uppercase"]
         }
 
-        # socket_address_condition = {
-        #   operator         = "IPMatch"
-        #   negate_condition = false
-        #   match_values     = ["5.5.5.64/26"]
-        # }
 
-        # client_port_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["Mobile"]
-        # }
-
-        # server_port_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["80"]
-        # }
-
-        # ssl_protocol_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["TLSv1"]
-        # }
-
-        # request_uri_condition = {
-        #   negate_condition = false
-        #   operator         = "BeginsWith"
-        #   match_values     = ["J", "K"]
-        #   transforms       = ["Uppercase"]
-        # }
-
-
-        # host_name_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-        #   transforms       = ["Lowercase", "Trim"]
-        # }
-
-        # is_device_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["Mobile"]
-        # }
-
-        # post_args_condition = {
-        #   post_args_name = "customerName"
-        #   operator       = "BeginsWith"
-        #   match_values   = ["J", "K"]
-        #   transforms     = ["Uppercase"]
-        # }
-
-        # request_method_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["DELETE"]
-        # }
-
-        # url_filename_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["media.mp4"]
-        #   transforms       = ["Lowercase", "RemoveNulls", "Trim"]
-        # }
       }
     }
   }
+  # diagnostic_settings = {
+  #   diag_setting_1 = {
+  #     name              = "storageandloganalytics"
+  #     log_groups        = ["allLogs"]
+  #     metric_categories = ["AllMetrics"]
+  #     #log_categories = ["AuditEvents"]
+  #     log_analytics_destination_type = "Dedicated"
+  #     workspace_resource_id          = data.azurerm_log_analytics_workspace.existingworkspace.id
+  #     storage_account_resource_id    = data.azurerm_storage_account.existingstorage.id
+  #     #event_hub_authorization_rule_resource_id = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventHub/namespaces/{namespaceName}/eventhubs/{eventHubName}/authorizationrules/{authorizationRuleName}"
+  #     #event_hub_name                           = "{eventHubName}"
+  #     #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
+  #   }
+  # }
+
   diagnostic_settings = {
-    diag_setting_1 = {
+    workspace_diag = {
       name              = "storageandloganalytics"
       log_groups        = ["allLogs"]
       metric_categories = ["AllMetrics"]
       #log_categories = ["AuditEvents"]
       log_analytics_destination_type = "Dedicated"
-      workspace_resource_id          = data.azurerm_log_analytics_workspace.existingworkspace.id
-      storage_account_resource_id    = data.azurerm_storage_account.existingstorage.id
-      #event_hub_authorization_rule_resource_id = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventHub/namespaces/{namespaceName}/eventhubs/{eventHubName}/authorizationrules/{authorizationRuleName}"
-      #event_hub_name                           = "{eventHubName}"
-      #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
+      workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
+      storage_account_resource_id    = module.avm_storage_account.id
+
     }
+
   }
-  managed_identities = {
-    system_assigned = true
-    user_assigned_resource_ids = [
-    ]
-  }
+
 }
+
 
 
 

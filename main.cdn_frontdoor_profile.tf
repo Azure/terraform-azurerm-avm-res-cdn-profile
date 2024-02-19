@@ -15,6 +15,7 @@
 #using azapi since azurerm_cdn_frontdoor_profile commented above does not support identity blocks
 resource "azapi_resource" "front_door_profile" {
   type      = "Microsoft.Cdn/profiles@2023-07-01-preview"
+  schema_validation_enabled = false
   name      = var.name
   location  = "Global"
   parent_id = data.azurerm_resource_group.rg.id
