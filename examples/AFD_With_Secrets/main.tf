@@ -5,10 +5,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 3.7.0, < 4.0.0"
     }
-    azapi = {
-      source  = "Azure/azapi"
-      version = "1.12.0"
-    }
   }
 }
 
@@ -51,6 +47,12 @@ resource "azurerm_resource_group" "this" {
 
 data "azurerm_client_config" "current" {}
 
+resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
+  location            = azurerm_resource_group.this.location
+  name                = module.naming.user_assigned_identity.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+}
+
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source = "Azure/avm-res-keyvault-vault/azurerm"
@@ -62,17 +64,21 @@ module "avm_res_keyvault_vault" {
   network_acls = {
     default_action = "Allow"
     bypass         = "AzureServices"
-    ip_rules       = ["10.10.0.0/24"]
+    ip_rules       = ["74.225.0.0/24"]
   }
 
   role_assignments = {
-    deployment_user_secrets = {
+    deployment_currentuser_secrets = {
       role_definition_id_or_name = "Key Vault Administrator"
       principal_id               = data.azurerm_client_config.current.object_id
     }
+    deployment_user_secrets = {
+      role_definition_id_or_name = "Key Vault Administrator"
+      principal_id               = azurerm_user_assigned_identity.identity_for_keyvault.principal_id
+    }
     deployment_user_administrator = {
       role_definition_id_or_name = "Key Vault Certificates Officer"
-      principal_id               = data.azurerm_client_config.current.object_id
+      principal_id               = azurerm_user_assigned_identity.identity_for_keyvault.principal_id
     }
   }
 
@@ -85,6 +91,7 @@ module "avm_res_keyvault_vault" {
 }
 
 resource "azurerm_key_vault_certificate" "keyvaultcert" {
+  depends_on = [ module.avm_res_keyvault_vault ]
   name         = "example-cert"
   key_vault_id = module.avm_res_keyvault_vault.resource.id
 
@@ -389,6 +396,12 @@ module "azurerm_cdn_frontdoor_profile" {
     key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
   }
 
+  managed_identities = {
+    system_assigned = true
+    user_assigned_resource_ids = [
+      azurerm_user_assigned_identity.identity_for_keyvault.id
+    ]
+  }
 }
 
 
