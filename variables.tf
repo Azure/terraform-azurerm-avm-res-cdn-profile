@@ -51,20 +51,9 @@ variable "origin_groups" {
       sample_size                        = optional(number, 4)
       successful_samples_required        = optional(number, 3)
     }))
-    #   origins = map(object({
-    #   name                           = string
-    #   origin_group_name              = string
-    #   host_name                      = string
-    #   certificate_name_check_enabled = string
-    #   enabled                        = string
-    #   http_port                      = optional(number, 80)
-    #   https_port                     = optional(number, 443)
-    #   host_header                    = optional(string, null)
-    #   priority                       = optional(number, 1)
-    #   weight                         = optional(number, 500)
-    # }))
   }))
   default = null
+  
 }
 
 variable "origin" {
@@ -79,9 +68,14 @@ variable "origin" {
     host_header                    = optional(string, null)
     priority                       = optional(number, 1)
     weight                         = optional(number, 500)
+    private_link = optional(map(object({
+      request_message        = string
+      target_type            = string
+      location               = string
+      private_link_target_id = string
+    })),null)
   }))
 }
-
 
 variable "endpoints" {
   type = map(object({
@@ -184,7 +178,6 @@ variable "diagnostic_settings" {
   DESCRIPTION
 }
 
-
 variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
@@ -227,8 +220,8 @@ variable "managed_identities" {
 
 variable "front_door_secret" {
   type = object({
-    name = string
+    name                     = string
     key_vault_certificate_id = string
-   })
-   default = null
+  })
+  default = null
 }

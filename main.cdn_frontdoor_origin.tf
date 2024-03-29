@@ -10,4 +10,14 @@ resource "azurerm_cdn_frontdoor_origin" "origins" {
   origin_host_header             = each.value.host_header
   priority                       = each.value.priority
   weight                         = each.value.weight
+  dynamic "private_link" {
+    for_each = each.value.private_link != null ? (each.value.private_link) : {}
+    
+    content {
+      request_message        = private_link.value.request_message
+      target_type            = private_link.value.target_type
+      location               = private_link.value.location
+      private_link_target_id = private_link.value.private_link_target_id
+    }
+  }
 }

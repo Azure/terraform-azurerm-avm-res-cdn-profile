@@ -14,12 +14,12 @@
 
 #using azapi since azurerm_cdn_frontdoor_profile commented above does not support identity blocks
 resource "azapi_resource" "front_door_profile" {
-  type      = "Microsoft.Cdn/profiles@2023-07-01-preview"
+  type                      = "Microsoft.Cdn/profiles@2023-07-01-preview"
   schema_validation_enabled = false
-  name      = var.name
-  location  = "Global"
-  parent_id = data.azurerm_resource_group.rg.id
-  tags      = var.tags
+  name                      = var.name
+  location                  = "Global"
+  parent_id                 = data.azurerm_resource_group.rg.id
+  tags                      = var.tags
 
   dynamic "identity" {
     for_each = local.managed_identity_type == null ? [] : ["identity"]
@@ -38,12 +38,12 @@ resource "azapi_resource" "front_door_profile" {
   })
 }
 
-  # Example resource implementation
-  resource "azurerm_management_lock" "this" {
-    count = var.lock != null ? 1 : 0
-  
-    lock_level = var.lock.kind
-    name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
-    scope      = azapi_resource.front_door_profile.id
-    notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
-  }
+# Example resource implementation
+resource "azurerm_management_lock" "this" {
+  count = var.lock != null ? 1 : 0
+
+  lock_level = var.lock.kind
+  name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
+  scope      = azapi_resource.front_door_profile.id
+  notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+}
