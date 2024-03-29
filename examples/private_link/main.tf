@@ -47,7 +47,7 @@ resource "azurerm_resource_group" "this" {
 
 # storage account origin which will be connected to private link
 resource "azurerm_storage_account" "storage" {
-  name                     = "ddstoragepvt" #module.naming.storage_account.name_unique
+  name                     = module.naming.storage_account.name_unique
   resource_group_name      = azurerm_resource_group.this.name
   location                 = azurerm_resource_group.this.location
   account_tier             = "Standard"
@@ -135,10 +135,10 @@ module "azurerm_cdn_frontdoor_profile" {
       origin_group_name              = "og1"
       enabled                        = true
       certificate_name_check_enabled = true
-      host_name                      = "ddstoragepvt.blob.core.windows.net"
+      host_name                      = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint,"https://",""),"/","")
       http_port                      = 80
       https_port                     = 443
-      host_header                    = "www.contoso.com"
+      host_header                    = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint,"https://",""),"/","")
       priority                       = 1
       weight                         = 1
       #TODO private link deployment fails, investigating..
@@ -382,4 +382,6 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 
 }
+
+
 
