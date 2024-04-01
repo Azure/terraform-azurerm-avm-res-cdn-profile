@@ -61,7 +61,7 @@ module "azurerm_cdn_frontdoor_profile" {
         hp1 = {
           interval_in_seconds = 240
           path                = "/healthProbe"
-          protocol            = "Https"
+          protocol            = "Http"
           request_type        = "HEAD"
         }
       }
@@ -86,6 +86,11 @@ module "azurerm_cdn_frontdoor_profile" {
       host_header                    = "www.contoso.com"
       priority                       = 1
       weight                         = 1
+      pl = {
+      request_message = ""
+      target_type     = null
+      location        = "Central India"
+      }
     }
     origin2 = {
       name                           = "origin2"
@@ -141,7 +146,7 @@ module "azurerm_cdn_frontdoor_profile" {
       supported_protocols    = ["Http", "Https"]
       cache = {
         cache1 = {
-          query_string_caching_behavior = "IgnoreSpecifiedQueryStrings"
+          query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
           query_strings                 = ["account", "settings"]
           compression_enabled           = true
           content_types_to_compress     = ["text/html", "text/javascript", "text/xml"]
