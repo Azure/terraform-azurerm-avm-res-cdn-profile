@@ -135,6 +135,28 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
+  # front_door_custom_domains = {
+  #   cd1 = {
+  #     name        = "example-customDomain"
+  #     dns_zone_id = azurerm_dns_zone.dnszone.id
+  #     host_name   = "contoso.fabrikam.com"
+
+  #     tls = {
+  #       certificate_type    = "ManagedCertificate"
+  #       minimum_tls_version = "TLS12"
+  #     }
+  #   },
+  #   cd2 = {
+  #     name        = "customdomain2"
+  #     dns_zone_id = azurerm_dns_zone.dnszone.id
+  #     host_name   = "contoso2.fabrikam.com"
+  #     #associated_route_names = ["route1"]
+  #     tls = {
+  #       certificate_type    = "ManagedCertificate"
+  #       minimum_tls_version = "TLS12"
+  #     }
+  #   }
+  # }
   routes = {
     route1 = {
       name                   = "route1"
@@ -470,8 +492,8 @@ module "azurerm_cdn_frontdoor_profile" {
       firewall = {
         front_door_firewall_policy_name = "examplecdnfdwafpolicy1"
         association = {
-          endpoint_names    = ["ep1"]
-          domain_names      = ["cd1"]
+          endpoint_names = ["ep1"]
+          # domain_names      = ["cd1"]
           patterns_to_match = ["/*"]
 
         }
@@ -496,6 +518,6 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 }
 
-output "epsanddomains1" {
-  value= module.azurerm_cdn_frontdoor_profile.epslist
+output "epsanddomains" {
+  value = module.azurerm_cdn_frontdoor_profile.epslist1
 }

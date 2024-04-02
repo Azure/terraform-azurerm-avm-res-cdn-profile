@@ -120,20 +120,7 @@ variable "front_door_firewall_policies" {
   default = null
 }
 
-variable "front_door_firewall_policies" {
-  type = map(object({
-    name                = string
-    priority            = number
-    action              = string
-    rule_set_type       = string
-    rule_set_version    = string
-    rule_group_override = optional(map(object({
-      rule_group_name = string
-      rules           = list(string)
-    })))
-  }))
-  default = null
-}
+
 
 
 
@@ -279,3 +266,7 @@ variable "front_door_custom_domains" {
   }))
   default = {}
 }
+
+
+
+
