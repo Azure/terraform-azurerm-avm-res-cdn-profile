@@ -45,23 +45,6 @@ resource "azurerm_resource_group" "this" {
   location = module.regions.regions[random_integer.region_index.result].name
 }
 
-data "azurerm_client_config" "current" {}
-
-module "avm_storage_account" {
-  source              = "Azure/avm-res-storage-storageaccount/azurerm"
-  name                = module.naming.storage_account.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-  shared_access_key_enabled = true
-}
-
-
-resource "azurerm_log_analytics_workspace" "workspace" {
-  name                = module.naming.log_analytics_workspace.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
-}
-
-
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
   source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
@@ -140,6 +123,12 @@ module "azurerm_cdn_frontdoor_profile" {
     }
     ep2 = {
       name = "ep2"
+      tags = {
+        ENV = "example2"
+      }
+    }
+    ep33 = {
+      name = "ep3"
       tags = {
         ENV = "example2"
       }
@@ -289,41 +278,224 @@ module "azurerm_cdn_frontdoor_profile" {
           transforms       = ["Uppercase"]
         }
 
+        # socket_address_condition = {
+        #   operator         = "IPMatch"
+        #   negate_condition = false
+        #   match_values     = ["5.5.5.64/26"]
+        # }
 
+        # client_port_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["Mobile"]
+        # }
+
+        # server_port_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["80"]
+        # }
+
+        # ssl_protocol_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["TLSv1"]
+        # }
+
+        # request_uri_condition = {
+        #   negate_condition = false
+        #   operator         = "BeginsWith"
+        #   match_values     = ["J", "K"]
+        #   transforms       = ["Uppercase"]
+        # }
+
+
+        # host_name_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
+        #   transforms       = ["Lowercase", "Trim"]
+        # }
+
+        # is_device_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["Mobile"]
+        # }
+
+        # post_args_condition = {
+        #   post_args_name = "customerName"
+        #   operator       = "BeginsWith"
+        #   match_values   = ["J", "K"]
+        #   transforms     = ["Uppercase"]
+        # }
+
+        # request_method_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["DELETE"]
+        # }
+
+        # url_filename_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["media.mp4"]
+        #   transforms       = ["Lowercase", "RemoveNulls", "Trim"]
+        # }
       }
     }
   }
-  # diagnostic_settings = {
-  #   diag_setting_1 = {
-  #     name              = "storageandloganalytics"
-  #     log_groups        = ["allLogs"]
-  #     metric_categories = ["AllMetrics"]
-  #     #log_categories = ["AuditEvents"]
-  #     log_analytics_destination_type = "Dedicated"
-  #     workspace_resource_id          = data.azurerm_log_analytics_workspace.existingworkspace.id
-  #     storage_account_resource_id    = data.azurerm_storage_account.existingstorage.id
-  #     #event_hub_authorization_rule_resource_id = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventHub/namespaces/{namespaceName}/eventhubs/{eventHubName}/authorizationrules/{authorizationRuleName}"
-  #     #event_hub_name                           = "{eventHubName}"
-  #     #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
-  #   }
-  # }
 
-  diagnostic_settings = {
-    workspace_diag = {
-      name              = "storageandloganalytics"
-      log_groups        = ["allLogs"]
-      metric_categories = ["AllMetrics"]
-      #log_categories = ["AuditEvents"]
-      log_analytics_destination_type = "Dedicated"
-      workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
-      storage_account_resource_id    = module.avm_storage_account.id
+  front_door_firewall_policies = {
+    fd_waf1 = {
+      name                              = "examplecdnfdwafpolicy1"
+      resource_group_name               = azurerm_resource_group.this.name
+      sku_name                          = "Standard_AzureFrontDoor"
+      enabled                           = true
+      mode                              = "Prevention"
+      redirect_url                      = "https://www.contoso.com"
+      custom_block_response_status_code = 405
+      custom_block_response_body        = "PGh0bWw+CjxoZWFkZXI+PHRpdGxlPkhlbGxvPC90aXRsZT48L2hlYWRlcj4KPGJvZHk+CkhlbGxvIHdvcmxkCjwvYm9keT4KPC9odG1sPg=="
+
+      custom_rules = {
+        cr1 = {
+          name                           = "Rule1"
+          enabled                        = true
+          priority                       = 1
+          rate_limit_duration_in_minutes = 1
+          rate_limit_threshold           = 10
+          type                           = "MatchRule"
+          action                         = "Block"
+          match_conditions = {
+            m1 = {
+              match_variable     = "RemoteAddr"
+              operator           = "IPMatch"
+              negation_condition = false
+              match_values       = ["10.0.1.0/24", "10.0.0.0/24"]
+            }
+          }
+        }
+
+
+        cr2 = {
+          name                           = "Rule2"
+          enabled                        = true
+          priority                       = 2
+          rate_limit_duration_in_minutes = 1
+          rate_limit_threshold           = 10
+          type                           = "MatchRule"
+          action                         = "Block"
+          match_conditions = {
+            match_condition1 = {
+              match_variable     = "RemoteAddr"
+              operator           = "IPMatch"
+              negation_condition = false
+              match_values       = ["192.168.1.0/24"]
+            }
+
+            match_condition2 = {
+              match_variable     = "RequestHeader"
+              selector           = "UserAgent"
+              operator           = "Contains"
+              negation_condition = false
+              match_values       = ["windows"]
+              transforms         = ["Lowercase", "Trim"]
+            }
+          }
+        }
+      }
+    }
+    fd_waf2 = {
+      name                              = "examplecdnfdwafpolicy2"
+      resource_group_name               = azurerm_resource_group.this.name
+      sku_name                          = "Standard_AzureFrontDoor"
+      enabled                           = true
+      mode                              = "Prevention"
+      redirect_url                      = "https://www.contoso.com"
+      custom_block_response_status_code = 405
+      custom_block_response_body        = "PGh0bWw+CjxoZWFkZXI+PHRpdGxlPkhlbGxvPC90aXRsZT48L2hlYWRlcj4KPGJvZHk+CkhlbGxvIHdvcmxkCjwvYm9keT4KPC9odG1sPg=="
+
+      custom_rules = {
+        cr1 = {
+          name                           = "Rule1"
+          enabled                        = true
+          priority                       = 1
+          rate_limit_duration_in_minutes = 1
+          rate_limit_threshold           = 10
+          type                           = "MatchRule"
+          action                         = "Block"
+          match_conditions = {
+            m1 = {
+              match_variable     = "RemoteAddr"
+              operator           = "IPMatch"
+              negation_condition = false
+              match_values       = ["10.0.1.0/24", "10.0.0.0/24"]
+            }
+          }
+        }
+
+
+        cr2 = {
+          name                           = "Rule2"
+          enabled                        = true
+          priority                       = 2
+          rate_limit_duration_in_minutes = 1
+          rate_limit_threshold           = 10
+          type                           = "MatchRule"
+          action                         = "Block"
+          match_conditions = {
+            match_condition1 = {
+              match_variable     = "RemoteAddr"
+              operator           = "IPMatch"
+              negation_condition = false
+              match_values       = ["192.168.1.0/24"]
+            }
+
+            match_condition2 = {
+              match_variable     = "RequestHeader"
+              selector           = "UserAgent"
+              operator           = "Contains"
+              negation_condition = false
+              match_values       = ["windows"]
+              transforms         = ["Lowercase", "Trim"]
+            }
+          }
+        }
+      }
+    }
+  }
+  front_door_security_policies = {
+    secpol1 = {
+      name = "firewallpolicyforep1and2"
+      firewall = {
+        front_door_firewall_policy_name = "examplecdnfdwafpolicy1"
+        association = {
+          endpoint_names    = ["ep1"]
+          domain_names      = ["cd1"]
+          patterns_to_match = ["/*"]
+
+        }
+      }
+
 
     }
+    secpol3 = {
+      name = "firewallpolicyforep33"
+      firewall = {
+        front_door_firewall_policy_name = "examplecdnfdwafpolicy2"
+        association = {
+          endpoint_names = ["ep2", "ep3"]
+          #domain_names      = ["cd2"]
+          patterns_to_match = ["/*"]
 
+        }
+      }
+
+
+    }
   }
-
 }
 
-
-
-
+output "epsanddomains1" {
+  value= module.azurerm_cdn_frontdoor_profile.epslist
+}

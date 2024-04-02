@@ -7,17 +7,19 @@ resource "azurerm_cdn_frontdoor_endpoint" "endpoints" {
 }
 
 resource "azurerm_cdn_frontdoor_route" "routes" {
-  depends_on                    = [azurerm_cdn_frontdoor_origin.origins]
-  for_each                      = var.routes
-  name                          = each.value.name
-  cdn_frontdoor_endpoint_id     = azurerm_cdn_frontdoor_endpoint.endpoints[each.value.endpoint_name].id
-  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.example[each.value.origin_group_name].id
-  cdn_frontdoor_origin_ids      = [for x in azurerm_cdn_frontdoor_origin.origins : x.id if contains(each.value.origin_names, x.name)]
-  supported_protocols           = each.value.supported_protocols
-  patterns_to_match             = each.value.patterns_to_match
-  forwarding_protocol           = each.value.forwarding_protocol
-  link_to_default_domain        = each.value.link_to_default_domain
-  https_redirect_enabled        = each.value.https_redirect_enabled
+  depends_on                      = [azurerm_cdn_frontdoor_origin.origins]
+  for_each                        = var.routes
+  name                            = each.value.name
+  cdn_frontdoor_endpoint_id       = azurerm_cdn_frontdoor_endpoint.endpoints[each.value.endpoint_name].id
+  cdn_frontdoor_origin_group_id   = azurerm_cdn_frontdoor_origin_group.example[each.value.origin_group_name].id
+  cdn_frontdoor_origin_ids        = [for x in azurerm_cdn_frontdoor_origin.origins : x.id if contains(each.value.origin_names, x.name)]
+  supported_protocols             = each.value.supported_protocols
+  patterns_to_match               = each.value.patterns_to_match
+  forwarding_protocol             = each.value.forwarding_protocol
+  link_to_default_domain          = each.value.link_to_default_domain
+  https_redirect_enabled          = each.value.https_redirect_enabled
+  cdn_frontdoor_custom_domain_ids = try([for x in azurerm_cdn_frontdoor_custom_domain.cds : x.id if contains(each.value.custom_domain_names, x.name)], null)
+
   dynamic "cache" {
     for_each = each.value.cache
     content {

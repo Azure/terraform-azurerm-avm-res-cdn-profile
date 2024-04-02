@@ -114,30 +114,66 @@ variable "rules" {
   type = map(any)
 }
 
+
+variable "front_door_firewall_policies" {
+  type    = any
+  default = null
+}
+
+variable "front_door_firewall_policies" {
+  type = map(object({
+    name                = string
+    priority            = number
+    action              = string
+    rule_set_type       = string
+    rule_set_version    = string
+    rule_group_override = optional(map(object({
+      rule_group_name = string
+      rules           = list(string)
+    })))
+  }))
+  default = null
+}
+
+
+
+variable "front_door_security_policies" {
+  type    = any
+  default = null
+}
+
+
+
 variable "lock" {
-  type = object({
-    kind = string
-    name = optional(string, null)
-  })
-  default     = null
-  description = <<DESCRIPTION
+    type = object({
+      kind = string
+      name = optional(string, null)
+    })
+    default     = null
+    description = <<DESCRIPTION
   Controls the Resource Lock configuration for this resource. The following properties can be specified:
   
   - `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
   - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
   DESCRIPTION
-
-  validation {
-    condition     = var.lock != null ? contains(["CanNotDelete", "ReadOnly"], var.lock.kind) : true
-    error_message = "Lock kind must be either `\"CanNotDelete\"` or `\"ReadOnly\"`."
+  
+    validation {
+      condition     = var.lock != null ? contains(["CanNotDelete", "ReadOnly"], var.lock.kind) : true
+      error_message = "Lock kind must be either `\"CanNotDelete\"` or `\"ReadOnly\"`."
+    }
   }
-}
+
+
+
+
+
+
 
 variable "diagnostic_settings" {
   type = map(object({
     name                                     = optional(string, null)
     log_categories                           = optional(set(string), [])
-    log_groups                               = optional(set(string), ["allLogs"])
+    log_groups                               = optional(set(string), [])
     metric_categories                        = optional(set(string), ["AllMetrics"])
     log_analytics_destination_type           = optional(string, "Dedicated")
     workspace_resource_id                    = optional(string, null)
@@ -182,6 +218,7 @@ variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
     principal_id                           = string
+    principal_type                         = optional(string, "User")  #["User" "Group" "ServicePrincipal"] case sensitive
     description                            = optional(string, null)
     skip_service_principal_aad_check       = optional(bool, false)
     condition                              = optional(string, null)
@@ -224,4 +261,21 @@ variable "front_door_secret" {
     key_vault_certificate_id = string
   })
   default = null
+}
+
+variable "front_door_custom_domains" {
+  type = map(object({
+    name        = string
+    dns_zone_id = string
+    host_name   = string
+    # associated_route_names = optional(list(string)) no functional purpose
+    tls = object({
+      certificate_type        = optional(string, "ManagedCertificate")
+      minimum_tls_version     = optional(string, null)
+      cdn_frontdoor_secret_id = optional(string, null)
+    })
+
+
+  }))
+  default = {}
 }

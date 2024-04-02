@@ -91,7 +91,7 @@ module "avm_res_keyvault_vault" {
 }
 
 resource "azurerm_key_vault_certificate" "keyvaultcert" {
-  depends_on = [ module.avm_res_keyvault_vault ]
+  depends_on   = [module.avm_res_keyvault_vault]
   name         = "example-cert"
   key_vault_id = module.avm_res_keyvault_vault.resource.id
 
@@ -216,15 +216,9 @@ module "azurerm_cdn_frontdoor_profile" {
 
   endpoints = {
     ep1 = {
-      name = "ep1"
+      name = module.naming.cdn_endpoint.name_unique
       tags = {
         ENV = "example"
-      }
-    }
-    ep2 = {
-      name = "ep2"
-      tags = {
-        ENV = "example2"
       }
     }
   }
@@ -376,25 +370,13 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-  # diagnostic_settings = {
-  #   diag_setting_1 = {
-  #     name              = "storageandloganalytics"
-  #     log_groups        = ["allLogs"]
-  #     metric_categories = ["AllMetrics"]
-  #     #log_categories = ["AuditEvents"]
-  #     log_analytics_destination_type = "Dedicated"
-  #     workspace_resource_id          = data.azurerm_log_analytics_workspace.existingworkspace.id
-  #     storage_account_resource_id    = data.azurerm_storage_account.existingstorage.id
-  #     #event_hub_authorization_rule_resource_id = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventHub/namespaces/{namespaceName}/eventhubs/{eventHubName}/authorizationrules/{authorizationRuleName}"
-  #     #event_hub_name                           = "{eventHubName}"
-  #     #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
-  #   }
-  # }
-
+  
+/*
   front_door_secret = {
     name                     = "Front-door-certificate"
     key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
   }
+*/
 
   managed_identities = {
     system_assigned = true
