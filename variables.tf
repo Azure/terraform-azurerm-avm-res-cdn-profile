@@ -527,39 +527,39 @@ variable "front_door_custom_domains" {
 
 variable "front_door_security_policies" {
   type = map(object({
-    security_policies = map(object({
       name = string
-      firewall = map(object({
+      firewall = object({
         front_door_firewall_policy_name = string
-        association = map(object({
-          custom_domain_names = list(string)
-          endpoint_name       = list(string)
-          patterns_to_match   = list(string, "/*")
-        }))
-      }))
-    }))
+        association = object({
+          domain_names = list(string)
+          endpoint_names       = optional(list(string))
+          patterns_to_match   = optional(list(string))
+        })
+      })
   }))
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.front_door_security_policies :
-        alltrue(
-          [
-            for _, a in v["security_policies"] : alltrue(
-              [
-                for b in a["firewall"] : alltrue(
-                  [
-                    length(flatten([for c in b[association]:concat(c[custom_domain_names],c[endpoint_name])])) == length(distinct(flatten([for c in b[association]: concat(c[custom_domain_names],c[endpoint_name])])))
-                  ]
-                )
-              ]
-            )
-          ]
-        )
-      ]
-    )
-    error_message = "Endpoint/Custom domain is already being used, please provide unique association."
-  }
+validation {
+  condition = length(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_names, policy.firewall.association.endpoint_names)])) == length(distinct(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_names, policy.firewall.association.endpoint_names)])))
+  error_message = "Endpoint/Custom domain is already being used, please provide unique association."
+}
+validation {
+  condition = alltrue([for _, v in var.front_door_security_policies : v.name != ""])
+  error_message = "Security policy name must not be an empty string."
+}
+validation {
+  condition = [for name, policy in var.front_door_security_policies : policy.firewall.association.domain_names == [] ? policy.firewall.association.endpoint_names != [] : true ]
+  error_message = "Provide either domain names or endpoint names or both."
+}
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Security Policy.
+  
+  - `name` - (Required) The name which should be used for this Front Door Security Policy. Possible values must not be an empty string.
+  - `firewall` - (Required) An firewall block as defined below: -
+    - 'front_door_firewall_policy_name' - (Required) the name of Front Door Firewall Policy that should be linked to this Front Door Security Policy.
+    - 'association' - (Required) An association block as defined below:-
+      - ' domain_names ' - (Optional) list of the domain names to associate with the firewall policy. Provide either domain names or endpoint names or both.
+      - ' endpoint_names' - (Optional) list of the endpoint names to associate with the firewall policy. Provide either domain names or endpoint names or both.
+      - ' patterns_to_match' - (Required) The list of paths to match for this firewall policy. Possible value includes /*
+  DESCRIPTION
 }
 
 # variable "front_door_firewall_policies" {
