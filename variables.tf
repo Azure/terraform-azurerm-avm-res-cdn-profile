@@ -115,10 +115,10 @@ variable "rules" {
 }
 
 
-variable "front_door_firewall_policies" {
-  type    = any
-  default = null
-}
+# variable "front_door_firewall_policies" {
+#   type    = any
+#   default = null
+# }
 
 
 
@@ -285,11 +285,116 @@ validation {
 }
 }
 
-# variable "front_door_firewall_policies" {
-#   type = map(object({
-#     name = 
-#   }))
-# }
+variable "front_door_firewall_policies" {
+  type = map(object({
+    name = string
+    resource_group_name = string
+    sku_name = string
+    enabled = optional(bool, true)
+    mode = string
+    request_body_check_enabled = optional(bool,true)
+    redirect_url = optional(string)
+    custom_block_response_status_code = optional(number)
+    custom_block_response_body = optional(string)
+    custom_rules = map(object({
+      name = string
+      enabled = optional(bool, true)
+      priority = optional(number, 1)
+      rate_limit_duration_in_minutes = optional(number, 1)
+      rate_limit_threshold = optional(number, 10)
+      type = string
+      action = string
+      match_conditions = map(object({
+        match_variable = string
+        operator = string
+        negation_condition = optional(bool)
+        match_values = list(string) 
+        selector = optional(string)
+        transforms = optional(list(string))
+      }))
+    }))
+    managed_rules = optional(map(object({
+      type = string
+      version = string
+      action = string
+      exclusion = optional(map(object({ 
+        match_variable = string
+        operator = string
+        selector = optional(string)
+      })), {})
+      override = optional(map(object({ 
+        rule_group_name = string
+        exclusion = optional(map(object({ 
+          match_variable = string
+          operator = string
+          selector = optional(string)
+        })), {}) 
+        rule = optional(map(object({
+          action = string
+          enabled = optional(bool, false)
+          exclusion = optional(map(object({ 
+            match_variable = string
+            operator = string
+            selector = optional(string)
+          })), {})
+        })), {})
+      })), {})
+    })), {})
+    tags = optional(map(any))
+  }))
+  validation {
+    condition = alltrue([for _, v in var.front_door_firewall_policies : contains(["Standard_AzureFrontDoor","Premium_AzureFrontDoor"], v.sku_name)])
+    error_message = "Possible values include 'Standard_AzureFrontDoor' or 'Premium_AzureFrontDoor' for Sku_name"
+  }
+  validation {
+    condition = alltrue([for _, v in var.front_door_firewall_policies : contains(["Detection","Prevention"], v.mode)])
+    error_message = " Possible values are 'Detection', 'Prevention' for mode"
+  }
+  validation {
+    condition = alltrue([for _, v in var.front_door_firewall_policies : contains(["200","403","405","406","429"], tostring(v.custom_block_response_status_code))])
+    error_message = " Possible values are 200, 403, 405, 406, or 429 for custom_block_response_status_code"
+  }
+  validation {
+    condition = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : contains(["Allow", "Block", "Log", "Redirect"], x["action"])])])
+    error_message = "Possible values are 'Allow', 'Block', 'Log', or 'Redirect' for action"
+  } 
+  validation {
+    condition = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : contains(["MatchRule", "RateLimitRule"], x["type"])])])
+    error_message = "Possible values are 'MatchRule' or 'RateLimitRule' for type."
+  }
+  # validation {
+  #   condition = length([for _, v in var.front_door_firewall_policies : v.custom_rules != null && length(v.custom_rules[*].match_conditions) > 0 ? v.custom_rules[*].match_conditions : null]) <= 10
+  #   error_message = "If match_condition is used, it should not exceed 10 blocks."
+  # }
+  validation {
+    condition = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"]: contains(["Cookies","PostArgs","QueryString","RemoteAddr","RequestBody","RequestHeader","RequestMethod","RequestUri","SocketAddr"], y["match_variable"])])])])
+    error_message = "Possible values are 'Cookies', 'PostArgs', 'QueryString', 'RemoteAddr', 'RequestBody', 'RequestHeader', 'RequestMethod','RequestUri', or 'SocketAddr' for match_condition."
+  }
+  # validation {
+  #   condition = length(flatten([for name, policy in var.front_door_firewall_policies : policy.custom_rules != null ? [for mc in policy.custom_rules[*].match_conditions : length(mc.match_values)] : []])) <= 600 && alltrue(flatten([for name, policy in var.front_door_firewall_policies : policy.custom_rules != null ? [for mc in policy.custom_rules[*].match_conditions : alltrue([for mv in mc.match_values : length(mv) <= 256])] : []]))
+  #   error_message = "The total number of match_values across all match_condition blocks should not exceed 600, and each match_value should be up to 256 characters in length."
+  # }
+  validation {
+    condition = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"]: contains(["Any","BeginsWith","Contains","EndsWith","Equal","GeoMatch","GreaterThan","GreaterThanOrEqual","IPMatch","LessThan","LessThanOrEqual","RegEx"], y["operator"])])])])
+    error_message = "Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'GeoMatch', 'GreaterThan', 'GreaterThanOrEqual', 'IPMatch', 'LessThan', 'LessThanOrEqua'l or 'RegEx' for operator."
+  } 
+  # validation {
+  #   condition = alltrue(flatten([for name, policy in var.front_door_firewall_policies : policy.custom_rules != null ? [for mc in policy.custom_rules[*].match_conditions : length([for mv in mc.match_values : mc.match_variable == "QueryString" || mc.match_variable == "PostArgs" || mc.match_variable == "RequestHeader" || mc.match_variable == "Cookies" ? coalesce(mc.selector, null) : null]) == length(mc.match_values)] : []]))
+  #   error_message = "If the match_variable is QueryString, PostArgs, RequestHeader, or Cookies, a selector should be provided."
+  # }
+  validation {
+    condition = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"]: alltrue([y["transforms"] == null ? true : alltrue([for transform in coalesce(y["transforms"], []) : contains(["Lowercase", "RemoveNulls", "Trim", "Uppercase", "URLDecode", "URLEncode"], transform)])])])])])
+    error_message = "Possible values are 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'URLDecode' or 'URLEncode' for transforms."
+  }
+  validation {
+    condition = alltrue([for name, policy in var.front_door_firewall_policies : policy.sku_name == "Premium_AzureFrontDoor" ? length(keys(policy.managed_rules)) > 0 : length(keys(policy.managed_rules)) == 0])
+    error_message = "Managed rules should be set only when the Sku_name selected is 'Premium_AzureFrontDoor'."
+}
+  validation {
+    condition = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["managed_rules"] : contains(["DefaultRuleSet","Microsoft_DefaultRuleSet","BotProtection","Microsoft_BotManagerRuleSet"], x["type"])])])
+    error_message = "Possible values include 'DefaultRuleSet', 'Microsoft_DefaultRuleSet', 'BotProtection' or 'Microsoft_BotManagerRuleSet' for managed_rule type."
+  } 
+}
 
 
 
