@@ -492,7 +492,7 @@ module "azurerm_cdn_frontdoor_profile" {
       firewall = {
         front_door_firewall_policy_name = "examplecdnfdwafpolicy1"
         association = {
-          endpoint_names = ["ep1"]
+          endpoint_names    = ["ep1"]
           domain_names      = ["cd1"]
           patterns_to_match = ["/*"]
         }
@@ -503,7 +503,7 @@ module "azurerm_cdn_frontdoor_profile" {
       firewall = {
         front_door_firewall_policy_name = "examplecdnfdwafpolicy2"
         association = {
-          endpoint_names = ["ep2", "ep3"]
+          endpoint_names    = ["ep2", "ep3"]
           domain_names      = ["cd2"]
           patterns_to_match = ["/*"]
         }

@@ -1,5 +1,5 @@
 resource "azurerm_cdn_frontdoor_origin" "origins" {
-  
+
   for_each                       = var.origin
   name                           = each.value.name
   cdn_frontdoor_origin_group_id  = azurerm_cdn_frontdoor_origin_group.example[each.value.origin_group_name].id

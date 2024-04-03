@@ -370,13 +370,13 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-  
-/*
+
+
   front_door_secret = {
     name                     = "Front-door-certificate"
     key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
   }
-*/
+
 
   managed_identities = {
     system_assigned = true

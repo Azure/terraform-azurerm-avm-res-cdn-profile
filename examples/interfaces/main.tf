@@ -98,7 +98,7 @@ resource "azurerm_eventhub_namespace_authorization_rule" "example" {
   manage              = true
 }
 
-resource azurerm_user_assigned_identity "identity_for_keyvault" {
+resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
   name                = module.naming.user_assigned_identity.name_unique
@@ -364,9 +364,9 @@ module "azurerm_cdn_frontdoor_profile" {
 
   role_assignments = {
     self_contributor = {
-      role_definition_id_or_name             = "Contributor"
-      principal_id                           = data.azurerm_client_config.current.object_id
-      skip_service_principal_aad_check       = true
+      role_definition_id_or_name       = "Contributor"
+      principal_id                     = data.azurerm_client_config.current.object_id
+      skip_service_principal_aad_check = true
     },
     # role_assignment_2 = {
     #   role_definition_id_or_name             = "Reader"
@@ -381,14 +381,14 @@ module "azurerm_cdn_frontdoor_profile" {
   tags = {
     environment = "production"
   }
-/*      
+  /*      
   # A lock needs to be removed before destroy
    lock = {
        name = "lock-cdnprofile" # optional
        kind = "CanNotDelete"
      }
   */
-    managed_identities = {
+  managed_identities = {
     system_assigned = true
     user_assigned_resource_ids = [
       azurerm_user_assigned_identity.identity_for_keyvault.id

@@ -27,12 +27,12 @@ variable "customdomains" {
     id   = string
   }))
   default = {
-   
-      customdomain1 = {
-        name = "cd1"
-        id   = "cd1id"
-      }
-    
+
+    customdomain1 = {
+      name = "cd1"
+      id   = "cd1id"
+    }
+
     customdomain2 = {
       name = "cd2"
       id   = "cd2id"
@@ -105,7 +105,7 @@ variable "policies" {
 
 
 locals {
-  epids = flatten([for v in var.policies : flatten([for e in var.endpoints : e.id if contains(v.eps,e.name)])])
+  epids = flatten([for v in var.policies : flatten([for e in var.endpoints : e.id if contains(v.eps, e.name)])])
 }
 
 locals {
