@@ -70,15 +70,15 @@ variable "origin_groups" {
   # restore_traffic_time_to_healed_or_new_endpoint_in_minutes = optional(number, 10)
   # session_affinity_enabled = optional(bool, true)
   default = null
- # validation {
- #   condition = alltrue(
- #     [
- #       for _, v in var.origin_groups :
- #       v.restore_traffic_time_to_healed_or_new_endpoint_in_minutes >= 0 && v.restore_traffic_time_to_healed_or_new_endpoint_in_minutes <= 50
- #     ]
- #   )
- #   error_message = "Possible values must be between 0 & 50 minutes"
- # }
+  # validation {
+  #   condition = alltrue(
+  #     [
+  #       for _, v in var.origin_groups :
+  #       v.restore_traffic_time_to_healed_or_new_endpoint_in_minutes >= 0 && v.restore_traffic_time_to_healed_or_new_endpoint_in_minutes <= 50
+  #     ]
+  #   )
+  #   error_message = "Possible values must be between 0 & 50 minutes"
+  # }
   validation {
     condition = alltrue(
       [
@@ -227,10 +227,10 @@ variable "origin" {
   validation {
     condition = alltrue(
       [
-        for _, v in var.origin :
+        for v in var.origin :
         alltrue(
           [
-            for _, x in v["private_link"] : length(x["request_message"]) >= 1 && length(x["request_message"]) <= 140
+            for x in v.private_link : length(x.request_message) >= 10 && length(x.request_message) <= 140
           ]
         )
       ]
@@ -276,6 +276,13 @@ variable "endpoints" {
     enabled = optional(bool, true)
     tags    = optional(map(any))
   }))
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Endpoint.
+  
+  - `name` - (Required) The name which should be used for this Front Door Endpoint.  
+  - `enabled` - (Optional) Specifies if this Front Door Endpoint is enabled? Defaults to true.
+  - 'tags' - (Optional) Specifies a mapping of tags which should be assigned to the Front Door Endpoint.
+  DESCRIPTION
 }
 
 variable "routes" {
@@ -318,7 +325,7 @@ variable "routes" {
     condition = alltrue(
       [
         for _, v in var.routes : length(v.supported_protocols) > 0 && alltrue([for protocol in v.supported_protocols : protocol == "Http" || protocol == "Https"]) &&
-      (!v.https_redirect_enabled || (contains(v.supported_protocols, "Http") && contains(v.supported_protocols, "Https")))
+        (!v.https_redirect_enabled || (contains(v.supported_protocols, "Http") && contains(v.supported_protocols, "Https")))
       ]
     )
     error_message = "Possible values are 'Http', 'Https' only. If 'https_redirect_enabled' is set to true the 'supported_protocols' field must contain both 'Http' and 'Https' values. "
@@ -349,6 +356,24 @@ variable "routes" {
     )
     error_message = "Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'."
   }
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Route.
+  
+  - `name` - (Required) The name which should be used for this Front Door Route. Valid values must begin with a letter or number, end with a letter or number and may only contain letters, numbers and hyphens with a maximum length of 90 characters.
+  - 'origin_group_name' - (Required) The name of the origin group to associate the route with.
+  - `origin_names` - (Required) The name of the origins to associate the route with.
+  - 'endpoint_name' - (Required) The name of the origins to associate the route with.
+  - 'forwarding_protocol' - (Optional) The Protocol that will be use when forwarding traffic to backends. Possible values are 'HttpOnly', 'HttpsOnly' or 'MatchRequest'. Defaults to 'MatchRequest'.
+  - 'patterns_to_match' - (Required) The route patterns of the rule.
+  - 'supported_protocols' - (Required) One or more Protocols supported by this Front Door Route. Possible values are 'Http' or 'Https'.
+  - 'https_redirect_enabled' - (Optional) Automatically redirect HTTP traffic to HTTPS traffic? Possible values are true or false. Defaults to true.
+  - 'link_to_default_domain' - (Optional) Should this Front Door Route be linked to the default endpoint? Possible values include true or false. Defaults to true.
+  - 'cache' - (Optional) A cache block as defined below:-
+      - 'query_string_caching_behavior' - (Optional) Defines how the Front Door Route will cache requests that include query strings. Possible values include 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'. Defaults to 'IgnoreQueryString'.
+      - 'query_strings' - (Optional) Query strings to include or ignore.
+      - 'compression_enabled' - (Optional) Is content compression enabled? Possible values are true or false. Defaults to false.
+      - 'content_types_to_compress' - (Optional) A list of one or more Content types (formerly known as MIME types) to compress. Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'.
+  DESCRIPTION
 }
 
 
@@ -473,7 +498,7 @@ variable "front_door_secret" {
   })
   default = null
   validation {
-    condition = can(regex("^[a-zA-Z0-9][-a-zA-Z0-9]{0,258}[a-zA-Z0-9]$", var.front_door_secret.name))
+    condition     = can(regex("^[a-zA-Z0-9][-a-zA-Z0-9]{0,258}[a-zA-Z0-9]$", var.front_door_secret.name))
     error_message = "The secret name must start with a letter or a number, only contain letters, numbers and hyphens, and have a length of between 2 and 260 characters."
   }
   description = <<DESCRIPTION
@@ -483,3 +508,64 @@ variable "front_door_secret" {
   - `key_vault_certificate_id` - (Required) The ID of the Key Vault certificate resource to use.
   DESCRIPTION
 }
+
+variable "front_door_custom_domains" {
+  type = map(object({
+    name        = string
+    dns_zone_id = string
+    host_name   = string
+    # associated_route_names = optional(list(string)) no functional purpose
+    tls = object({
+      certificate_type        = optional(string, "ManagedCertificate")
+      minimum_tls_version     = optional(string, null)
+      cdn_frontdoor_secret_id = optional(string, null)
+    })
+  }))
+  default = {}
+}
+
+
+variable "front_door_security_policies" {
+  type = map(object({
+    security_policies = map(object({
+      name = string
+      firewall = map(object({
+        front_door_firewall_policy_name = string
+        association = map(object({
+          custom_domain_names = list(string)
+          endpoint_name       = list(string)
+          patterns_to_match   = list(string, "/*")
+        }))
+      }))
+    }))
+  }))
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_security_policies :
+        alltrue(
+          [
+            for _, a in v["security_policies"] : alltrue(
+              [
+                for b in a["firewall"] : alltrue(
+                  [
+                    length(flatten([for c in b[association]:concat(c[custom_domain_names],c[endpoint_name])])) == length(distinct(flatten([for c in b[association]: concat(c[custom_domain_names],c[endpoint_name])])))
+                  ]
+                )
+              ]
+            )
+          ]
+        )
+      ]
+    )
+    error_message = "Endpoint/Custom domain is already being used, please provide unique association."
+  }
+}
+
+# variable "front_door_firewall_policies" {
+#   type = map(object({
+#     name = 
+#   }))
+# }
+
+

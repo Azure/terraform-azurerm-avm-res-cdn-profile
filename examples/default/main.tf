@@ -86,11 +86,6 @@ module "azurerm_cdn_frontdoor_profile" {
       host_header                    = "www.contoso.com"
       priority                       = 1
       weight                         = 1
-      pl = {
-      request_message = ""
-      target_type     = null
-      location        = "Central India"
-      }
     }
     origin2 = {
       name                           = "origin2"
@@ -346,4 +341,6 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 
 }
+
+
 
