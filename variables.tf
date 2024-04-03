@@ -124,10 +124,10 @@ variable "front_door_firewall_policies" {
 
 
 
-variable "front_door_security_policies" {
-  type    = any
-  default = null
-}
+# variable "front_door_security_policies" {
+#   type    = any
+#   default = null
+# }
 
 
 
@@ -267,6 +267,29 @@ variable "front_door_custom_domains" {
   default = {}
 }
 
+variable "front_door_security_policies" {
+  type = map(object({
+      name = string
+      firewall = object({
+        front_door_firewall_policy_name = string
+        association = object({
+          domain_names = list(string)
+          endpoint_names       = list(string)
+          patterns_to_match   = list(string)
+        })
+      })
+  }))
+validation {
+  condition = length(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_names, policy.firewall.association.endpoint_names)])) == length(distinct(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_names, policy.firewall.association.endpoint_names)])))
+  error_message = "Endpoint/Custom domain is already being used, please provide unique association."
+}
+}
+
+# variable "front_door_firewall_policies" {
+#   type = map(object({
+#     name = 
+#   }))
+# }
 
 
 
