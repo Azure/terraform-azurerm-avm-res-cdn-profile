@@ -45,6 +45,12 @@ resource "azurerm_resource_group" "this" {
   location = module.regions.regions[random_integer.region_index.result].name
 }
 
+# resource block for DNS zones
+resource "azurerm_dns_zone" "dnszone" {
+  name                = "sub-domain.domain.com"
+  resource_group_name = azurerm_resource_group.this.name
+}
+
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
   source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
@@ -135,28 +141,29 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  # front_door_custom_domains = {
-  #   cd1 = {
-  #     name        = "example-customDomain"
-  #     dns_zone_id = azurerm_dns_zone.dnszone.id
-  #     host_name   = "contoso.fabrikam.com"
+  front_door_custom_domains = {
+    cd1 = {
+      name        = "example-customDomain"
+      dns_zone_id = azurerm_dns_zone.dnszone.id
+      host_name   = "contoso.fabrikam.com"
 
-  #     tls = {
-  #       certificate_type    = "ManagedCertificate"
-  #       minimum_tls_version = "TLS12"
-  #     }
-  #   },
-  #   cd2 = {
-  #     name        = "customdomain2"
-  #     dns_zone_id = azurerm_dns_zone.dnszone.id
-  #     host_name   = "contoso2.fabrikam.com"
-  #     #associated_route_names = ["route1"]
-  #     tls = {
-  #       certificate_type    = "ManagedCertificate"
-  #       minimum_tls_version = "TLS12"
-  #     }
-  #   }
-  # }
+      tls = {
+        certificate_type    = "ManagedCertificate"
+        minimum_tls_version = "TLS12"
+      }
+    },
+    cd2 = {
+      name        = "customdomain2"
+      dns_zone_id = azurerm_dns_zone.dnszone.id
+      host_name   = "contoso2.fabrikam.com"
+      #associated_route_names = ["route1"]
+      tls = {
+        certificate_type    = "ManagedCertificate"
+        minimum_tls_version = "TLS12"
+      }
+    }
+  }
+
   routes = {
     route1 = {
       name                   = "route1"
@@ -165,6 +172,7 @@ module "azurerm_cdn_frontdoor_profile" {
       origin_names           = ["example-origin", "origin3"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
+      #custom_domain_names    = ["example-customDomain", "customdomain2"]
       patterns_to_match      = ["/*"]
       supported_protocols    = ["Http", "Https"]
       cache = {
@@ -188,7 +196,6 @@ module "azurerm_cdn_frontdoor_profile" {
       rule_set_name     = "ruleset1"
       origin_group_name = "og1"
       actions = {
-
         url_rewrite_action = {
           actiontype              = "url_rewrite_action"
           source_pattern          = "/"
@@ -224,6 +231,7 @@ module "azurerm_cdn_frontdoor_profile" {
           value         = "/abc"
         }
       }
+      # Upto 10 match conditions are allowed, comment/uncomment based on your requirements
       conditions = {
         remote_address_condition = {
           operator         = "IPMatch"

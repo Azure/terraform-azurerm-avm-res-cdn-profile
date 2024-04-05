@@ -338,8 +338,6 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  #TO DO test ALlmetrics
-
   diagnostic_settings = {
     workspaceandstorage_diag = {
       name                           = " workspaceandstorage_diag"
@@ -353,7 +351,7 @@ module "azurerm_cdn_frontdoor_profile" {
     }
     eventhub_diag = {
       name                                     = "eventhubforwarding"
-      log_groups                               = ["allLogs", "audit"] #TODO  cannot be used if log_categories in used. Create validation for this
+      log_groups                               = ["allLogs", "audit"] 
       metric_categories                        = ["AllMetrics"]
       event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
       event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name

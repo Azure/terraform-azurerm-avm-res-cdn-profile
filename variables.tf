@@ -70,7 +70,7 @@ variable "origin" {
     weight                         = optional(number, 500)
     private_link = optional(map(object({
       request_message        = string
-      target_type            = string
+      target_type            = optional(string, null)
       location               = string
       private_link_target_id = string
     })), null)
@@ -162,6 +162,15 @@ variable "diagnostic_settings" {
     )
     error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, or `event_hub_authorization_rule_resource_id`, must be set."
   }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.diagnostic_settings :
+        ((length(v.log_categories) > 0 && length(v.log_groups) > 0) ? false : true )#|| (coalesce(v.log_categories, []) == [] && coalesce(v.log_groups, []) != []))
+      ]
+    )
+    error_message = "Set either Log categories or Log groups, you cant set both"
+  }
   description = <<DESCRIPTION
   A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
@@ -250,8 +259,8 @@ variable "front_door_security_policies" {
     firewall = object({
       front_door_firewall_policy_name = string
       association = object({
-        domain_names      = list(string)
-        endpoint_names    = list(string)
+        domain_names      = optional(list(string), [])
+        endpoint_names    = optional(list(string), [])
         patterns_to_match = list(string)
       })
     })

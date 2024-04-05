@@ -39,110 +39,68 @@ module "regions" {
   version = ">= 0.3.0"
 }
 
+data "azurerm_client_config" "current" {}
+
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
-  location = module.regions.regions[random_integer.region_index.result].name
+  location = "eastus"
 }
 
-data "azurerm_client_config" "current" {}
-
-resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
+# Create a virtual network
+resource "azurerm_virtual_network" "vnet" {
+  name                = "my-vnet"
+  address_space       = ["10.5.0.0/16"]
   location            = azurerm_resource_group.this.location
-  name                = module.naming.user_assigned_identity.name_unique
   resource_group_name = azurerm_resource_group.this.name
 }
 
-#create a keyvault for storing the credential with RBAC for the deployment user
-module "avm_res_keyvault_vault" {
-  source = "Azure/avm-res-keyvault-vault/azurerm"
-  #version             = "0.5.1"
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  name                = module.naming.key_vault.name_unique
-  resource_group_name = azurerm_resource_group.this.name
+# Create a subnet within the virtual network
+resource "azurerm_subnet" "subnet" {
+  name                 = "my-subnet"
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.5.1.0/24"]
+  private_link_service_network_policies_enabled = false
+}
+
+# Create Public IP to associate with Load balancer
+resource "azurerm_public_ip" "pip" {
+  name                = "ip-example"
+  sku                 = "Standard"
   location            = azurerm_resource_group.this.location
-  network_acls = {
-    default_action = "Allow"
-    bypass         = "AzureServices"
-    ip_rules       = ["74.225.0.0/24"]
-  }
+  resource_group_name = azurerm_resource_group.this.name
+  allocation_method   = "Static"
+}
 
-  role_assignments = {
-    deployment_currentuser_secrets = {
-      role_definition_id_or_name = "Key Vault Administrator"
-      principal_id               = data.azurerm_client_config.current.object_id
-    }
-    deployment_user_secrets = {
-      role_definition_id_or_name = "Key Vault Administrator"
-      principal_id               = azurerm_user_assigned_identity.identity_for_keyvault.principal_id
-    }
-    deployment_user_administrator = {
-      role_definition_id_or_name = "Key Vault Certificates Officer"
-      principal_id               = azurerm_user_assigned_identity.identity_for_keyvault.principal_id
-    }
-  }
+# Create a Load balancer resource and associate with public IP created above
+resource "azurerm_lb" "lb" {
+  name                = "lb-example"
+  sku                 = "Standard"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
 
-  wait_for_rbac_before_secret_operations = {
-    create = "60s"
-  }
-  tags = {
-    scenario = "AVM AFD Sample Certificates deployment"
+  frontend_ip_configuration {
+    name                 = azurerm_public_ip.pip.name
+    public_ip_address_id = azurerm_public_ip.pip.id
   }
 }
 
-# The below example uses a self signed certificate which is not supported in AFD. Hence use a certificate chain with 2 or more certificates (root CA & sub CA) in real world example.
-resource "azurerm_key_vault_certificate" "keyvaultcert" {
-  depends_on   = [module.avm_res_keyvault_vault]
-  name         = "example-cert"
-  key_vault_id = module.avm_res_keyvault_vault.resource.id
+# Create Private link service
+resource "azurerm_private_link_service" "pls" {
+  name                = "pls-example"
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
 
-  certificate_policy {
-    issuer_parameters {
-      name = "Self"
-    }
+  visibility_subscription_ids                 = [data.azurerm_client_config.current.subscription_id]
+  load_balancer_frontend_ip_configuration_ids = [azurerm_lb.lb.frontend_ip_configuration[0].id]
 
-    key_properties {
-      exportable = true
-      key_size   = 2048
-      key_type   = "RSA"
-      reuse_key  = true
-    }
-
-    lifetime_action {
-      action {
-        action_type = "AutoRenew"
-      }
-
-      trigger {
-        days_before_expiry = 30
-      }
-    }
-
-    secret_properties {
-      content_type = "application/x-pkcs12"
-    }
-
-    x509_certificate_properties {
-      # Server Authentication = 1.3.6.1.5.5.7.3.1
-      # Client Authentication = 1.3.6.1.5.5.7.3.2
-      extended_key_usage = ["1.3.6.1.5.5.7.3.1"]
-
-      key_usage = [
-        "cRLSign",
-        "dataEncipherment",
-        "digitalSignature",
-        "keyAgreement",
-        "keyCertSign",
-        "keyEncipherment",
-      ]
-
-      subject_alternative_names {
-        dns_names = ["internal.contoso.com", "domain.hello.world"]
-      }
-
-      subject            = "CN=hello-world"
-      validity_in_months = 12
-    }
+  nat_ip_configuration {
+    name                       = "primary"
+    private_ip_address         = "10.5.1.17"
+    private_ip_address_version = "IPv4"
+    subnet_id                  = azurerm_subnet.subnet.id
+    primary                    = true
   }
 }
 
@@ -150,10 +108,11 @@ resource "azurerm_key_vault_certificate" "keyvaultcert" {
 module "azurerm_cdn_frontdoor_profile" {
   source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
+  depends_on = [azurerm_private_link_service.pls]
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
-  sku_name            = "Standard_AzureFrontDoor"
+  sku_name            = "Premium_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
   origin_groups = {
     og1 = {
@@ -177,49 +136,39 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   origin = {
     origin1 = {
-      name                           = "example-origin"
+      name                           = "example-origin1"
       origin_group_name              = "og1"
       enabled                        = true
-      certificate_name_check_enabled = false
-      host_name                      = "contoso.com"
+      certificate_name_check_enabled = true
+      host_name                      = "example.com"
       http_port                      = 80
       https_port                     = 443
-      host_header                    = "www.contoso.com"
+      host_header                    = "example.com"
       priority                       = 1
       weight                         = 1
-    }
-    origin2 = {
-      name                           = "origin2"
-      origin_group_name              = "og1"
-      enabled                        = true
-      certificate_name_check_enabled = false
-      host_name                      = "contoso1.com"
-      http_port                      = 80
-      https_port                     = 443
-      host_header                    = "www.contoso.com"
-      priority                       = 1
-      weight                         = 1
-    }
-    origin3 = {
-      name                           = "origin3"
-      origin_group_name              = "og1"
-      enabled                        = true
-      certificate_name_check_enabled = false
-      host_name                      = "contoso1.com"
-      http_port                      = 80
-      https_port                     = 443
-      host_header                    = "www.contoso.com"
-      priority                       = 1
-      weight                         = 1
+      private_link = {
+        pl = {
+          request_message        = "Please approve this private link connection"
+          location               = azurerm_resource_group.this.location
+          private_link_target_id = azurerm_private_link_service.pls.id
+        }
+      }
+
     }
 
   }
 
   endpoints = {
-    ep1 = {
-      name = module.naming.cdn_endpoint.name_unique
+    ep-1 = {
+      name = "ep-1"
       tags = {
         ENV = "example"
+      }
+    }
+    ep-2 = {
+      name = "ep-2"
+      tags = {
+        ENV = "example2"
       }
     }
   }
@@ -227,7 +176,7 @@ module "azurerm_cdn_frontdoor_profile" {
   routes = {
     route1 = {
       name                   = "route1"
-      endpoint_name          = "ep1"
+      endpoint_name          = "ep-1"
       origin_group_name      = "og1"
       origin_names           = ["example-origin", "origin3"]
       forwarding_protocol    = "HttpsOnly"
@@ -367,25 +316,72 @@ module "azurerm_cdn_frontdoor_profile" {
           transforms       = ["Uppercase"]
         }
 
+        # socket_address_condition = {
+        #   operator         = "IPMatch"
+        #   negate_condition = false
+        #   match_values     = ["5.5.5.64/26"]
+        # }
 
+        # client_port_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["Mobile"]
+        # }
+
+        # server_port_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["80"]
+        # }
+
+        # ssl_protocol_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["TLSv1"]
+        # }
+
+        # request_uri_condition = {
+        #   negate_condition = false
+        #   operator         = "BeginsWith"
+        #   match_values     = ["J", "K"]
+        #   transforms       = ["Uppercase"]
+        # }
+
+
+        # host_name_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
+        #   transforms       = ["Lowercase", "Trim"]
+        # }
+
+        # is_device_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["Mobile"]
+        # }
+
+        # post_args_condition = {
+        #   post_args_name = "customerName"
+        #   operator       = "BeginsWith"
+        #   match_values   = ["J", "K"]
+        #   transforms     = ["Uppercase"]
+        # }
+
+        # request_method_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["DELETE"]
+        # }
+
+        # url_filename_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["media.mp4"]
+        #   transforms       = ["Lowercase", "RemoveNulls", "Trim"]
+        # }
       }
     }
   }
 
-
-  front_door_secret = {
-    name                     = "Front-door-certificate"
-    key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
-  }
-
-
-  managed_identities = {
-    system_assigned = true
-    user_assigned_resource_ids = [
-      azurerm_user_assigned_identity.identity_for_keyvault.id
-    ]
-  }
 }
-
-
-
