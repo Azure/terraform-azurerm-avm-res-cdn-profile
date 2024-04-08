@@ -18,8 +18,9 @@ resource "azurerm_cdn_frontdoor_route" "routes" {
   forwarding_protocol             = each.value.forwarding_protocol
   link_to_default_domain          = each.value.link_to_default_domain
   https_redirect_enabled          = each.value.https_redirect_enabled
-  cdn_frontdoor_custom_domain_ids = try([for x in azurerm_cdn_frontdoor_custom_domain.cds : x.id if contains(each.value.custom_domain_names, x.name)], null)
-
+  cdn_frontdoor_custom_domain_ids = [for k, v in azurerm_cdn_frontdoor_custom_domain.cds : v.id if contains(each.value.custom_domain_names, v.name)]
+  
+                                 
   dynamic "cache" {
     for_each = each.value.cache
     content {
@@ -44,3 +45,4 @@ resource "azurerm_cdn_frontdoor_route" "routes" {
 # output "filtered_values" {
 #   value = [for key, value in var.my_object : key => value if contains(var.filtered_keys, key)]
 # }
+
