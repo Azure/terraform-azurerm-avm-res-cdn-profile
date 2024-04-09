@@ -12,10 +12,10 @@ resource "azurerm_cdn_frontdoor_custom_domain" "cds" {
   }
 }
 
-#no functional purpose. custom domain setting in route are enough --> to discuss
+#creating domain association resource block for seamless updation of custom domains
 resource "azurerm_cdn_frontdoor_custom_domain_association" "association" {
-        for_each = azurerm_cdn_frontdoor_custom_domain.cds
-      
+  for_each = azurerm_cdn_frontdoor_custom_domain.cds
+
   cdn_frontdoor_custom_domain_id = each.value.id
   cdn_frontdoor_route_ids        = local.custom_domain_routes[each.value.name]
 }

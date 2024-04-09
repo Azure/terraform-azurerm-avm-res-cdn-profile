@@ -108,7 +108,7 @@ resource "azurerm_private_link_service" "pls" {
 module "azurerm_cdn_frontdoor_profile" {
   source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
-  depends_on = [azurerm_private_link_service.pls]
+  depends_on = [azurerm_private_link_service.pls, time_sleep.wait_30_seconds]
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
@@ -384,4 +384,10 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
+}
+
+resource "time_sleep" "wait_30_seconds" {
+  depends_on = [azurerm_private_link_service.pls]
+
+  create_duration = "60s"
 }
