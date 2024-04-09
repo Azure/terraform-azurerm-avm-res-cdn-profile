@@ -172,7 +172,7 @@ module "azurerm_cdn_frontdoor_profile" {
       origin_names           = ["example-origin", "origin3"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
-      #custom_domain_names    = ["example-customDomain", "customdomain2"]
+      custom_domain_names    = ["example-customDomain", "customdomain2"]
       patterns_to_match      = ["/*"]
       supported_protocols    = ["Http", "Https"]
       cache = {

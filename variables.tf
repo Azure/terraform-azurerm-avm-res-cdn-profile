@@ -228,8 +228,7 @@ variable "origin" {
   validation {
     condition = alltrue(
       [
-        for v in var.origin :
-        alltrue(
+        for v in var.origin : v.private_link == null ? true : alltrue(
           [
             for x in v.private_link : length(x.request_message) >= 10 && length(x.request_message) <= 140
           ]
@@ -241,8 +240,7 @@ variable "origin" {
   validation {
     condition = alltrue(
       [
-        for _, v in var.origin :
-        alltrue(
+        for _, v in var.origin : v["private_link"] == null ? true : alltrue(
           [
             for _, x in v["private_link"] : x["target_type"] == null ? true : contains(["blob", "blob_secondary", "web", "sites"], x["target_type"])
           ]
@@ -508,7 +506,7 @@ variable "front_door_secret" {
   })
   default = null
   validation {
-    condition     = can(regex("^[a-zA-Z0-9][-a-zA-Z0-9]{0,258}[a-zA-Z0-9]$", var.front_door_secret.name))
+    condition     =  var.front_door_secret == null ? true : can(regex("^[a-zA-Z0-9][-a-zA-Z0-9]{0,258}[a-zA-Z0-9]$", var.front_door_secret.name))
     error_message = "The secret name must start with a letter or a number, only contain letters, numbers and hyphens, and have a length of between 2 and 260 characters."
   }
   description = <<DESCRIPTION
@@ -557,7 +555,7 @@ variable "front_door_security_policies" {
     error_message = "Security policy name must not be an empty string."
   }
   validation {
-    condition     = [for name, policy in var.front_door_security_policies : policy.firewall.association.domain_names == [] ? policy.firewall.association.endpoint_names != [] : true]
+    condition     = alltrue([for name, policy in var.front_door_security_policies : policy.firewall.association.domain_names == [] ? policy.firewall.association.endpoint_names != [] : true])
     error_message = "Provide either domain names or endpoint names or both."
   }
   validation {
