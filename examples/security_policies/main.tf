@@ -58,7 +58,7 @@ module "azurerm_cdn_frontdoor_profile" {
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
-  sku_name            = "Standard_AzureFrontDoor"
+  sku_name            = "Premium_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
   origin_groups = {
     og1 = {
@@ -380,7 +380,7 @@ module "azurerm_cdn_frontdoor_profile" {
     fd_waf1 = {
       name                              = "examplecdnfdwafpolicy1"
       resource_group_name               = azurerm_resource_group.this.name
-      sku_name                          = "Standard_AzureFrontDoor"
+      sku_name                          = "Premium_AzureFrontDoor" # Ensure SKU_name for WAF is similar to SKU_name for front door profile.
       enabled                           = true
       mode                              = "Prevention"
       redirect_url                      = "https://www.contoso.com"
@@ -405,7 +405,6 @@ module "azurerm_cdn_frontdoor_profile" {
             }
           }
         }
-
 
         cr2 = {
           name                           = "Rule2"
@@ -434,11 +433,69 @@ module "azurerm_cdn_frontdoor_profile" {
           }
         }
       }
+
+      # if using Standard sku , then managed rules are not supported, hence remove the below input variables
+      managed_rules = {
+        mr1 = {
+          type    = "DefaultRuleSet"
+          version = "1.0"
+          action  = "Log"
+          exclusions = {
+            exclusion1 = {
+              match_variable = "QueryStringArgNames"
+              operator       = "Equals"
+              selector       = "not_suspicious"
+            }
+          }
+          overrides = {
+            override1 = {
+              rule_group_name = "PHP"
+              rule = {
+                rule1 = {
+                  rule_id = "933100"
+                  enabled = false
+                  action  = "Block"
+                }
+              }
+            }
+
+            override2 = {
+              rule_group_name = "SQLI"
+              exclusions = {
+                exclusion1 = {
+                  match_variable = "QueryStringArgNames"
+                  operator       = "Equals"
+                  selector       = "really_not_suspicious"
+                }
+              }
+              rules = {
+                rule1 = {
+                  rule_id = "942200"
+                  action  = "Block"
+                  exclusions = {
+                    exclusion1 = {
+                      match_variable = "QueryStringArgNames"
+                      operator       = "Equals"
+                      selector       = "innocent"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        mr2 = {
+          type    = "Microsoft_BotManagerRuleSet"
+          version = "1.0"
+          action  = "Log"
+        }
+      }
     }
     fd_waf2 = {
       name                              = "examplecdnfdwafpolicy2"
       resource_group_name               = azurerm_resource_group.this.name
-      sku_name                          = "Standard_AzureFrontDoor"
+      sku_name                          = "Premium_AzureFrontDoor" # Ensure SKU_name for WAF is similar to SKU_name for front door profile.
       enabled                           = true
       mode                              = "Prevention"
       redirect_url                      = "https://www.contoso.com"

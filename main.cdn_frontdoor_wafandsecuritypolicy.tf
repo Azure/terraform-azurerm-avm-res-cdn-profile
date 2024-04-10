@@ -14,7 +14,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "wafs" {
   custom_block_response_body        = each.value.custom_block_response_body
 
   dynamic "custom_rule" {
-    for_each = each.value.custom_rules
+    for_each = try(each.value.custom_rules, null)
     content {
       name                           = custom_rule.value.name
       enabled                        = custom_rule.value.enabled
@@ -25,7 +25,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "wafs" {
       action                         = custom_rule.value.action
 
       dynamic "match_condition" {
-        for_each = custom_rule.value.match_conditions
+        for_each = try(custom_rule.value.match_conditions, null)
         content {
           match_variable     = match_condition.value.match_variable
           operator           = match_condition.value.operator
@@ -37,7 +37,60 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "wafs" {
       }
     }
   }
+
+dynamic "managed_rule" {
+    for_each = try(each.value.managed_rules, null)
+    content {
+      type    = managed_rule.value.type
+      version = managed_rule.value.version
+      action  = managed_rule.value.action
+
+      dynamic "exclusion" {
+        for_each = try(managed_rule.value.exclusions, null)
+        content {
+          match_variable = exclusion.value.match_variable
+          operator       = exclusion.value.operator
+          selector       = try(exclusion.value.selector, null)
+        }
+      }
+
+      dynamic "override" {
+        for_each = try(managed_rule.value.overrides, null)
+        content {
+          rule_group_name = override.value.rule_group_name
+
+          dynamic "exclusion" {
+            for_each = try(override.value.exclusions, null)
+            content {
+              match_variable = exclusion.value.match_variable
+              operator       = exclusion.value.operator
+              selector       = try(exclusion.value.selector, null)
+            }
+          }
+
+          dynamic "rule" {
+            for_each = try(override.value.rules, null)
+            content {
+              rule_id = rule.value.rule_id
+              action  = rule.value.action
+              enabled = try(rule.value.enabled, null)
+
+              dynamic "exclusion" {
+                for_each = try(rule.value.exclusions, null)
+                content {
+                  match_variable = exclusion.value.match_variable
+                  operator       = exclusion.value.operator
+                  selector       = try(exclusion.value.selector, null)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
+
 
 resource "azurerm_cdn_frontdoor_security_policy" "example" {
   for_each                 = try(var.front_door_security_policies != null ? var.front_door_security_policies : {})

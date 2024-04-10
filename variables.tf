@@ -587,7 +587,7 @@ variable "front_door_firewall_policies" {
     redirect_url                      = optional(string)
     custom_block_response_status_code = optional(number)
     custom_block_response_body        = optional(string)
-    custom_rules = map(object({
+    custom_rules = optional(map(object({
       name                           = string
       enabled                        = optional(bool, true)
       priority                       = optional(number, 1)
@@ -603,27 +603,28 @@ variable "front_door_firewall_policies" {
         selector           = optional(string)
         transforms         = optional(list(string))
       }))
-    }))
+    })), {})
     managed_rules = optional(map(object({
       type    = string
       version = string
       action  = string
-      exclusion = optional(map(object({
+      exclusions = optional(map(object({
         match_variable = string
         operator       = string
         selector       = optional(string)
       })), {})
-      override = optional(map(object({
+      overrides = optional(map(object({
         rule_group_name = string
-        exclusion = optional(map(object({
+        exclusions = optional(map(object({
           match_variable = string
           operator       = string
           selector       = optional(string)
         })), {})
-        rule = optional(map(object({
+        rules = optional(map(object({
+          rule_id = string
           action  = string
           enabled = optional(bool, false)
-          exclusion = optional(map(object({
+          exclusions = optional(map(object({
             match_variable = string
             operator       = string
             selector       = optional(string)
@@ -680,7 +681,7 @@ variable "front_door_firewall_policies" {
     error_message = "Possible values are 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'URLDecode' or 'URLEncode' for transforms."
   }
   validation {
-    condition     = alltrue([for name, policy in var.front_door_firewall_policies : policy.sku_name == "Premium_AzureFrontDoor" ? length(keys(policy.managed_rules)) > 0 : length(keys(policy.managed_rules)) == 0])
+    condition     = alltrue(flatten([for name, policy in var.front_door_firewall_policies : length(policy["managed_rules"]) > 0 ? policy.sku_name == "Premium_AzureFrontDoor" : true]))
     error_message = "Managed rules should be set only when the Sku_name selected is 'Premium_AzureFrontDoor'."
   }
   validation {
