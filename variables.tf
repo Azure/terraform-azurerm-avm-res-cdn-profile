@@ -381,8 +381,163 @@ variable "rule_sets" {
   default = []
 }
 
+# variable "rules" {
+#   type = map(any)
+# }
+
 variable "rules" {
-  type = map(any)
+  type = map(object({
+    name = string
+    order = number
+    rule_set_name = string
+    origin_group_name = string
+    actions = object({
+      url_rewrite_action = optional(object({
+        source_pattern = string
+        destination = string
+        preserve_unmatched_path = optional(bool,false)
+      }), null)
+      url_redirect_action = optional(object({
+        redirect_type = string
+        destination_hostname = string
+        redirect_protocol = optional(string,"MatchRequest")
+        destination_path = optional(string,"")
+        query_string = optional(string,"")
+        destination_fragment = optional(string,"")
+      }), null)
+      route_configuration_override_action = optional(object({
+        set_origin_groupid = bool
+        actiontype = string
+        cache_duration = optional(string)
+        forwarding_protocol = optional(string)
+        query_string_caching_behavior = optional(string)
+        query_string_parameters = optional(list(string))
+        compression_enabled = optional(bool)
+        cache_behavior = optional(string)
+      }), null)
+      request_header_action = optional(object({
+        header_action = string
+        header_name  = string
+        value = string
+      }), null)
+      response_header_action = optional(object({
+        header_action = string
+        header_name  = string
+        value = string
+      }), null)
+    })
+    behavior_on_match = optional(string,"continue")
+    conditions = optional(object({
+      remote_address_condition = optional(object({
+        operator = optional(string,"IPMatch")
+        match_values = optional(list(string))
+        megate_condition = optional(bool,false)        
+      }), null)
+      request_method_condition = optional(object({
+        operator = optional(string,"Equal")
+        match_values = list(string)
+        megate_condition = optional(bool,false)        
+      }), null)
+      query_string_condition = optional(object({
+        operator = string
+        match_values = optional(list(any))
+        transforms = optional(list(string))
+        megate_condition = optional(bool,false)        
+      }), null)
+      post_args_condition = optional(object({
+        post_args_name = string
+        operator = string
+        match_values = optional(list(any))
+        transforms = optional(list(string))
+        megate_condition = optional(bool,false)         
+      }), null)
+      request_uri_condition = optional(object({
+        operator = string
+        match_values = optional(list(any))
+        transforms = optional(list(string))
+        megate_condition = optional(bool,false)        
+      }), null)
+      request_header_condition = optional(object({
+        header_name = string
+        operator = string
+        match_values = optional(list(any))
+        transforms = optional(list(string))
+        megate_condition = optional(bool,false)        
+      }), null)
+      request_body_condition = optional(object({
+        operator = string
+        match_values = list(any)
+        transforms = optional(list(string))
+        megate_condition = optional(bool,false)        
+      }), null)
+      request_scheme_condition = optional(object({
+        operator = optional(string,"Equal")
+        match_values = optional(list(string))
+        megate_condition = optional(bool,false)        
+      }), null)
+      url_path_condition = optional(object({
+        operator = string
+        match_values = optional(list(any))
+        transforms = optional(list(string))
+        megate_condition = optional(bool,false)        
+      }), null)
+      url_file_extension_condition = optional(object({
+        operator = string
+        match_values = list(any)
+        transforms = optional(list(string))
+        megate_condition = optional(bool,false)        
+      }), null)
+      url_filename_condition = optional(object({
+        operator = string
+        match_values = optional(list(any))
+        transforms = optional(list(string))
+        megate_condition = optional(bool,false) 
+      }), null)
+      http_version_condition = optional(object({
+        operator = optional(string,"Equal")
+        match_values = list(string)
+        megate_condition = optional(bool,false)         
+      }), null)
+      cookies_condition = optional(object({
+        cookie_name = string
+        operator = string
+        match_values = optional(list(any))
+        transforms = optional(list(string))
+        megate_condition = optional(bool,false)         
+      }), null)
+      is_device_condition = optional(object({
+        operator = optional(string,"Equal")
+        match_values = string
+        megate_condition = optional(bool,false)         
+      }), null)
+      socket_address_condition = optional(object({
+        operator = optional(string,"IPMatch")
+        match_values = optional(list(string))
+        megate_condition = optional(bool,false)        
+      }), null)
+      client_port_condition = optional(object({
+        operator = string
+        match_values = list(number)
+        megate_condition = optional(bool,false)
+      }), null)
+      server_port_condition = optional(object({
+        operator = string
+        match_values = list(number)
+        megate_condition = optional(bool,false)
+      }), null)
+      host_name_condition = optional(object({
+        operator = string
+        match_values = optional(list(string))
+        transforms = optional(list(string))
+        megate_condition = optional(bool,false)
+      }), null)
+      ssl_protocol_condition = optional(object({
+        match_values = list(string)
+        operator = optional(string,"Equal")
+        negate_condition = optional(bool,false)   
+      }), null)
+    }), null)
+  }))
 }
 
 variable "lock" {

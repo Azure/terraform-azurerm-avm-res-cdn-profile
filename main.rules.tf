@@ -16,9 +16,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     #for_each = each.value.actions  #cant add foreach here.. multiple action blocks not allowed
 
     dynamic "url_rewrite_action" {
-      for_each = { for key, value in each.value.actions : key => value
+      for_each = try({ for key, value in each.value.actions : key => value
         if key == "url_rewrite_action"
-      }
+      }, null)
 
       content {
         source_pattern          = url_rewrite_action.value.source_pattern
@@ -28,7 +28,7 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "url_redirect_action" {
-      for_each = { for key, value in each.value.actions : key => value
+      for_each = { for key, value in try(each.value.actions==null, null) : key => value
         if key == "url_redirect_action"
       }
 
@@ -43,9 +43,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "route_configuration_override_action" {
-      for_each = { for key, value in each.value.actions : key => value
+      for_each = try({ for key, value in each.value.actions : key => value
         if key == "route_configuration_override_action"
-      }
+      }, null)
 
       content {
         cdn_frontdoor_origin_group_id = try(route_configuration_override_action.value.set_origin_groupid == true ? azurerm_cdn_frontdoor_origin_group.example[each.value.origin_group_name].id : null)
@@ -59,9 +59,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "request_header_action" {
-      for_each = { for key, value in each.value.actions : key => value
+      for_each = try({ for key, value in each.value.actions : key => value
         if key == "request_header_action"
-      }
+      }, null)
 
       content {
         header_action = request_header_action.value.header_action
@@ -71,9 +71,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "response_header_action" {
-      for_each = { for key, value in each.value.actions : key => value
+      for_each = try({ for key, value in each.value.actions : key => value
         if key == "response_header_action"
-      }
+      }, null)
 
       content {
         header_action = response_header_action.value.header_action
@@ -85,9 +85,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
 
   conditions {
     dynamic "remote_address_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "remote_address_condition"
-      }
+      }, null)
       content {
         operator         = try(remote_address_condition.value.operator, "IPMatch")
         negate_condition = try(remote_address_condition.value.negate_condition, false)
@@ -96,9 +96,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "request_method_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "request_method_condition"
-      }
+      }, null)
       content {
         operator         = try(request_method_condition.value.operator, "Equal")
         negate_condition = try(request_method_condition.value.negate_condition, false)
@@ -107,9 +107,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "query_string_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "query_string_condition"
-      }
+      }, null)
       content {
         operator         = query_string_condition.value.operator
         negate_condition = try(query_string_condition.value.negate_condition, false)
@@ -119,9 +119,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "post_args_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "post_args_condition"
-      }
+      }, null)
       content {
         post_args_name   = post_args_condition.value.post_args_name
         operator         = post_args_condition.value.operator
@@ -132,9 +132,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "request_uri_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "request_uri_condition"
-      }
+      }, null)
       content {
         operator         = request_uri_condition.value.operator
         negate_condition = try(request_uri_condition.value.negate_condition, false)
@@ -144,9 +144,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "request_header_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "request_header_condition"
-      }
+      }, null)
       content {
         header_name      = request_header_condition.value.header_name
         operator         = request_header_condition.value.operator
@@ -157,9 +157,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "request_body_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "request_body_condition"
-      }
+      }, null)
       content {
         operator         = request_body_condition.value.operator
         negate_condition = try(request_body_condition.value.negate_condition, false)
@@ -169,9 +169,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "request_scheme_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "request_scheme_condition"
-      }
+      }, null)
       content {
         operator         = try(request_scheme_condition.value.operator, "Equal")
         negate_condition = try(request_scheme_condition.value.negate_condition, false)
@@ -180,9 +180,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "url_path_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "url_path_condition"
-      }
+      }, null)
       content {
         operator         = url_path_condition.value.operator
         negate_condition = try(url_path_condition.value.negate_condition, false)
@@ -192,9 +192,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "url_file_extension_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "url_file_extension_condition"
-      }
+      }, null)
       content {
         operator         = url_file_extension_condition.value.operator
         negate_condition = try(url_file_extension_condition.value.negate_condition, false)
@@ -204,9 +204,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "url_filename_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "url_filename_condition"
-      }
+      }, null)
       content {
         operator         = url_filename_condition.value.operator
         negate_condition = try(url_filename_condition.value.negate_condition, false)
@@ -216,9 +216,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "http_version_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "http_version_condition"
-      }
+      }, null)
       content {
         operator         = try(http_version_condition.value.operator, "Equal")
         negate_condition = try(http_version_condition.value.negate_condition, false)
@@ -227,9 +227,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "cookies_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "cookies_condition"
-      }
+      }, null)
       content {
         cookie_name      = cookies_condition.value.cookie_name
         operator         = cookies_condition.value.operator
@@ -240,9 +240,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "is_device_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "is_device_condition"
-      }
+      }, null)
       content {
         operator         = try(is_device_condition.value.operator, "Equal")
         negate_condition = try(is_device_condition.value.negate_condition, false)
@@ -251,9 +251,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "socket_address_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "socket_address_condition"
-      }
+      }, null)
       content {
         operator         = try(socket_address_condition.value.operator, "IPMatch")
         negate_condition = try(socket_address_condition.value.negate_condition, false)
@@ -262,9 +262,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "client_port_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "client_port_condition"
-      }
+      }, null)
       content {
         operator         = client_port_condition.value.operator
         negate_condition = try(client_port_condition.value.negate_condition, false)
@@ -273,9 +273,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "server_port_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "server_port_condition"
-      }
+      }, null)
       content {
         operator         = server_port_condition.value.operator
         negate_condition = try(server_port_condition.value.negate_condition, false)
@@ -284,9 +284,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "host_name_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "host_name_condition"
-      }
+      }, null)
       content {
         operator         = host_name_condition.value.operator
         negate_condition = try(host_name_condition.value.negate_condition, false)
@@ -296,9 +296,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
     }
 
     dynamic "ssl_protocol_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in each.value.conditions : key => value
         if key == "ssl_protocol_condition"
-      }
+      }, null)
       content {
         operator         = ssl_protocol_condition.value.operator
         negate_condition = try(ssl_protocol_condition.value.negate_condition, false)
