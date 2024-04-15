@@ -656,29 +656,29 @@ variable "front_door_firewall_policies" {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : contains(["MatchRule", "RateLimitRule"], x["type"])])])
     error_message = "Possible values are 'MatchRule' or 'RateLimitRule' for type."
   }
-  # validation {
-  #   condition = length([for _, v in var.front_door_firewall_policies : v.custom_rules != null && length(v.custom_rules[*].match_conditions) > 0 ? v.custom_rules[*].match_conditions : null]) <= 10
-  #   error_message = "If match_condition is used, it should not exceed 10 blocks."
-  # }
+  validation {
+    condition = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : length(x["match_conditions"]) <= 10 ]) && v["custom_rules"] != null])
+    error_message = "If match_condition is used, it should not exceed 10 blocks."
+  }
   validation {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : contains(["Cookies", "PostArgs", "QueryString", "RemoteAddr", "RequestBody", "RequestHeader", "RequestMethod", "RequestUri", "SocketAddr"], y["match_variable"])])])])
     error_message = "Possible values are 'Cookies', 'PostArgs', 'QueryString', 'RemoteAddr', 'RequestBody', 'RequestHeader', 'RequestMethod','RequestUri', or 'SocketAddr' for match_condition."
   }
-  # validation {
-  #   condition = length(flatten([for name, policy in var.front_door_firewall_policies : policy.custom_rules != null ? [for mc in policy.custom_rules[*].match_conditions : length(mc.match_values)] : []])) <= 600 && alltrue(flatten([for name, policy in var.front_door_firewall_policies : policy.custom_rules != null ? [for mc in policy.custom_rules[*].match_conditions : alltrue([for mv in mc.match_values : length(mv) <= 256])] : []]))
-  #   error_message = "The total number of match_values across all match_condition blocks should not exceed 600, and each match_value should be up to 256 characters in length."
-  # }
+  validation {
+    condition = alltrue([for _, v in var.front_door_firewall_policies : v["custom_rules"] != null ? alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : length(y["match_values"]) <= 256 ])]) : true])
+    error_message = "Each match_value should be up to 256 characters in length."
+  }
   validation {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "GeoMatch", "GreaterThan", "GreaterThanOrEqual", "IPMatch", "LessThan", "LessThanOrEqual", "RegEx"], y["operator"])])])])
     error_message = "Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'GeoMatch', 'GreaterThan', 'GreaterThanOrEqual', 'IPMatch', 'LessThan', 'LessThanOrEqua'l or 'RegEx' for operator."
   }
-  # validation {
-  #   condition = alltrue(flatten([for name, policy in var.front_door_firewall_policies : policy.custom_rules != null ? [for mc in policy.custom_rules[*].match_conditions : length([for mv in mc.match_values : mc.match_variable == "QueryString" || mc.match_variable == "PostArgs" || mc.match_variable == "RequestHeader" || mc.match_variable == "Cookies" ? coalesce(mc.selector, null) : null]) == length(mc.match_values)] : []]))
-  #   error_message = "If the match_variable is QueryString, PostArgs, RequestHeader, or Cookies, a selector should be provided."
-  # }
   validation {
-    condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : alltrue([y["transforms"] == null ? true : alltrue([for transform in coalesce(y["transforms"], []) : contains(["Lowercase", "RemoveNulls", "Trim", "Uppercase", "URLDecode", "URLEncode"], transform)])])])])])
-    error_message = "Possible values are 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'URLDecode' or 'URLEncode' for transforms."
+    condition = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : contains(["QueryString", "PostArgs", "RequestHeader", "Cookies"], y["match_variable"]) ? y["selector"] != null : true])])])
+    error_message = "If the match_variable is QueryString, PostArgs, RequestHeader, or Cookies, a selector should be provided."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : alltrue([y["transforms"] == null ? true : alltrue([for transform in coalesce(y["transforms"], []) : contains(["Lowercase", "RemoveNulls", "Trim", "Uppercase", "UrlDecode", "UrlEncode"], transform) ]) && length(y["transforms"]) <= 5])])])])
+    error_message = "Upto 5 transforms are allowed and Possible values are 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'URLDecode' or 'URLEncode' for transforms."
   }
   validation {
     condition     = alltrue(flatten([for name, policy in var.front_door_firewall_policies : length(policy["managed_rules"]) > 0 ? policy.sku_name == "Premium_AzureFrontDoor" : true]))
@@ -688,6 +688,55 @@ variable "front_door_firewall_policies" {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["managed_rules"] : contains(["DefaultRuleSet", "Microsoft_DefaultRuleSet", "BotProtection", "Microsoft_BotManagerRuleSet"], x["type"])])])
     error_message = "Possible values include 'DefaultRuleSet', 'Microsoft_DefaultRuleSet', 'BotProtection' or 'Microsoft_BotManagerRuleSet' for managed_rule type."
   }
+description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Firewall Policy instance.
+  
+  - `name` - (Required) The name which should be used for this Front Door Security Policy. Possible values must not be an empty string.
+  - `resource_group_name` - (Required) The name of the resource group. Changing this forces a new resource to be created.
+  - 'sku_name' - (Required) The sku's pricing tier for this Front Door Firewall Policy. Possible values include 'Standard_AzureFrontDoor' or 'Premium_AzureFrontDoor'.
+  - 'enabled' - (Optional) Is the Front Door Firewall Policy enabled? Defaults to true.
+  - 'mode' - (Required) The Front Door Firewall Policy mode. Possible values are 'Detection', 'Prevention'.
+  - 'request_body_check_enabled' - (Optional) Should policy managed rules inspect the request body content? Defaults to true.
+  - 'redirect_url' - (Optional) If action type is redirect, this field represents redirect URL for the client.
+  - 'custom_block_response_status_code' - (Optional) If a custom_rule block's action type is block, this is the response status code. Possible values are 200, 403, 405, 406, or 429.
+  - 'custom_block_response_body' - (Optional) If a custom_rule block's action type is block, this is the response body. The body must be specified in base64 encoding.
+  - 'custom_rule' - (Optional) One or more custom_rule blocks as defined below.
+    - 'name' - (Required) Gets name of the resource that is unique within a policy. This name can be used to access the resource.
+    - 'action' - (Required) The action to perform when the rule is matched. Possible values are 'Allow', 'Block', 'Log', or 'Redirect'.
+    - 'enabled' - (Optional) Is the rule is enabled or disabled? Defaults to true.
+    - 'priority' - (Optional) The priority of the rule. Rules with a lower value will be evaluated before rules with a higher value. Defaults to 1.
+    - 'type' - (Required) The type of rule. Possible values are MatchRule or RateLimitRule.
+    - 'rate_limit_duration_in_minutes' - (Optional) The rate limit duration in minutes. Defaults to 1.
+    - 'rate_limit_threshold' - (Optional) The rate limit threshold. Defaults to 10.
+    - 'match_condition' - (Optional) One or more match_condition block defined below. Can support up to 10 match_condition blocks.
+      - 'match_variable' - (Required) The request variable to compare with. Possible values are Cookies, PostArgs, QueryString, RemoteAddr, RequestBody, RequestHeader, RequestMethod, RequestUri, or SocketAddr.
+      - 'match_values' - (Required) Up to 600 possible values to match. Limit is in total across all match_condition blocks and match_values arguments. String value itself can be up to 256 characters in length.
+      - 'operator' - (Required) Comparison type to use for matching with the variable value. Possible values are Any, BeginsWith, Contains, EndsWith, Equal, GeoMatch, GreaterThan, GreaterThanOrEqual, IPMatch, LessThan, LessThanOrEqual or RegEx.
+      - 'selector' - (Optional) Match against a specific key if the match_variable is QueryString, PostArgs, RequestHeader or Cookies
+      - 'negation_condition' - (Optional) Should the result of the condition be negated.
+      - 'transforms' - (Optional) Up to 5 transforms to apply. Possible values are Lowercase, RemoveNulls, Trim, Uppercase, URLDecode or URLEncode.
+  - 'managed_rule' -  (Optional) One or more managed_rule blocks as defined below.
+    - 'type' - (Required) The name of the managed rule to use with this resource. Possible values include DefaultRuleSet, Microsoft_DefaultRuleSet, BotProtection or Microsoft_BotManagerRuleSet.
+    - 'version' - (Required) The version of the managed rule to use with this resource. Possible values depends on which DRS type you are using, for the DefaultRuleSet type the possible values include 1.0 or preview-0.1. For Microsoft_DefaultRuleSet the possible values include 1.1, 2.0 or 2.1. For BotProtection the value must be preview-0.1 and for Microsoft_BotManagerRuleSet the value must be 1.0.
+    - 'action' - (Required) The action to perform for all DRS rules when the managed rule is matched or when the anomaly score is 5 or greater depending on which version of the DRS you are using. Possible values include Allow, Log, Block, and Redirect.
+    - 'exclusion' - (Optional) One or more exclusion blocks as defined below: -
+      - 'match_variable' - (Required) The variable type to be excluded. Possible values are QueryStringArgNames, RequestBodyPostArgNames, RequestCookieNames, RequestHeaderNames, RequestBodyJsonArgNames.
+      - 'operator' - (Required) Comparison operator to apply to the selector when specifying which elements in the collection this exclusion applies to. Possible values are: Equals, Contains, StartsWith, EndsWith, EqualsAny.
+      - 'selector' - (Required) Selector for the value in the match_variable attribute this exclusion applies to.
+    - 'override' - (Optional) One or more override blocks as defined below: -
+      - 'rule_group_name' - (Required) The managed rule group to override.
+      - 'exclusion' - (Optional) One or more exclusion blocks as defined below: -
+      - 'rule' - (Optional) One or more rule blocks as defined below. If none are specified, all of the rules in the group will be disabled: -
+        - 'rule_id' - (Required) Identifier for the managed rule.
+        - 'action' - (Required) The action to be applied when the managed rule matches or when the anomaly score is 5 or greater. Possible values for DRS 1.1 and below are Allow, Log, Block, and Redirect. For DRS 2.0 and above the possible values are Log or AnomalyScoring.
+        - 'enabled' - (Optional) Is the managed rule override enabled or disabled. Defaults to false.
+        - 'exclusion' - (Optional) One or more exclusion blocks as defined below: -
+          - 'match_variable' - (Required) The variable type to be excluded. Possible values are QueryStringArgNames, RequestBodyPostArgNames, RequestCookieNames, RequestHeaderNames, RequestBodyJsonArgNames.
+          - 'operator' - (Required) Comparison operator to apply to the selector when specifying which elements in the collection this exclusion applies to. Possible values are: Equals, Contains, StartsWith, EndsWith, EqualsAny.
+          - 'selector' - (Required) Selector for the value in the match_variable attribute this exclusion applies to.
+  - 'tags' - (Optional) A mapping of tags to assign to the Front Door Firewall Policy.
+/*
+  DESCRIPTION
 }
 
 
