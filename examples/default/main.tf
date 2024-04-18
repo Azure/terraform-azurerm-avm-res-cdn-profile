@@ -303,7 +303,6 @@ module "azurerm_cdn_frontdoor_profile" {
         #   transforms       = ["Uppercase"]
         # }
 
-
         # host_name_condition = {
         #   operator         = "Equal"
         #   negate_condition = false

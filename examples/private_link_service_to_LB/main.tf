@@ -64,16 +64,7 @@ resource "azurerm_subnet" "subnet" {
   private_link_service_network_policies_enabled = false
 }
 
-# Create Public IP to associate with Load balancer
-resource "azurerm_public_ip" "pip" {
-  name                = "ip-example"
-  sku                 = "Standard"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  allocation_method   = "Static"
-}
-
-# Create a Load balancer resource and associate with public IP created above
+# Create an Internal Load balancer resource 
 resource "azurerm_lb" "lb" {
   name                = "lb-example"
   sku                 = "Standard"
@@ -81,8 +72,11 @@ resource "azurerm_lb" "lb" {
   resource_group_name = azurerm_resource_group.this.name
 
   frontend_ip_configuration {
-    name                 = azurerm_public_ip.pip.name
-    public_ip_address_id = azurerm_public_ip.pip.id
+    name                 = "AFD-lb-IP"
+    zones                = ["1", "2"]
+    subnet_id            = azurerm_subnet.subnet.id
+    private_ip_address_allocation   = "Dynamic"
+    private_ip_address_version   = "IPv4"
   }
 }
 
@@ -91,13 +85,10 @@ resource "azurerm_private_link_service" "pls" {
   name                = "pls-example"
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
-
-  visibility_subscription_ids                 = [data.azurerm_client_config.current.subscription_id]
   load_balancer_frontend_ip_configuration_ids = [azurerm_lb.lb.frontend_ip_configuration[0].id]
 
   nat_ip_configuration {
     name                       = "primary"
-    private_ip_address         = "10.5.1.17"
     private_ip_address_version = "IPv4"
     subnet_id                  = azurerm_subnet.subnet.id
     primary                    = true
@@ -107,7 +98,6 @@ resource "azurerm_private_link_service" "pls" {
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
   source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
   depends_on = [azurerm_private_link_service.pls, time_sleep.wait_30_seconds]
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
@@ -153,9 +143,7 @@ module "azurerm_cdn_frontdoor_profile" {
           private_link_target_id = azurerm_private_link_service.pls.id
         }
       }
-
     }
-
   }
 
   endpoints = {
@@ -165,12 +153,6 @@ module "azurerm_cdn_frontdoor_profile" {
         ENV = "example"
       }
     }
-    ep-2 = {
-      name = "ep-2"
-      tags = {
-        ENV = "example2"
-      }
-    }
   }
 
   routes = {
@@ -178,7 +160,7 @@ module "azurerm_cdn_frontdoor_profile" {
       name                   = "route1"
       endpoint_name          = "ep-1"
       origin_group_name      = "og1"
-      origin_names           = ["example-origin", "origin3"]
+      origin_names           = ["example-origin1"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
@@ -204,7 +186,6 @@ module "azurerm_cdn_frontdoor_profile" {
       rule_set_name     = "ruleset1"
       origin_group_name = "og1"
       actions = {
-
         url_rewrite_action = {
           actiontype              = "url_rewrite_action"
           source_pattern          = "/"
