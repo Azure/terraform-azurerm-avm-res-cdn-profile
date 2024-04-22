@@ -166,6 +166,7 @@ module "azurerm_cdn_frontdoor_profile" {
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
       supported_protocols    = ["Http", "Https"]
+      rule_set_names         = ["ruleset1"]
       custom_domain_names    = ["contoso", "contoso2"]
       cache = {
         cache1 = {

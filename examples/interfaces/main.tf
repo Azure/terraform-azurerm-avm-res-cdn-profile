@@ -200,6 +200,7 @@ module "azurerm_cdn_frontdoor_profile" {
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
       supported_protocols    = ["Http", "Https"]
+      rule_set_names         = ["ruleset1"]
       cache = {
         cache1 = {
           query_string_caching_behavior = "IgnoreSpecifiedQueryStrings"

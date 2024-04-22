@@ -296,6 +296,9 @@ variable "routes" {
     link_to_default_domain = optional(bool, true)
     https_redirect_enabled = optional(bool, true)
     custom_domain_names    = optional(list(string))
+    enabled                = optional(bool, true) 
+    rule_set_names         = optional(list(string))
+    cdn_frontdoor_origin_path = optional(string, null)
     cache = optional(map(object({
       query_string_caching_behavior = optional(string, "IgnoreQueryString")
       query_strings                 = optional(list(string))
@@ -379,6 +382,10 @@ variable "routes" {
 variable "rule_sets" {
   type    = set(string)
   default = []
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Rule Set.. The following properties can be specified:
+  - `name` - (Required) The name which should be used for this Front Door Rule Set.
+  DESCRIPTION
 }
 
 variable "rules" {
@@ -520,16 +527,26 @@ variable "front_door_secret" {
 variable "front_door_custom_domains" {
   type = map(object({
     name        = string
-    dns_zone_id = string
+    dns_zone_id = optional(string, null)
     host_name   = string
-    # associated_route_names = optional(list(string)) no functional purpose
     tls = object({
       certificate_type        = optional(string, "ManagedCertificate")
-      minimum_tls_version     = optional(string, null)
+      minimum_tls_version     = optional(string, "TLS12")
       cdn_frontdoor_secret_id = optional(string, null)
     })
   }))
   default = {}
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Custom Domain.
+  
+  - `name` - (Required) The name which should be used for this Front Door Custom Domain. 
+  - `dns_zone_id` - (Optional) The ID of the Azure DNS Zone which should be used for this Front Door Custom Domain.
+  - `host_name` - (Required) The host name of the domain. The host_name field must be the FQDN of your domain.
+  - `tls` - (Required) A tls block as defined below : -
+    - 'certificate_type' - (Optional) Defines the source of the SSL certificate. Possible values include 'CustomerCertificate' and 'ManagedCertificate'. Defaults to 'ManagedCertificate'.
+    - 'minimum_tls_version' - (Optional) TLS protocol version that will be used for Https. Possible values include 'TLS10' and 'TLS12'. Defaults to 'TLS12'.
+    - 'cdn_frontdoor_secret_id' - (Optional) Resource ID of the Front Door Secret.
+  DESCRIPTION
 }
 
 variable "front_door_security_policies" {
@@ -688,7 +705,7 @@ variable "front_door_firewall_policies" {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["managed_rules"] : contains(["DefaultRuleSet", "Microsoft_DefaultRuleSet", "BotProtection", "Microsoft_BotManagerRuleSet"], x["type"])])])
     error_message = "Possible values include 'DefaultRuleSet', 'Microsoft_DefaultRuleSet', 'BotProtection' or 'Microsoft_BotManagerRuleSet' for managed_rule type."
   }
-description = <<DESCRIPTION
+  description = <<DESCRIPTION
   Manages a Front Door (standard/premium) Firewall Policy instance.
   
   - `name` - (Required) The name which should be used for this Front Door Security Policy. Possible values must not be an empty string.
@@ -735,7 +752,7 @@ description = <<DESCRIPTION
           - 'operator' - (Required) Comparison operator to apply to the selector when specifying which elements in the collection this exclusion applies to. Possible values are: Equals, Contains, StartsWith, EndsWith, EqualsAny.
           - 'selector' - (Required) Selector for the value in the match_variable attribute this exclusion applies to.
   - 'tags' - (Optional) A mapping of tags to assign to the Front Door Firewall Policy.
-/*
+  /*
   DESCRIPTION
 }
 

@@ -141,7 +141,6 @@ module "azurerm_cdn_frontdoor_profile" {
       host_header                    = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint, "https://", ""), "/", "")
       priority                       = 1
       weight                         = 1
-      #TODO private link deployment fails, investigating..
       private_link = {
         pl = {
           request_message        = "Please approve this private link connection"
@@ -180,6 +179,7 @@ module "azurerm_cdn_frontdoor_profile" {
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
       supported_protocols    = ["Http", "Https"]
+      rule_set_names         = ["ruleset1"]
       cache = {
         cache1 = {
           query_string_caching_behavior = "IgnoreSpecifiedQueryStrings"
