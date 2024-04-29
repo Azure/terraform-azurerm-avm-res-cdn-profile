@@ -51,7 +51,8 @@ resource "azurerm_storage_account" "storage" {
   resource_group_name      = azurerm_resource_group.this.name
   location                 = azurerm_resource_group.this.location
   account_tier             = "Standard"
-  account_replication_type = "LRS"
+  account_replication_type = "ZRS"
+  public_network_access_enabled = false
 }
 
 # Create a virtual network
@@ -82,7 +83,6 @@ resource "azurerm_private_endpoint" "storage_endpoint" {
     name                           = "storage-connection"
     private_connection_resource_id = azurerm_storage_account.storage.id
     subresource_names              = ["blob"]
-
   }
 }
 
@@ -149,9 +149,7 @@ module "azurerm_cdn_frontdoor_profile" {
           private_link_target_id = azurerm_storage_account.storage.id
         }
       }
-
     }
-
   }
 
   endpoints = {
@@ -175,7 +173,6 @@ module "azurerm_cdn_frontdoor_profile" {
       endpoint_name          = "ep-1"
       origin_group_name      = "og1"
       origin_names           = ["example-origin", "origin3"]
-      forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
       supported_protocols    = ["Http", "Https"]
@@ -380,7 +377,6 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
 }
 
 
