@@ -439,7 +439,7 @@ module "azurerm_cdn_frontdoor_profile" {
       managed_rules = {
         mr1 = {
           type    = "DefaultRuleSet"
-          version = "1.0"
+          version = "1.0" #2.0
           action  = "Log"
           exclusions = {
             exclusion1 = {
@@ -580,6 +580,3 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 }
 
-output "epsanddomains" {
-  value = module.azurerm_cdn_frontdoor_profile.epslist1
-}

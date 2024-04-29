@@ -38,7 +38,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "wafs" {
     }
   }
 
-dynamic "managed_rule" {
+  dynamic "managed_rule" {
     for_each = try(each.value.managed_rules, null)
     content {
       type    = managed_rule.value.type

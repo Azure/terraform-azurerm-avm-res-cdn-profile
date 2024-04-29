@@ -69,7 +69,8 @@ variable "origin_groups" {
   # The below 2 properties will be enabled in near future
   # restore_traffic_time_to_healed_or_new_endpoint_in_minutes = optional(number, 10)
   # session_affinity_enabled = optional(bool, true)
-  default = null
+  default  = {}
+  nullable = false
   # validation {
   #   condition = alltrue(
   #     [
@@ -192,6 +193,8 @@ variable "origin" {
       private_link_target_id = string
     })), null)
   }))
+  default  = {}
+  nullable = false
   validation {
     condition = alltrue(
       [
@@ -275,6 +278,8 @@ variable "endpoints" {
     enabled = optional(bool, true)
     tags    = optional(map(any))
   }))
+  default     = {}
+  nullable    = false
   description = <<DESCRIPTION
   Manages a Front Door (standard/premium) Endpoint.
   
@@ -286,18 +291,18 @@ variable "endpoints" {
 
 variable "routes" {
   type = map(object({
-    name                   = string
-    origin_group_name      = string
-    origin_names           = list(string)
-    endpoint_name          = string
-    forwarding_protocol    = optional(string, "HttpsOnly")
-    supported_protocols    = list(string)
-    patterns_to_match      = list(string)
-    link_to_default_domain = optional(bool, true)
-    https_redirect_enabled = optional(bool, true)
-    custom_domain_names    = optional(list(string))
-    enabled                = optional(bool, true) 
-    rule_set_names         = optional(list(string))
+    name                      = string
+    origin_group_name         = string
+    origin_names              = list(string)
+    endpoint_name             = string
+    forwarding_protocol       = optional(string, "HttpsOnly")
+    supported_protocols       = list(string)
+    patterns_to_match         = list(string)
+    link_to_default_domain    = optional(bool, true)
+    https_redirect_enabled    = optional(bool, true)
+    custom_domain_names       = optional(list(string))
+    enabled                   = optional(bool, true)
+    rule_set_names            = optional(list(string))
     cdn_frontdoor_origin_path = optional(string, null)
     cache = optional(map(object({
       query_string_caching_behavior = optional(string, "IgnoreQueryString")
@@ -306,6 +311,8 @@ variable "routes" {
       content_types_to_compress     = optional(list(string))
     })), {})
   }))
+  default  = {}
+  nullable = false
   validation {
     condition = alltrue(
       [
@@ -380,8 +387,8 @@ variable "routes" {
 }
 
 variable "rule_sets" {
-  type    = set(string)
-  default = []
+  type        = set(string)
+  default     = []
   description = <<DESCRIPTION
   Manages a Front Door (standard/premium) Rule Set.. The following properties can be specified:
   - `name` - (Required) The name which should be used for this Front Door Rule Set.
@@ -389,7 +396,9 @@ variable "rule_sets" {
 }
 
 variable "rules" {
-  type = map(any)
+  type     = map(any)
+  default  = {}
+  nullable = false
 }
 
 variable "lock" {
@@ -512,8 +521,9 @@ variable "front_door_secret" {
     key_vault_certificate_id = string
   })
   default = null
+
   validation {
-    condition     =  var.front_door_secret == null ? true : can(regex("^[a-zA-Z0-9][-a-zA-Z0-9]{0,258}[a-zA-Z0-9]$", var.front_door_secret.name))
+    condition     = var.front_door_secret == null ? true : can(regex("^[a-zA-Z0-9][-a-zA-Z0-9]{0,258}[a-zA-Z0-9]$", var.front_door_secret.name))
     error_message = "The secret name must start with a letter or a number, only contain letters, numbers and hyphens, and have a length of between 2 and 260 characters."
   }
   description = <<DESCRIPTION
@@ -535,7 +545,8 @@ variable "front_door_custom_domains" {
       cdn_frontdoor_secret_id = optional(string, null)
     })
   }))
-  default = {}
+  default     = {}
+  nullable    = false
   description = <<DESCRIPTION
   Manages a Front Door (standard/premium) Custom Domain.
   
@@ -561,8 +572,8 @@ variable "front_door_security_policies" {
       })
     })
   }))
-  nullable = false
   default  = {}
+  nullable = false
   validation {
     condition     = length(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_names, policy.firewall.association.endpoint_names)])) == length(distinct(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_names, policy.firewall.association.endpoint_names)])))
     error_message = "Endpoint/Custom domain is already being used, please provide unique association."
@@ -624,7 +635,7 @@ variable "front_door_firewall_policies" {
     managed_rules = optional(map(object({
       type    = string
       version = string
-      action  = string
+      action  = string #default Log
       exclusions = optional(map(object({
         match_variable = string
         operator       = string
@@ -651,8 +662,8 @@ variable "front_door_firewall_policies" {
     })), {})
     tags = optional(map(any))
   }))
-  nullable = false
   default  = {}
+  nullable = false
   validation {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : contains(["Standard_AzureFrontDoor", "Premium_AzureFrontDoor"], v.sku_name)])
     error_message = "Possible values include 'Standard_AzureFrontDoor' or 'Premium_AzureFrontDoor' for Sku_name"
@@ -674,7 +685,7 @@ variable "front_door_firewall_policies" {
     error_message = "Possible values are 'MatchRule' or 'RateLimitRule' for type."
   }
   validation {
-    condition = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : length(x["match_conditions"]) <= 10 ]) && v["custom_rules"] != null])
+    condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : length(x["match_conditions"]) <= 10]) && v["custom_rules"] != null])
     error_message = "If match_condition is used, it should not exceed 10 blocks."
   }
   validation {
@@ -682,7 +693,7 @@ variable "front_door_firewall_policies" {
     error_message = "Possible values are 'Cookies', 'PostArgs', 'QueryString', 'RemoteAddr', 'RequestBody', 'RequestHeader', 'RequestMethod','RequestUri', or 'SocketAddr' for match_condition."
   }
   validation {
-    condition = alltrue([for _, v in var.front_door_firewall_policies : v["custom_rules"] != null ? alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : length(y["match_values"]) <= 256 ])]) : true])
+    condition     = alltrue([for _, v in var.front_door_firewall_policies : v["custom_rules"] != null ? alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : length(y["match_values"]) <= 256])]) : true])
     error_message = "Each match_value should be up to 256 characters in length."
   }
   validation {
@@ -690,11 +701,11 @@ variable "front_door_firewall_policies" {
     error_message = "Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'GeoMatch', 'GreaterThan', 'GreaterThanOrEqual', 'IPMatch', 'LessThan', 'LessThanOrEqua'l or 'RegEx' for operator."
   }
   validation {
-    condition = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : contains(["QueryString", "PostArgs", "RequestHeader", "Cookies"], y["match_variable"]) ? y["selector"] != null : true])])])
+    condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : contains(["QueryString", "PostArgs", "RequestHeader", "Cookies"], y["match_variable"]) ? y["selector"] != null : true])])])
     error_message = "If the match_variable is QueryString, PostArgs, RequestHeader, or Cookies, a selector should be provided."
   }
   validation {
-    condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : alltrue([y["transforms"] == null ? true : alltrue([for transform in coalesce(y["transforms"], []) : contains(["Lowercase", "RemoveNulls", "Trim", "Uppercase", "UrlDecode", "UrlEncode"], transform) ]) && length(y["transforms"]) <= 5])])])])
+    condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : alltrue([for _, y in x["match_conditions"] : alltrue([y["transforms"] == null ? true : alltrue([for transform in coalesce(y["transforms"], []) : contains(["Lowercase", "RemoveNulls", "Trim", "Uppercase", "UrlDecode", "UrlEncode"], transform)]) && length(y["transforms"]) <= 5])])])])
     error_message = "Upto 5 transforms are allowed and Possible values are 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'URLDecode' or 'URLEncode' for transforms."
   }
   validation {
@@ -758,3 +769,193 @@ variable "front_door_firewall_policies" {
 
 
 
+variable "cdn_endpoint_custom_domains" {
+  type     = map(any)
+  default  = {}
+  nullable = false
+}
+
+
+
+variable "cdn_endpoints" {
+  type = map(object({
+    name                      = string
+    is_http_allowed           = optional(bool, false)
+    is_https_allowed          = optional(bool, true)
+    content_types_to_compress = optional(list(string), [])
+
+    geo_filters = optional(map(object({
+      relative_path = string       # must be "/" for Standard_Microsoft. Must be unique across all filters. Only one allowed for Standard_Microsoft
+      action        = string       # create a validation: allowed values: Allow or Block
+      country_codes = list(string) # Create a validation. Two letter country codes allows e.g. ["US", "CA"]
+    })), {})
+
+    is_compression_enabled        = optional(bool)
+    querystring_caching_behaviour = optional(string, "IgnoreQueryString") #create a validation: allowed values: IgnoreQueryString,BypassCaching ,UseQueryString,NotSet for premium verizon.
+    optimization_type             = optional(string)                      # create a validation: allowed values: DynamicSiteAcceleration,GeneralMediaStreaming,GeneralWebDelivery,LargeFileDownload ,VideoOnDemandMediaStreaming
+
+    origins = map(object({
+      name       = string
+      host_name  = string
+      http_port  = optional(number, 80)
+      https_port = optional(number, 443)
+    }))
+
+    origin_host_header = optional(string)
+    origin_path        = optional(string)     # must start with / e.g. "/media"
+    probe_path         = optional(string)     # must start with / e.g. "/foo.bar"
+    global_delivery_rule = optional(object({ #verify structure later
+      cache_expiration_action = optional(object({
+        behavior = string           # Allowed Values: BypassCache, Override and SetIfMissing
+        duration = optional(string) # Only allowed when behavior is Override or SetIfMissing. Format: [d.]hh:mm:ss e.g "1.10:30:00"
+      }))
+      cache_key_query_string_action = optional(object({
+        behavior   = string           # Allowed Values: Exclude, ExcludeAll, Include and IncludeAll
+        parameters = optional(string) # Documentation says it is a list but string e.g "*"
+      }))
+      modify_request_header_action = optional(object({
+        action = string # Allowed Values: Append, Delete and Overwrite
+        name   = string
+        value  = optional(string) # Only needed if action = Append or Overwrite
+      }))
+      modify_response_header_action = optional(object({
+        action = string # Allowed Values: Append, Delete and Overwrite
+        name   = string
+        value  = optional(string) # Only needed if action = Append or Overwrite
+      }))
+      url_redirect_action = optional(object({
+        redirect_type = string                    # Allowed Values: Found, Moved, PermanentRedirect and TemporaryRedirect
+        protocol      = optional(string, "Https") # Allowed Values: MatchRequest, Http and Https
+        hostname      = optional(string)
+        path          = optional(string) # Should begin with /
+        fragment      = optional(string) #Specifies the fragment part of the URL. This value must not start with a #
+        query_string  = optional(string) # Specifies the query string part of the URL. This value must not start with a ? or & and must be in <key>=<value> format separated by &.
+      }))
+      url_rewrite_action = optional(object({
+        source_pattern          = string #(Required) This value must start with a / and can't be longer than 260 characters.
+        destination             = string # This value must start with a / and can't be longer than 260 characters.
+        preserve_unmatched_path = optional(bool, true)
+      }))
+    }))
+    delivery_rules = optional(map(object({ #verify structure later
+      name  = string
+      order = number
+      cache_expiration_action = optional(object({
+        behavior = string
+        duration = optional(string)
+      }))
+      cache_key_query_string_action = optional(object({
+        behavior   = string
+        parameters = optional(string)
+      }))
+      cookies_condition = optional(object({
+        selector         = string
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      device_condition = optional(object({
+        operator         = optional(string, "Equal")
+        negate_condition = optional(bool, false)
+        match_values     = list(string)
+      }))
+      http_version_condition = optional(object({
+        operator         = optional(string, "Equal")
+        negate_condition = optional(bool, false)
+        match_values     = list(string)
+      }))
+      modify_request_header_action = optional(object({
+        action = string
+        name   = string
+        value  = optional(string)
+      }))
+      modify_response_header_action = optional(object({
+        action = string
+        name   = string
+        value  = optional(string)
+      }))
+      post_arg_condition = optional(object({
+        selector         = string
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      query_string_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      remote_address_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+      }))
+      request_body_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      request_header_condition = optional(object({
+        selector         = string
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      request_method_condition = optional(object({
+        operator         = optional(string, "Equal")
+        negate_condition = optional(bool, false)
+        match_values     = list(string)
+      }))
+      request_scheme_condition = optional(object({
+        operator         = optional(string, "Equal")
+        negate_condition = optional(bool, false)
+        match_values     = list(string)
+      }))
+      request_uri_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      url_file_extension_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      url_file_name_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      url_path_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      url_redirect_action = optional(object({
+        redirect_type = string
+        protocol      = optional(string, "MatchRequest")
+        hostname      = optional(string)
+        path          = optional(string)
+        fragment      = optional(string)
+        query_string  = optional(string)
+      }))
+      url_rewrite_action = optional(object({
+        source_pattern          = string
+        destination             = string
+        preserve_unmatched_path = optional(bool, true)
+      }))
+    })))
+    tags = optional(map(string))
+  }))
+  default  = {}
+  nullable = false
+}
