@@ -45,73 +45,7 @@ resource "azurerm_resource_group" "this" {
   location = module.regions.regions[random_integer.region_index.result].name
 }
 
-data "azurerm_role_definition" "example" {
-  name = "Contributor"
-}
-
-data "azurerm_client_config" "current" {}
-
-module "avm_storage_account" {
-  source                    = "Azure/avm-res-storage-storageaccount/azurerm"
-  name                      = module.naming.storage_account.name_unique
-  resource_group_name       = azurerm_resource_group.this.name
-  shared_access_key_enabled = true
-  enable_telemetry          = true
-  account_replication_type  = "LRS"
-
-}
-
-resource "azurerm_log_analytics_workspace" "workspace" {
-  name                = module.naming.log_analytics_workspace.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
-}
-
-resource "azurerm_eventhub_namespace" "eventhub_namespace" {
-  name                = module.naming.eventhub_namespace.name_unique
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  sku                 = "Standard"
-  capacity            = 1
-  zone_redundant      = false
-
-
-  tags = {
-    environment = "Production"
-  }
-}
-
-resource "azurerm_eventhub" "eventhub" {
-  name                = "acceptanceTestEventHub"
-  namespace_name      = azurerm_eventhub_namespace.eventhub_namespace.name
-  resource_group_name = azurerm_resource_group.this.name
-  partition_count     = 2
-  message_retention   = 1
-}
-
-resource "azurerm_eventhub_namespace_authorization_rule" "example" {
-  name                = "streamlogs"
-  namespace_name      = azurerm_eventhub_namespace.eventhub_namespace.name
-  resource_group_name = azurerm_resource_group.this.name
-  listen              = true
-  send                = true
-  manage              = true
-}
-
-resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.user_assigned_identity.name_unique
-}
-
-/* This is the module call that shows how to add interfaces for waf alignment
-Locks
-Tags
-Role Assignments
-Diagnostic Settings
-Managed Identity
-Azure Monitor Alerts
-*/
+# This is the module call
 module "azurerm_cdn_frontdoor_profile" {
   source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
@@ -140,7 +74,6 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
   origin = {
     origin1 = {
       name                           = "example-origin"
@@ -188,19 +121,26 @@ module "azurerm_cdn_frontdoor_profile" {
         ENV = "example"
       }
     }
+    ep2 = {
+      name = "ep2"
+      tags = {
+        ENV = "example2"
+      }
+    }
   }
 
   routes = {
     route1 = {
-      name                   = "route1"
-      endpoint_name          = "ep1"
-      origin_group_name      = "og1"
-      origin_names           = ["example-origin", "origin3"]
-      forwarding_protocol    = "HttpsOnly"
-      https_redirect_enabled = true
-      patterns_to_match      = ["/*"]
-      supported_protocols    = ["Http", "Https"]
-      rule_set_names         = ["ruleset1"]
+      name                      = "route1"
+      endpoint_name             = "ep1"
+      origin_group_name         = "og1"
+      origin_names              = ["example-origin", "origin3"]
+      forwarding_protocol       = "HttpsOnly"
+      https_redirect_enabled    = true
+      patterns_to_match         = ["/*"]
+      supported_protocols       = ["Http", "Https"]
+      rule_set_names            = ["ruleset1"]
+      cdn_frontdoor_origin_path = "/originpath"
       cache = {
         cache1 = {
           query_string_caching_behavior = "IgnoreSpecifiedQueryStrings"
@@ -334,64 +274,72 @@ module "azurerm_cdn_frontdoor_profile" {
           transforms       = ["Uppercase"]
         }
 
+        # socket_address_condition = {
+        #   operator         = "IPMatch"
+        #   negate_condition = false
+        #   match_values     = ["5.5.5.64/26"]
+        # }
 
+        # client_port_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["Mobile"]
+        # }
+
+        # server_port_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["80"]
+        # }
+
+        # ssl_protocol_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["TLSv1"]
+        # }
+
+        # request_uri_condition = {
+        #   negate_condition = false
+        #   operator         = "BeginsWith"
+        #   match_values     = ["J", "K"]
+        #   transforms       = ["Uppercase"]
+        # }
+
+        # host_name_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
+        #   transforms       = ["Lowercase", "Trim"]
+        # }
+
+        # is_device_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["Mobile"]
+        # }
+
+        # post_args_condition = {
+        #   post_args_name = "customerName"
+        #   operator       = "BeginsWith"
+        #   match_values   = ["J", "K"]
+        #   transforms     = ["Uppercase"]
+        # }
+
+        # request_method_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["DELETE"]
+        # }
+
+        # url_filename_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["media.mp4"]
+        #   transforms       = ["Lowercase", "RemoveNulls", "Trim"]
+        # }
       }
     }
   }
 
-  diagnostic_settings = {
-    workspaceandstorage_diag = {
-      name                           = " workspaceandstorage_diag"
-      metric_categories              = ["AllMetrics"]
-      log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      log_analytics_destination_type = "Dedicated"
-      workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
-      storage_account_resource_id    = module.avm_storage_account.id
-      #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
-
-    }
-    eventhub_diag = {
-      name                                     = "eventhubforwarding"
-      log_groups                               = ["allLogs", "audit"] 
-      metric_categories                        = ["AllMetrics"]
-      event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
-      event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
-
-    }
-  }
-
-
-  role_assignments = {
-    self_contributor = {
-      role_definition_id_or_name       = "Contributor"
-      principal_id                     = data.azurerm_client_config.current.object_id
-      skip_service_principal_aad_check = true
-    },
-    # role_assignment_2 = {
-    #   role_definition_id_or_name             = "Reader"
-    #   principal_id                           = "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
-    #   description                            = "Example role assignment 2 of reader role"
-    #   skip_service_principal_aad_check       = false
-    #   condition                              = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
-    #   condition_version                      = "2.0"
-    # }
-  }
-
-  tags = {
-    environment = "production"
-  }
-  /*      
-  # A lock needs to be removed before destroy
-   lock = {
-       name = "lock-cdnprofile" # optional
-       kind = "CanNotDelete"
-     }
-  */
-  managed_identities = {
-    system_assigned = true
-    user_assigned_resource_ids = [
-      azurerm_user_assigned_identity.identity_for_keyvault.id
-    ]
-  }
-
 }
+

@@ -57,10 +57,10 @@ resource "azurerm_virtual_network" "vnet" {
 
 # Create a subnet within the virtual network
 resource "azurerm_subnet" "subnet" {
-  name                 = "my-subnet"
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.5.1.0/24"]
+  name                                          = "my-subnet"
+  resource_group_name                           = azurerm_resource_group.this.name
+  virtual_network_name                          = azurerm_virtual_network.vnet.name
+  address_prefixes                              = ["10.5.1.0/24"]
   private_link_service_network_policies_enabled = false
 }
 
@@ -72,19 +72,19 @@ resource "azurerm_lb" "lb" {
   resource_group_name = azurerm_resource_group.this.name
 
   frontend_ip_configuration {
-    name                 = "AFD-lb-IP"
-    zones                = ["1", "2"]
-    subnet_id            = azurerm_subnet.subnet.id
-    private_ip_address_allocation   = "Dynamic"
-    private_ip_address_version   = "IPv4"
+    name                          = "AFD-lb-IP"
+    zones                         = ["1", "2"]
+    subnet_id                     = azurerm_subnet.subnet.id
+    private_ip_address_allocation = "Dynamic"
+    private_ip_address_version    = "IPv4"
   }
 }
 
 # Create Private link service
 resource "azurerm_private_link_service" "pls" {
-  name                = "pls-example"
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
+  name                                        = "pls-example"
+  resource_group_name                         = azurerm_resource_group.this.name
+  location                                    = azurerm_resource_group.this.location
   load_balancer_frontend_ip_configuration_ids = [azurerm_lb.lb.frontend_ip_configuration[0].id]
 
   nat_ip_configuration {
@@ -97,8 +97,8 @@ resource "azurerm_private_link_service" "pls" {
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
-  depends_on = [azurerm_private_link_service.pls, time_sleep.wait_30_seconds]
+  source              = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  depends_on          = [azurerm_private_link_service.pls, time_sleep.wait_30_seconds]
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
