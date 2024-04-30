@@ -10,9 +10,12 @@ variable "resource_group_name" {
 }
 
 variable "cdn_endpoint_custom_domains" {
-  type     = map(any)
-  default  = {}
-  nullable = false
+  type        = map(any)
+  default     = {}
+  nullable    = false
+  description = <<DESCRIPTION
+  Manages a Custom Domain for a CDN Endpoint.
+  DESCRIPTION
 }
 
 variable "cdn_endpoints" {
@@ -194,8 +197,12 @@ variable "cdn_endpoints" {
       }))
     })))
   }))
-  default  = {}
-  nullable = false
+  default     = {}
+  nullable    = false
+  description = <<DESCRIPTION
+  Manages a CDN Endpoint. A CDN Endpoint is the entity within a CDN Profile containing configuration information regarding caching behaviours and origins. 
+  Refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint#arguments-reference for details and description on the CDN endpoint arguments reference.
+  DESCRIPTION
 }
 
 variable "diagnostic_settings" {
@@ -247,10 +254,10 @@ variable "enable_telemetry" {
   type        = bool
   default     = true
   description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetryinfo.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
+  This variable controls whether or not telemetry is enabled for the module.
+  For more information see https://aka.ms/avm/telemetryinfo.
+  If it is set to false, then no telemetry will be collected.
+  DESCRIPTION
 }
 
 variable "endpoints" {
@@ -514,7 +521,7 @@ variable "front_door_security_policies" {
     error_message = "Security policy name must not be an empty string."
   }
   validation {
-    condition     = alltrue([for name, policy in var.front_door_security_policies : policy.firewall.association.domain_names == [] ? policy.firewall.association.endpoint_names != [] : true])
+    condition     = alltrue([for name, policy in var.front_door_security_policies : length(policy.firewall.association.domain_names) == 0 ? length(policy.firewall.association.endpoint_names) > 0 : true])
     error_message = "Provide either domain names or endpoint names or both."
   }
   validation {
@@ -810,6 +817,7 @@ variable "role_assignments" {
     delegated_managed_identity_resource_id = optional(string, null)
   }))
   default     = {}
+  nullable    = false
   description = <<DESCRIPTION
   A map of role assignments to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
@@ -935,8 +943,8 @@ variable "rules" {
   type        = map(any)
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Rule Set.. The following properties can be specified:
-  - `name` - (Required) The name which should be used for this Front Door Rule Set.
+  Manages a Front Door (standard/premium) Rule. 
+  refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule#arguments-reference for Azure Front door rules arguments reference.
   DESCRIPTION
   nullable    = false
 }
