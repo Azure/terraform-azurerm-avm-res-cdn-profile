@@ -24,8 +24,8 @@ DESCRIPTION
 
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
-  min = 0
   max = length(module.regions.regions) - 1
+  min = 0
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -41,8 +41,8 @@ module "regions" {
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  name     = module.naming.resource_group.name_unique
   location = module.regions.regions[random_integer.region_index.result].name
+  name     = module.naming.resource_group.name_unique
 }
 
 data "azurerm_client_config" "current" {}
@@ -92,41 +92,31 @@ module "avm_res_keyvault_vault" {
 
 # The below example uses a self signed certificate which is not supported in AFD. Hence use a certificate chain with 2 or more certificates (root CA & sub CA) in real world example.
 resource "azurerm_key_vault_certificate" "keyvaultcert" {
-  depends_on   = [module.avm_res_keyvault_vault]
-  name         = "example-cert"
   key_vault_id = module.avm_res_keyvault_vault.resource.id
+  name         = "example-cert"
 
   certificate_policy {
     issuer_parameters {
       name = "Self"
     }
-
     key_properties {
       exportable = true
-      key_size   = 2048
       key_type   = "RSA"
       reuse_key  = true
+      key_size   = 2048
     }
-
+    secret_properties {
+      content_type = "application/x-pkcs12"
+    }
     lifetime_action {
       action {
         action_type = "AutoRenew"
       }
-
       trigger {
         days_before_expiry = 30
       }
     }
-
-    secret_properties {
-      content_type = "application/x-pkcs12"
-    }
-
     x509_certificate_properties {
-      # Server Authentication = 1.3.6.1.5.5.7.3.1
-      # Client Authentication = 1.3.6.1.5.5.7.3.2
-      extended_key_usage = ["1.3.6.1.5.5.7.3.1"]
-
       key_usage = [
         "cRLSign",
         "dataEncipherment",
@@ -135,21 +125,25 @@ resource "azurerm_key_vault_certificate" "keyvaultcert" {
         "keyCertSign",
         "keyEncipherment",
       ]
+      subject            = "CN=hello-world"
+      validity_in_months = 12
+      # Server Authentication = 1.3.6.1.5.5.7.3.1
+      # Client Authentication = 1.3.6.1.5.5.7.3.2
+      extended_key_usage = ["1.3.6.1.5.5.7.3.1"]
 
       subject_alternative_names {
         dns_names = ["internal.contoso.com", "domain.hello.world"]
       }
-
-      subject            = "CN=hello-world"
-      validity_in_months = 12
     }
   }
+
+  depends_on = [module.avm_res_keyvault_vault]
 }
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
+  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  source              = "../../"
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location

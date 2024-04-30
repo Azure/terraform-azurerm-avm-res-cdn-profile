@@ -1,3 +1,9 @@
+<!-- BEGIN_TF_DOCS -->
+# Default example
+
+This deploys the module in its simplest form.
+
+```hcl
 terraform {
   required_version = ">= 1.3.0"
   required_providers {
@@ -45,56 +51,7 @@ resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
 }
 
-data "azurerm_role_definition" "example" {
-  name = "Contributor"
-}
-
 data "azurerm_client_config" "current" {}
-
-module "avm_storage_account" {
-  source                    = "Azure/avm-res-storage-storageaccount/azurerm"
-  name                      = module.naming.storage_account.name_unique
-  resource_group_name       = azurerm_resource_group.this.name
-  shared_access_key_enabled = true
-  enable_telemetry          = true
-  account_replication_type  = "LRS"
-
-}
-
-resource "azurerm_log_analytics_workspace" "workspace" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.log_analytics_workspace.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-}
-
-resource "azurerm_eventhub_namespace" "eventhub_namespace" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.eventhub_namespace.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-  sku                 = "Standard"
-  capacity            = 1
-  tags = {
-    environment = "Production"
-  }
-  zone_redundant = false
-}
-
-resource "azurerm_eventhub" "eventhub" {
-  message_retention   = 1
-  name                = "acceptanceTestEventHub"
-  namespace_name      = azurerm_eventhub_namespace.eventhub_namespace.name
-  partition_count     = 2
-  resource_group_name = azurerm_resource_group.this.name
-}
-
-resource "azurerm_eventhub_namespace_authorization_rule" "example" {
-  name                = "streamlogs"
-  namespace_name      = azurerm_eventhub_namespace.eventhub_namespace.name
-  resource_group_name = azurerm_resource_group.this.name
-  listen              = true
-  manage              = true
-  send                = true
-}
 
 resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
   location            = azurerm_resource_group.this.location
@@ -102,17 +59,97 @@ resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
   resource_group_name = azurerm_resource_group.this.name
 }
 
-/* This is the module call that shows how to add interfaces for waf alignment
-Locks
-Tags
-Role Assignments
-Diagnostic Settings
-Managed Identity
-Azure Monitor Alerts
-*/
+#create a keyvault for storing the credential with RBAC for the deployment user
+module "avm_res_keyvault_vault" {
+  source = "Azure/avm-res-keyvault-vault/azurerm"
+  #version             = "0.5.1"
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  name                = module.naming.key_vault.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  network_acls = {
+    default_action = "Allow"
+    bypass         = "AzureServices"
+    ip_rules       = ["74.225.0.0/24"]
+  }
+
+  role_assignments = {
+    deployment_currentuser_secrets = {
+      role_definition_id_or_name = "Key Vault Administrator"
+      principal_id               = data.azurerm_client_config.current.object_id
+    }
+    deployment_user_secrets = {
+      role_definition_id_or_name = "Key Vault Administrator"
+      principal_id               = azurerm_user_assigned_identity.identity_for_keyvault.principal_id
+    }
+    deployment_user_administrator = {
+      role_definition_id_or_name = "Key Vault Certificates Officer"
+      principal_id               = azurerm_user_assigned_identity.identity_for_keyvault.principal_id
+    }
+  }
+
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
+  }
+  tags = {
+    scenario = "AVM AFD Sample Certificates deployment"
+  }
+}
+
+# The below example uses a self signed certificate which is not supported in AFD. Hence use a certificate chain with 2 or more certificates (root CA & sub CA) in real world example.
+resource "azurerm_key_vault_certificate" "keyvaultcert" {
+  key_vault_id = module.avm_res_keyvault_vault.resource.id
+  name         = "example-cert"
+
+  certificate_policy {
+    issuer_parameters {
+      name = "Self"
+    }
+    key_properties {
+      exportable = true
+      key_type   = "RSA"
+      reuse_key  = true
+      key_size   = 2048
+    }
+    secret_properties {
+      content_type = "application/x-pkcs12"
+    }
+    lifetime_action {
+      action {
+        action_type = "AutoRenew"
+      }
+      trigger {
+        days_before_expiry = 30
+      }
+    }
+    x509_certificate_properties {
+      key_usage = [
+        "cRLSign",
+        "dataEncipherment",
+        "digitalSignature",
+        "keyAgreement",
+        "keyCertSign",
+        "keyEncipherment",
+      ]
+      subject            = "CN=hello-world"
+      validity_in_months = 12
+      # Server Authentication = 1.3.6.1.5.5.7.3.1
+      # Client Authentication = 1.3.6.1.5.5.7.3.2
+      extended_key_usage = ["1.3.6.1.5.5.7.3.1"]
+
+      subject_alternative_names {
+        dns_names = ["internal.contoso.com", "domain.hello.world"]
+      }
+    }
+  }
+
+  depends_on = [module.avm_res_keyvault_vault]
+}
+
+# This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
-  source              = "../../"
+  source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
@@ -138,7 +175,6 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
   origin = {
     origin1 = {
       name                           = "example-origin"
@@ -181,7 +217,7 @@ module "azurerm_cdn_frontdoor_profile" {
 
   endpoints = {
     ep1 = {
-      name = "ep1"
+      name = module.naming.cdn_endpoint.name_unique
       tags = {
         ENV = "example"
       }
@@ -337,59 +373,105 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  diagnostic_settings = {
-    workspaceandstorage_diag = {
-      name                           = " workspaceandstorage_diag"
-      metric_categories              = ["AllMetrics"]
-      log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      log_analytics_destination_type = "Dedicated"
-      workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
-      storage_account_resource_id    = module.avm_storage_account.id
-      #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
 
-    }
-    eventhub_diag = {
-      name                                     = "eventhubforwarding"
-      log_groups                               = ["allLogs", "audit"]
-      metric_categories                        = ["AllMetrics"]
-      event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
-      event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
-
-    }
+  front_door_secret = {
+    name                     = "Front-door-certificate"
+    key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
   }
 
 
-  role_assignments = {
-    self_contributor = {
-      role_definition_id_or_name       = "Contributor"
-      principal_id                     = data.azurerm_client_config.current.object_id
-      skip_service_principal_aad_check = true
-    },
-    # role_assignment_2 = {
-    #   role_definition_id_or_name             = "Reader"
-    #   principal_id                           = "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
-    #   description                            = "Example role assignment 2 of reader role"
-    #   skip_service_principal_aad_check       = false
-    #   condition                              = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
-    #   condition_version                      = "2.0"
-    # }
-  }
-
-  tags = {
-    environment = "production"
-  }
-  /*      
-  # A lock needs to be removed before destroy
-   lock = {
-       name = "lock-cdnprofile" # optional
-       kind = "CanNotDelete"
-     }
-  */
   managed_identities = {
     system_assigned = true
     user_assigned_resource_ids = [
       azurerm_user_assigned_identity.identity_for_keyvault.id
     ]
   }
-
 }
+
+
+
+```
+
+<!-- markdownlint-disable MD033 -->
+## Requirements
+
+The following requirements are needed by this module:
+
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
+
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 4.0.0)
+
+## Providers
+
+The following providers are used by this module:
+
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.7.0, < 4.0.0)
+
+- <a name="provider_random"></a> [random](#provider\_random)
+
+## Resources
+
+The following resources are used by this module:
+
+- [azurerm_key_vault_certificate.keyvaultcert](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
+- [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_user_assigned_identity.identity_for_keyvault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
+- [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
+- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
+
+<!-- markdownlint-disable MD013 -->
+## Required Inputs
+
+No required inputs.
+
+## Optional Inputs
+
+The following input variables are optional (have default values):
+
+### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
+
+Description: This variable controls whether or not telemetry is enabled for the module.  
+For more information see https://aka.ms/avm/telemetryinfo.  
+If it is set to false, then no telemetry will be collected.
+
+Type: `bool`
+
+Default: `true`
+
+## Outputs
+
+No outputs.
+
+## Modules
+
+The following Modules are called:
+
+### <a name="module_avm_res_keyvault_vault"></a> [avm\_res\_keyvault\_vault](#module\_avm\_res\_keyvault\_vault)
+
+Source: Azure/avm-res-keyvault-vault/azurerm
+
+Version:
+
+### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
+
+Source: /workspaces/terraform-azurerm-avm-res-cdn-profile
+
+Version:
+
+### <a name="module_naming"></a> [naming](#module\_naming)
+
+Source: Azure/naming/azurerm
+
+Version: 0.3.0
+
+### <a name="module_regions"></a> [regions](#module\_regions)
+
+Source: Azure/regions/azurerm
+
+Version: >= 0.3.0
+
+<!-- markdownlint-disable-next-line MD041 -->
+## Data Collection
+
+The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the repository. There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
+<!-- END_TF_DOCS -->

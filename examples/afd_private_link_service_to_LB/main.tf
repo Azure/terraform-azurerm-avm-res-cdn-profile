@@ -24,8 +24,8 @@ DESCRIPTION
 
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
-  min = 0
   max = length(module.regions.regions) - 1
+  min = 0
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -43,61 +43,62 @@ data "azurerm_client_config" "current" {}
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  name     = module.naming.resource_group.name_unique
   location = "eastus"
+  name     = module.naming.resource_group.name_unique
 }
 
 # Create a virtual network
 resource "azurerm_virtual_network" "vnet" {
-  name                = "my-vnet"
   address_space       = ["10.5.0.0/16"]
   location            = azurerm_resource_group.this.location
+  name                = "my-vnet"
   resource_group_name = azurerm_resource_group.this.name
 }
 
 # Create a subnet within the virtual network
 resource "azurerm_subnet" "subnet" {
+  address_prefixes                              = ["10.5.1.0/24"]
   name                                          = "my-subnet"
   resource_group_name                           = azurerm_resource_group.this.name
   virtual_network_name                          = azurerm_virtual_network.vnet.name
-  address_prefixes                              = ["10.5.1.0/24"]
   private_link_service_network_policies_enabled = false
 }
 
 # Create an Internal Load balancer resource 
 resource "azurerm_lb" "lb" {
-  name                = "lb-example"
-  sku                 = "Standard"
   location            = azurerm_resource_group.this.location
+  name                = "lb-example"
   resource_group_name = azurerm_resource_group.this.name
+  sku                 = "Standard"
 
   frontend_ip_configuration {
     name                          = "AFD-lb-IP"
-    zones                         = ["1", "2"]
-    subnet_id                     = azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
     private_ip_address_version    = "IPv4"
+    subnet_id                     = azurerm_subnet.subnet.id
+    zones                         = ["1", "2"]
   }
 }
 
 # Create Private link service
 resource "azurerm_private_link_service" "pls" {
+  load_balancer_frontend_ip_configuration_ids = [azurerm_lb.lb.frontend_ip_configuration[0].id]
+  location                                    = azurerm_resource_group.this.location
   name                                        = "pls-example"
   resource_group_name                         = azurerm_resource_group.this.name
-  location                                    = azurerm_resource_group.this.location
-  load_balancer_frontend_ip_configuration_ids = [azurerm_lb.lb.frontend_ip_configuration[0].id]
 
   nat_ip_configuration {
     name                       = "primary"
-    private_ip_address_version = "IPv4"
-    subnet_id                  = azurerm_subnet.subnet.id
     primary                    = true
+    subnet_id                  = azurerm_subnet.subnet.id
+    private_ip_address_version = "IPv4"
   }
 }
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source              = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  #source              = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  source              = "../../"
   depends_on          = [azurerm_private_link_service.pls, time_sleep.wait_30_seconds]
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
@@ -369,7 +370,7 @@ module "azurerm_cdn_frontdoor_profile" {
 }
 
 resource "time_sleep" "wait_30_seconds" {
-  depends_on = [azurerm_private_link_service.pls]
-
   create_duration = "60s"
+
+  depends_on = [azurerm_private_link_service.pls]
 }

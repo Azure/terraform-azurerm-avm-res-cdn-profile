@@ -24,8 +24,8 @@ DESCRIPTION
 
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
-  min = 0
   max = length(module.regions.regions) - 1
+  min = 0
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -41,42 +41,41 @@ module "regions" {
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  name     = module.naming.resource_group.name_unique
   location = "eastus"
+  name     = module.naming.resource_group.name_unique
 }
 
 # storage account origin which will be connected to private link
 resource "azurerm_storage_account" "storage" {
-  name                     = module.naming.storage_account.name_unique
-  resource_group_name      = azurerm_resource_group.this.name
-  location                 = azurerm_resource_group.this.location
-  account_tier             = "Standard"
-  account_replication_type = "ZRS"
+  account_replication_type      = "ZRS"
+  account_tier                  = "Standard"
+  location                      = azurerm_resource_group.this.location
+  name                          = module.naming.storage_account.name_unique
+  resource_group_name           = azurerm_resource_group.this.name
   public_network_access_enabled = false
 }
 
 # Create a virtual network
 resource "azurerm_virtual_network" "vnet" {
-  name                = "my-vnet"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this.location
+  name                = "my-vnet"
   resource_group_name = azurerm_resource_group.this.name
 }
 
 # Create a subnet within the virtual network
 resource "azurerm_subnet" "subnet" {
+  address_prefixes     = ["10.0.0.0/24"]
   name                 = "my-subnet"
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.0.0.0/24"]
 }
 # Create a private endpoint for the storage account
 resource "azurerm_private_endpoint" "storage_endpoint" {
+  location            = azurerm_resource_group.this.location
   name                = "storage-endpoint"
   resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
   subnet_id           = azurerm_subnet.subnet.id
-
 
   private_service_connection {
     is_manual_connection           = false
@@ -95,15 +94,15 @@ resource "azurerm_private_dns_zone" "storage_dns_zone" {
 # Link the private DNS zone to the virtual network
 resource "azurerm_private_dns_zone_virtual_network_link" "dns_link" {
   name                  = "dns-link"
-  resource_group_name   = azurerm_resource_group.this.name
   private_dns_zone_name = azurerm_private_dns_zone.storage_dns_zone.name
+  resource_group_name   = azurerm_resource_group.this.name
   virtual_network_id    = azurerm_virtual_network.vnet.id
 }
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
+  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  source              = "../../"
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location

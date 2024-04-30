@@ -51,78 +51,20 @@ resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
 }
 
-data "azurerm_role_definition" "example" {
-  name = "Contributor"
-}
-
-data "azurerm_client_config" "current" {}
-
-module "avm_storage_account" {
-  source                    = "Azure/avm-res-storage-storageaccount/azurerm"
-  name                      = module.naming.storage_account.name_unique
-  resource_group_name       = azurerm_resource_group.this.name
-  shared_access_key_enabled = true
-  enable_telemetry          = true
-  account_replication_type  = "LRS"
-
-}
-
-resource "azurerm_log_analytics_workspace" "workspace" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.log_analytics_workspace.name_unique
+# resource block for DNS zones
+resource "azurerm_dns_zone" "dnszone" {
+  name                = "sub-domain.domain.com"
   resource_group_name = azurerm_resource_group.this.name
 }
 
-resource "azurerm_eventhub_namespace" "eventhub_namespace" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.eventhub_namespace.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-  sku                 = "Standard"
-  capacity            = 1
-  tags = {
-    environment = "Production"
-  }
-  zone_redundant = false
-}
-
-resource "azurerm_eventhub" "eventhub" {
-  message_retention   = 1
-  name                = "acceptanceTestEventHub"
-  namespace_name      = azurerm_eventhub_namespace.eventhub_namespace.name
-  partition_count     = 2
-  resource_group_name = azurerm_resource_group.this.name
-}
-
-resource "azurerm_eventhub_namespace_authorization_rule" "example" {
-  name                = "streamlogs"
-  namespace_name      = azurerm_eventhub_namespace.eventhub_namespace.name
-  resource_group_name = azurerm_resource_group.this.name
-  listen              = true
-  manage              = true
-  send                = true
-}
-
-resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-}
-
-/* This is the module call that shows how to add interfaces for waf alignment
-Locks
-Tags
-Role Assignments
-Diagnostic Settings
-Managed Identity
-Azure Monitor Alerts
-*/
+# This is the module call
 module "azurerm_cdn_frontdoor_profile" {
   source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
-  sku_name            = "Standard_AzureFrontDoor"
+  sku_name            = "Premium_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
   origin_groups = {
     og1 = {
@@ -144,8 +86,7 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
-  origins = {
+  origin = {
     origin1 = {
       name                           = "example-origin"
       origin_group_name              = "og1"
@@ -192,6 +133,41 @@ module "azurerm_cdn_frontdoor_profile" {
         ENV = "example"
       }
     }
+    ep2 = {
+      name = "ep2"
+      tags = {
+        ENV = "example2"
+      }
+    }
+    ep33 = {
+      name = "ep3"
+      tags = {
+        ENV = "example2"
+      }
+    }
+  }
+
+  front_door_custom_domains = {
+    cd1 = {
+      name        = "example-customDomain"
+      dns_zone_id = azurerm_dns_zone.dnszone.id
+      host_name   = "contoso.fabrikam.com"
+
+      tls = {
+        certificate_type    = "ManagedCertificate"
+        minimum_tls_version = "TLS12"
+      }
+    },
+    cd2 = {
+      name        = "customdomain2"
+      dns_zone_id = azurerm_dns_zone.dnszone.id
+      host_name   = "contoso2.fabrikam.com"
+      #associated_route_names = ["route1"]
+      tls = {
+        certificate_type    = "ManagedCertificate"
+        minimum_tls_version = "TLS12"
+      }
+    }
   }
 
   routes = {
@@ -202,6 +178,7 @@ module "azurerm_cdn_frontdoor_profile" {
       origin_names           = ["example-origin", "origin3"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
+      custom_domain_names    = ["example-customDomain", "customdomain2"]
       patterns_to_match      = ["/*"]
       supported_protocols    = ["Http", "Https"]
       rule_set_names         = ["ruleset1"]
@@ -226,7 +203,6 @@ module "azurerm_cdn_frontdoor_profile" {
       rule_set_name     = "ruleset1"
       origin_group_name = "og1"
       actions = {
-
         url_rewrite_action = {
           actiontype              = "url_rewrite_action"
           source_pattern          = "/"
@@ -262,6 +238,7 @@ module "azurerm_cdn_frontdoor_profile" {
           value         = "/abc"
         }
       }
+      # Upto 10 match conditions are allowed, comment/uncomment based on your requirements
       conditions = {
         remote_address_condition = {
           operator         = "IPMatch"
@@ -338,67 +315,277 @@ module "azurerm_cdn_frontdoor_profile" {
           transforms       = ["Uppercase"]
         }
 
+        # socket_address_condition = {
+        #   operator         = "IPMatch"
+        #   negate_condition = false
+        #   match_values     = ["5.5.5.64/26"]
+        # }
 
+        # client_port_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["Mobile"]
+        # }
+
+        # server_port_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["80"]
+        # }
+
+        # ssl_protocol_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["TLSv1"]
+        # }
+
+        # request_uri_condition = {
+        #   negate_condition = false
+        #   operator         = "BeginsWith"
+        #   match_values     = ["J", "K"]
+        #   transforms       = ["Uppercase"]
+        # }
+
+
+        # host_name_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
+        #   transforms       = ["Lowercase", "Trim"]
+        # }
+
+        # is_device_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["Mobile"]
+        # }
+
+        # post_args_condition = {
+        #   post_args_name = "customerName"
+        #   operator       = "BeginsWith"
+        #   match_values   = ["J", "K"]
+        #   transforms     = ["Uppercase"]
+        # }
+
+        # request_method_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["DELETE"]
+        # }
+
+        # url_filename_condition = {
+        #   operator         = "Equal"
+        #   negate_condition = false
+        #   match_values     = ["media.mp4"]
+        #   transforms       = ["Lowercase", "RemoveNulls", "Trim"]
+        # }
       }
     }
   }
 
-  diagnostic_settings = {
-    workspaceandstorage_diag = {
-      name                           = " workspaceandstorage_diag"
-      metric_categories              = ["AllMetrics"]
-      log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      log_analytics_destination_type = "Dedicated"
-      workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
-      storage_account_resource_id    = module.avm_storage_account.id
-      #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
+  front_door_firewall_policies = {
+    fd_waf1 = {
+      name                              = "examplecdnfdwafpolicy1"
+      resource_group_name               = azurerm_resource_group.this.name
+      sku_name                          = "Premium_AzureFrontDoor" # Ensure SKU_name for WAF is similar to SKU_name for front door profile.
+      enabled                           = true
+      mode                              = "Prevention"
+      redirect_url                      = "https://www.contoso.com"
+      custom_block_response_status_code = 405
+      custom_block_response_body        = "PGh0bWw+CjxoZWFkZXI+PHRpdGxlPkhlbGxvPC90aXRsZT48L2hlYWRlcj4KPGJvZHk+CkhlbGxvIHdvcmxkCjwvYm9keT4KPC9odG1sPg=="
+
+      custom_rules = {
+        cr1 = {
+          name                           = "Rule1"
+          enabled                        = true
+          priority                       = 1
+          rate_limit_duration_in_minutes = 1
+          rate_limit_threshold           = 10
+          type                           = "MatchRule"
+          action                         = "Block"
+          match_conditions = {
+            m1 = {
+              match_variable     = "RemoteAddr"
+              operator           = "IPMatch"
+              negation_condition = false
+              match_values       = ["10.0.1.0/24", "10.0.0.0/24"]
+            }
+          }
+        }
+
+        cr2 = {
+          name                           = "Rule2"
+          enabled                        = true
+          priority                       = 2
+          rate_limit_duration_in_minutes = 1
+          rate_limit_threshold           = 10
+          type                           = "MatchRule"
+          action                         = "Block"
+          match_conditions = {
+            match_condition1 = {
+              match_variable     = "RemoteAddr"
+              operator           = "IPMatch"
+              negation_condition = false
+              match_values       = ["192.168.1.0/24"]
+            }
+
+            match_condition2 = {
+              match_variable     = "RequestHeader"
+              selector           = "UserAgent"
+              operator           = "Contains"
+              negation_condition = false
+              match_values       = ["windows"]
+              transforms         = ["Lowercase", "Trim"]
+            }
+          }
+        }
+      }
+
+      # if using Standard sku , then managed rules are not supported, hence remove the below input variables
+      managed_rules = {
+        mr1 = {
+          type    = "DefaultRuleSet"
+          version = "1.0" #2.0
+          action  = "Log"
+          exclusions = {
+            exclusion1 = {
+              match_variable = "QueryStringArgNames"
+              operator       = "Equals"
+              selector       = "not_suspicious"
+            }
+          }
+          overrides = {
+            override1 = {
+              rule_group_name = "PHP"
+              rule = {
+                rule1 = {
+                  rule_id = "933100"
+                  enabled = false
+                  action  = "Block"
+                }
+              }
+            }
+
+            override2 = {
+              rule_group_name = "SQLI"
+              exclusions = {
+                exclusion1 = {
+                  match_variable = "QueryStringArgNames"
+                  operator       = "Equals"
+                  selector       = "really_not_suspicious"
+                }
+              }
+              rules = {
+                rule1 = {
+                  rule_id = "942200"
+                  action  = "Block"
+                  exclusions = {
+                    exclusion1 = {
+                      match_variable = "QueryStringArgNames"
+                      operator       = "Equals"
+                      selector       = "innocent"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        mr2 = {
+          type    = "Microsoft_BotManagerRuleSet"
+          version = "1.0"
+          action  = "Log"
+        }
+      }
+    }
+    fd_waf2 = {
+      name                              = "examplecdnfdwafpolicy2"
+      resource_group_name               = azurerm_resource_group.this.name
+      sku_name                          = "Premium_AzureFrontDoor" # Ensure SKU_name for WAF is similar to SKU_name for front door profile.
+      enabled                           = true
+      mode                              = "Prevention"
+      redirect_url                      = "https://www.contoso.com"
+      custom_block_response_status_code = 405
+      custom_block_response_body        = "PGh0bWw+CjxoZWFkZXI+PHRpdGxlPkhlbGxvPC90aXRsZT48L2hlYWRlcj4KPGJvZHk+CkhlbGxvIHdvcmxkCjwvYm9keT4KPC9odG1sPg=="
+
+      custom_rules = {
+        cr1 = {
+          name                           = "Rule1"
+          enabled                        = true
+          priority                       = 1
+          rate_limit_duration_in_minutes = 1
+          rate_limit_threshold           = 10
+          type                           = "MatchRule"
+          action                         = "Block"
+          match_conditions = {
+            m1 = {
+              match_variable     = "RemoteAddr"
+              operator           = "IPMatch"
+              negation_condition = false
+              match_values       = ["10.0.1.0/24", "10.0.0.0/24"]
+            }
+          }
+        }
+
+
+        cr2 = {
+          name                           = "Rule2"
+          enabled                        = true
+          priority                       = 2
+          rate_limit_duration_in_minutes = 1
+          rate_limit_threshold           = 10
+          type                           = "MatchRule"
+          action                         = "Block"
+          match_conditions = {
+            match_condition1 = {
+              match_variable     = "RemoteAddr"
+              operator           = "IPMatch"
+              negation_condition = false
+              match_values       = ["192.168.1.0/24"]
+            }
+
+            match_condition2 = {
+              match_variable     = "RequestHeader"
+              selector           = "UserAgent"
+              operator           = "Contains"
+              negation_condition = false
+              match_values       = ["windows"]
+              transforms         = ["Lowercase", "Trim"]
+            }
+          }
+        }
+      }
+    }
+  }
+  front_door_security_policies = {
+    secpol1 = {
+      name = "firewallpolicyforep1and2"
+      firewall = {
+        front_door_firewall_policy_name = "examplecdnfdwafpolicy1"
+        association = {
+          endpoint_names    = ["ep1"]
+          domain_names      = ["cd1"]
+          patterns_to_match = ["/*"]
+        }
+      }
+    }
+    secpol3 = {
+      name = "firewallpolicyforep33"
+      firewall = {
+        front_door_firewall_policy_name = "examplecdnfdwafpolicy2"
+        association = {
+          endpoint_names    = ["ep2", "ep3"]
+          domain_names      = ["cd2"]
+          patterns_to_match = ["/*"]
+        }
+      }
+
 
     }
-    eventhub_diag = {
-      name                                     = "eventhubforwarding"
-      log_groups                               = ["allLogs", "audit"]
-      metric_categories                        = ["AllMetrics"]
-      event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
-      event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
-
-    }
   }
-
-
-  role_assignments = {
-    self_contributor = {
-      role_definition_id_or_name       = "Contributor"
-      principal_id                     = data.azurerm_client_config.current.object_id
-      skip_service_principal_aad_check = true
-    },
-    # role_assignment_2 = {
-    #   role_definition_id_or_name             = "Reader"
-    #   principal_id                           = "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
-    #   description                            = "Example role assignment 2 of reader role"
-    #   skip_service_principal_aad_check       = false
-    #   condition                              = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
-    #   condition_version                      = "2.0"
-    # }
-  }
-
-  tags = {
-    environment = "production"
-  }
-  /*      
-  # A lock needs to be removed before destroy
-   lock = {
-       name = "lock-cdnprofile" # optional
-       kind = "CanNotDelete"
-     }
-  */
-  managed_identities = {
-    system_assigned = true
-    user_assigned_resource_ids = [
-      azurerm_user_assigned_identity.identity_for_keyvault.id
-    ]
-  }
-
 }
+
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -422,15 +609,9 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
-- [azurerm_eventhub.eventhub](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/eventhub) (resource)
-- [azurerm_eventhub_namespace.eventhub_namespace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/eventhub_namespace) (resource)
-- [azurerm_eventhub_namespace_authorization_rule.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/eventhub_namespace_authorization_rule) (resource)
-- [azurerm_log_analytics_workspace.workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
+- [azurerm_dns_zone.dnszone](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dns_zone) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_user_assigned_identity.identity_for_keyvault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
-- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
-- [azurerm_role_definition.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/role_definition) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -458,12 +639,6 @@ No outputs.
 ## Modules
 
 The following Modules are called:
-
-### <a name="module_avm_storage_account"></a> [avm\_storage\_account](#module\_avm\_storage\_account)
-
-Source: Azure/avm-res-storage-storageaccount/azurerm
-
-Version:
 
 ### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
 

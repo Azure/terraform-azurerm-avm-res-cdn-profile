@@ -24,8 +24,8 @@ DESCRIPTION
 
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
-  min = 0
   max = length(module.regions.regions) - 1
+  min = 0
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -46,8 +46,8 @@ module "regions" {
 # }
 
 resource "azurerm_resource_group" "this" {
-  name     = module.naming.resource_group.name_unique
   location = "centralindia"
+  name     = module.naming.resource_group.name_unique
 }
 
 resource "azurerm_dns_zone" "dnszone" {
@@ -59,8 +59,8 @@ resource "azurerm_dns_zone" "dnszone" {
 # This is the module call
 module "azurerm_cdn_profile" {
   #depends_on = [ data.azurerm_resource_group.this ]
-  source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
+  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  source = "../../"
   tags = {
     environment = "production"
   }

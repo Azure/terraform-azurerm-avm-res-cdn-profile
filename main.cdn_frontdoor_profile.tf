@@ -14,12 +14,19 @@
 
 #using azapi since azurerm_cdn_frontdoor_profile commented above does not support identity blocks
 resource "azapi_resource" "front_door_profile" {
-
-  type                      = "Microsoft.Cdn/profiles@2023-07-01-preview"
-  schema_validation_enabled = false
-  name                      = var.name
+  type = "Microsoft.Cdn/profiles@2023-07-01-preview"
+  body = jsonencode({
+    properties = {
+      originResponseTimeoutSeconds = 20
+    }
+    sku = {
+      name = var.sku_name
+    }
+  })
   location                  = "Global"
+  name                      = var.name
   parent_id                 = data.azurerm_resource_group.rg.id
+  schema_validation_enabled = false
   tags                      = var.tags
 
   dynamic "identity" {
@@ -29,13 +36,5 @@ resource "azapi_resource" "front_door_profile" {
       identity_ids = var.managed_identities.user_assigned_resource_ids
     }
   }
-  body = jsonencode({
-    properties = {
-      originResponseTimeoutSeconds = 20
-    }
-    sku = {
-      name = var.sku_name
-    }
-  })
 }
 

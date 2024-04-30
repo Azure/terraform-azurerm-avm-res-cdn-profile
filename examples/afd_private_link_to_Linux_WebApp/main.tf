@@ -24,8 +24,8 @@ DESCRIPTION
 
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
-  min = 0
   max = length(module.regions.regions) - 1
+  min = 0
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -41,16 +41,16 @@ module "regions" {
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  name     = module.naming.resource_group.name_unique
   location = "eastus"
+  name     = module.naming.resource_group.name_unique
 }
 
 # Creating App service plan with premium V3 SKU
 resource "azurerm_service_plan" "ASP" {
-  name                = "my-ASP"
   location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
+  name                = "my-ASP"
   os_type             = "Linux"
+  resource_group_name = azurerm_resource_group.this.name
   sku_name            = "P1v3"
 }
 
@@ -115,12 +115,13 @@ resource "azurerm_service_plan" "ASP" {
 
 # Creating the linux web app
 resource "azurerm_linux_web_app" "webapp" {
-  name                = "my-LinuxWebApp"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  service_plan_id     = azurerm_service_plan.ASP.id
+  location                      = azurerm_resource_group.this.location
+  name                          = "my-LinuxWebApp"
+  resource_group_name           = azurerm_resource_group.this.name
+  service_plan_id               = azurerm_service_plan.ASP.id
+  https_only                    = true
   public_network_access_enabled = false
-  https_only            = true
+
   site_config {
     minimum_tls_version = "1.2"
   }
@@ -128,24 +129,24 @@ resource "azurerm_linux_web_app" "webapp" {
 
 #  Deploy code from a public GitHub repo
 resource "azurerm_app_service_source_control" "sourcecontrol" {
-  app_id             = azurerm_linux_web_app.webapp.id
-  repo_url           = "https://github.com/Azure-Samples/nodejs-docs-hello-world"
-  branch             = "master"
+  app_id                 = azurerm_linux_web_app.webapp.id
+  branch                 = "master"
+  repo_url               = "https://github.com/Azure-Samples/nodejs-docs-hello-world"
   use_manual_integration = true
-  use_mercurial      = false
+  use_mercurial          = false
 }
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
-  enable_telemetry    = true
-  name                = module.naming.cdn_profile.name_unique
-  location            = azurerm_resource_group.this.location
-  sku_name            = "Premium_AzureFrontDoor"
-  resource_group_name = azurerm_resource_group.this.name
+  #source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  source                   = "../../"
+  enable_telemetry         = true
+  name                     = module.naming.cdn_profile.name_unique
+  location                 = azurerm_resource_group.this.location
+  sku_name                 = "Premium_AzureFrontDoor"
+  resource_group_name      = azurerm_resource_group.this.name
   response_timeout_seconds = 120
-  tags = {    environment = "example"  }
+  tags                     = { environment = "example" }
   origin_groups = {
     og1 = {
       name = "og1"
