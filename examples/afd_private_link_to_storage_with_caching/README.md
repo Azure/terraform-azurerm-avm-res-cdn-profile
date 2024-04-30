@@ -107,8 +107,8 @@ resource "azurerm_private_dns_zone_virtual_network_link" "dns_link" {
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
+  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  source              = "../../"
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
@@ -447,7 +447,7 @@ The following Modules are called:
 
 ### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
 
-Source: /workspaces/terraform-azurerm-avm-res-cdn-profile
+Source: ../../
 
 Version:
 

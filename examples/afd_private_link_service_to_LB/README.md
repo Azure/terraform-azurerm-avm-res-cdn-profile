@@ -103,7 +103,8 @@ resource "azurerm_private_link_service" "pls" {
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source              = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  #source              = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  source              = "../../"
   depends_on          = [azurerm_private_link_service.pls, time_sleep.wait_30_seconds]
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
@@ -442,7 +443,7 @@ The following Modules are called:
 
 ### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
 
-Source: /workspaces/terraform-azurerm-avm-res-cdn-profile
+Source: ../../
 
 Version:
 

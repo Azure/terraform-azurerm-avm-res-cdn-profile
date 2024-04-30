@@ -148,8 +148,8 @@ resource "azurerm_key_vault_certificate" "keyvaultcert" {
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
+  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  source              = "../../"
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
@@ -454,7 +454,7 @@ Version:
 
 ### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
 
-Source: /workspaces/terraform-azurerm-avm-res-cdn-profile
+Source: ../../
 
 Version:
 

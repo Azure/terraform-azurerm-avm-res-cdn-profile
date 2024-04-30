@@ -60,8 +60,8 @@ resource "azurerm_resource_group" "this" {
 # This is the module call
 module "azurerm_cdn_profile" {
   #depends_on = [ data.azurerm_resource_group.this ]
-  source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
+  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  source = "../../"
   tags = {
     environment = "production"
   }
@@ -223,7 +223,7 @@ The following Modules are called:
 
 ### <a name="module_azurerm_cdn_profile"></a> [azurerm\_cdn\_profile](#module\_azurerm\_cdn\_profile)
 
-Source: /workspaces/terraform-azurerm-avm-res-cdn-profile
+Source: ../../
 
 Version:
 

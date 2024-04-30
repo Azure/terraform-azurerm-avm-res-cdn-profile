@@ -18,6 +18,7 @@ variable "cdn_endpoint_custom_domains" {
 variable "cdn_endpoints" {
   type = map(object({
     name                      = string
+    tags                      = optional(map(any))
     is_http_allowed           = optional(bool, false)
     is_https_allowed          = optional(bool, true)
     content_types_to_compress = optional(list(string), [])
@@ -192,7 +193,6 @@ variable "cdn_endpoints" {
         preserve_unmatched_path = optional(bool, true)
       }))
     })))
-    tags = optional(map(string))
   }))
   default  = {}
   nullable = false
@@ -240,15 +240,6 @@ variable "diagnostic_settings" {
       ]
     )
     error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, or `event_hub_authorization_rule_resource_id`, must be set."
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.diagnostic_settings :
-        ((length(v.log_categories) > 0 && length(v.log_groups) > 0) ? false : true)
-      ]
-    )
-    error_message = "Set either Log categories or Log groups, you cant set both"
   }
 }
 
@@ -943,11 +934,11 @@ variable "rule_sets" {
 variable "rules" {
   type        = map(any)
   default     = {}
-  nullable    = false
   description = <<DESCRIPTION
   Manages a Front Door (standard/premium) Rule Set.. The following properties can be specified:
   - `name` - (Required) The name which should be used for this Front Door Rule Set.
   DESCRIPTION
+  nullable    = false
 }
 
 variable "sku_name" {

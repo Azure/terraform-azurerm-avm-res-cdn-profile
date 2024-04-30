@@ -3,6 +3,7 @@ resource "azurerm_cdn_endpoint" "endpoint" {
 
   location                      = var.location
   name                          = each.value.name
+  tags                          = each.value.tags
   profile_name                  = azapi_resource.front_door_profile.name
   resource_group_name           = var.resource_group_name
   content_types_to_compress     = each.value.content_types_to_compress

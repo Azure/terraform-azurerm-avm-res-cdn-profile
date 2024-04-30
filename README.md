@@ -302,7 +302,7 @@ Type:
 map(object({
     name                                     = optional(string, null)
     log_categories                           = optional(set(string), [])
-    log_groups                               = optional(set(string), [])
+    log_groups                               = optional(set(string), ["allLogs"])
     metric_categories                        = optional(set(string), ["AllMetrics"])
     log_analytics_destination_type           = optional(string, "Dedicated")
     workspace_resource_id                    = optional(string, null)
@@ -756,7 +756,8 @@ Default: `[]`
 
 ### <a name="input_rules"></a> [rules](#input\_rules)
 
-Description: n/a
+Description:   Manages a Front Door (standard/premium) Rule Set.. The following properties can be specified:
+  - `name` - (Required) The name which should be used for this Front Door Rule Set.
 
 Type: `map(any)`
 
@@ -774,17 +775,13 @@ Default: `"Standard_AzureFrontDoor"`
 
 Description: Map of tags to assign to the Azure Front Door resource.
 
-Type: `map(any)`
+Type: `map(string)`
 
 Default: `null`
 
 ## Outputs
 
 The following outputs are exported:
-
-### <a name="output_epslist1"></a> [epslist1](#output\_epslist1)
-
-Description: n/a
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 

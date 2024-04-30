@@ -117,8 +117,8 @@ Managed Identity
 Azure Monitor Alerts
 */
 module "azurerm_cdn_frontdoor_profile" {
-  source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
+  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
+  source              = "../../"
   enable_telemetry    = true
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
@@ -145,7 +145,7 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  origins = {
+  origin = {
     origin1 = {
       name                           = "example-origin"
       origin_group_name              = "og1"
@@ -352,7 +352,6 @@ module "azurerm_cdn_frontdoor_profile" {
       workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
       storage_account_resource_id    = module.avm_storage_account.id
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
-
     }
     eventhub_diag = {
       name                                     = "eventhubforwarding"
@@ -360,7 +359,6 @@ module "azurerm_cdn_frontdoor_profile" {
       metric_categories                        = ["AllMetrics"]
       event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
       event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
-
     }
   }
 
@@ -467,7 +465,7 @@ Version:
 
 ### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
 
-Source: /workspaces/terraform-azurerm-avm-res-cdn-profile
+Source: ../../
 
 Version:
 

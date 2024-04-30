@@ -346,7 +346,6 @@ module "azurerm_cdn_frontdoor_profile" {
       workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
       storage_account_resource_id    = module.avm_storage_account.id
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
-
     }
     eventhub_diag = {
       name                                     = "eventhubforwarding"
@@ -354,7 +353,6 @@ module "azurerm_cdn_frontdoor_profile" {
       metric_categories                        = ["AllMetrics"]
       event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
       event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
-
     }
   }
 
