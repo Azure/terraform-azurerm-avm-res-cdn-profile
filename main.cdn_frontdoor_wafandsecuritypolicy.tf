@@ -6,13 +6,13 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "wafs" {
 
   mode                              = each.value.mode
   name                              = each.value.name
-  tags                              = each.value.tags
   resource_group_name               = each.value.resource_group_name
   sku_name                          = each.value.sku_name
   custom_block_response_body        = each.value.custom_block_response_body
   custom_block_response_status_code = each.value.custom_block_response_status_code
   enabled                           = each.value.enabled
   redirect_url                      = each.value.redirect_url
+  tags                              = each.value.tags
 
   dynamic "custom_rule" {
     for_each = try(each.value.custom_rules, null)

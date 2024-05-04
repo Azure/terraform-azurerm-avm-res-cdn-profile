@@ -3,7 +3,6 @@ resource "azurerm_cdn_endpoint" "endpoint" {
 
   location                      = var.location
   name                          = each.value.name
-  tags                          = each.value.tags
   profile_name                  = azapi_resource.front_door_profile.name
   resource_group_name           = var.resource_group_name
   content_types_to_compress     = each.value.content_types_to_compress
@@ -14,6 +13,7 @@ resource "azurerm_cdn_endpoint" "endpoint" {
   origin_path                   = each.value.origin_path
   probe_path                    = each.value.probe_path
   querystring_caching_behaviour = each.value.querystring_caching_behaviour
+  tags                          = each.value.tags
 
   dynamic "origin" {
     for_each = each.value.origins
