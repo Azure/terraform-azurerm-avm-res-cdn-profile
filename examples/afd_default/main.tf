@@ -1,9 +1,13 @@
 terraform {
-  required_version = ">= 1.3.0"
+  required_version = "~> 1.5"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.7.0, < 4.0.0"
+      version = "~> 3.74"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
     }
   }
 }
@@ -12,15 +16,6 @@ provider "azurerm" {
   features {}
 }
 
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetryinfo.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
-}
 
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
@@ -31,7 +26,7 @@ resource "random_integer" "region_index" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  version = ">= 0.3.0"
 }
 
 module "regions" {
@@ -49,7 +44,7 @@ resource "azurerm_resource_group" "this" {
 module "azurerm_cdn_frontdoor_profile" {
   #source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source              = "../../"
-  enable_telemetry    = true
+  enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
   sku_name            = "Standard_AzureFrontDoor"

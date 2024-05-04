@@ -5,11 +5,15 @@ This deploys the module in its simplest form.
 
 ```hcl
 terraform {
-  required_version = ">= 1.3.0"
+  required_version = "~> 1.5"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.7.0, < 4.0.0"
+      version = "~> 3.74"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
     }
   }
 }
@@ -17,17 +21,6 @@ terraform {
 provider "azurerm" {
   features {}
 }
-
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetryinfo.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
-}
-
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
   max = length(module.regions.regions) - 1
@@ -61,8 +54,8 @@ resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
 
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
-  source = "Azure/avm-res-keyvault-vault/azurerm"
-  #version             = "0.5.1"
+  source              = "Azure/avm-res-keyvault-vault/azurerm"
+  version             = "0.5.3"
   tenant_id           = data.azurerm_client_config.current.tenant_id
   name                = module.naming.key_vault.name_unique
   resource_group_name = azurerm_resource_group.this.name
@@ -150,7 +143,7 @@ resource "azurerm_key_vault_certificate" "keyvaultcert" {
 module "azurerm_cdn_frontdoor_profile" {
   # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source              = "../../"
-  enable_telemetry    = true
+  enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
   sku_name            = "Standard_AzureFrontDoor"
@@ -397,17 +390,19 @@ module "azurerm_cdn_frontdoor_profile" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 4.0.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.74)
+
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5)
 
 ## Providers
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.7.0, < 4.0.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.74)
 
-- <a name="provider_random"></a> [random](#provider\_random)
+- <a name="provider_random"></a> [random](#provider\_random) (~> 3.5)
 
 ## Resources
 
@@ -450,7 +445,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version:
+Version: 0.5.3
 
 ### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
 

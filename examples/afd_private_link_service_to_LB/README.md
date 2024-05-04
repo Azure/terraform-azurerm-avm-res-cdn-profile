@@ -5,27 +5,25 @@ This deploys the module in its simplest form.
 
 ```hcl
 terraform {
-  required_version = ">= 1.3.0"
+  required_version = "~> 1.5"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.7.0, < 4.0.0"
+      version = "~> 3.74"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+    time = {
+      source  = "hashicorp/time"
+      version = "0.11.1"
     }
   }
 }
 
 provider "azurerm" {
   features {}
-}
-
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetryinfo.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
 }
 
 # This allows us to randomize the region for the resource group.
@@ -44,8 +42,6 @@ module "regions" {
   source  = "Azure/regions/azurerm"
   version = ">= 0.3.0"
 }
-
-data "azurerm_client_config" "current" {}
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
@@ -106,7 +102,7 @@ module "azurerm_cdn_frontdoor_profile" {
   #source              = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source              = "../../"
   depends_on          = [azurerm_private_link_service.pls, time_sleep.wait_30_seconds]
-  enable_telemetry    = true
+  enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
   sku_name            = "Premium_AzureFrontDoor"
@@ -387,19 +383,23 @@ resource "time_sleep" "wait_30_seconds" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 4.0.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.74)
+
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5)
+
+- <a name="requirement_time"></a> [time](#requirement\_time) (0.11.1)
 
 ## Providers
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.7.0, < 4.0.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.74)
 
-- <a name="provider_random"></a> [random](#provider\_random)
+- <a name="provider_random"></a> [random](#provider\_random) (~> 3.5)
 
-- <a name="provider_time"></a> [time](#provider\_time)
+- <a name="provider_time"></a> [time](#provider\_time) (0.11.1)
 
 ## Resources
 
@@ -411,8 +411,7 @@ The following resources are used by this module:
 - [azurerm_subnet.subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
-- [time_sleep.wait_30_seconds](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
-- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
+- [time_sleep.wait_30_seconds](https://registry.terraform.io/providers/hashicorp/time/0.11.1/docs/resources/sleep) (resource)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs

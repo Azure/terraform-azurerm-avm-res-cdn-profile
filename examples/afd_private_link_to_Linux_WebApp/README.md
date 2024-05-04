@@ -5,27 +5,21 @@ This deploys the module in its simplest form.
 
 ```hcl
 terraform {
-  required_version = ">= 1.3.0"
+  required_version = "~> 1.5"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.7.0, < 4.0.0"
+      version = "~> 3.74"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
     }
   }
 }
 
 provider "azurerm" {
   features {}
-}
-
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetryinfo.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
 }
 
 # This allows us to randomize the region for the resource group.
@@ -52,9 +46,9 @@ resource "azurerm_resource_group" "this" {
 }
 
 # Creating App service plan with premium V3 SKU
-resource "azurerm_service_plan" "ASP" {
+resource "azurerm_service_plan" "appservice" {
   location            = azurerm_resource_group.this.location
-  name                = "my-ASP"
+  name                = "my-appservice"
   os_type             = "Linux"
   resource_group_name = azurerm_resource_group.this.name
   sku_name            = "P1v3"
@@ -124,7 +118,7 @@ resource "azurerm_linux_web_app" "webapp" {
   location                      = azurerm_resource_group.this.location
   name                          = "my-LinuxWebApp"
   resource_group_name           = azurerm_resource_group.this.name
-  service_plan_id               = azurerm_service_plan.ASP.id
+  service_plan_id               = azurerm_service_plan.appservice.id
   https_only                    = true
   public_network_access_enabled = false
 
@@ -146,7 +140,7 @@ resource "azurerm_app_service_source_control" "sourcecontrol" {
 module "azurerm_cdn_frontdoor_profile" {
   #source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source                   = "../../"
-  enable_telemetry         = true
+  enable_telemetry         = var.enable_telemetry
   name                     = module.naming.cdn_profile.name_unique
   location                 = azurerm_resource_group.this.location
   sku_name                 = "Premium_AzureFrontDoor"
@@ -425,17 +419,19 @@ module "azurerm_cdn_frontdoor_profile" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 4.0.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.74)
+
+- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5)
 
 ## Providers
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.7.0, < 4.0.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.74)
 
-- <a name="provider_random"></a> [random](#provider\_random)
+- <a name="provider_random"></a> [random](#provider\_random) (~> 3.5)
 
 ## Resources
 
@@ -444,7 +440,7 @@ The following resources are used by this module:
 - [azurerm_app_service_source_control.sourcecontrol](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/app_service_source_control) (resource)
 - [azurerm_linux_web_app.webapp](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_web_app) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_service_plan.ASP](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/service_plan) (resource)
+- [azurerm_service_plan.appservice](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/service_plan) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
 <!-- markdownlint-disable MD013 -->
