@@ -188,7 +188,7 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
       }
     }
     dynamic "request_method_condition" {
-      for_each = { for key, value in try(each.value.conditions == null, {}) : key => value
+      for_each = { for key, value in each.value.conditions : key => value
         if key == "request_method_condition"
       }
       content {
