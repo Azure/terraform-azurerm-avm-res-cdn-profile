@@ -788,6 +788,16 @@ variable "front_door_rule_sets" {
   DESCRIPTION
 }
 
+variable "front_door_rules" {
+  type        = map(any)
+  default     = {}
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Rules.
+  refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule#arguments-reference for Azure Front door rules arguments reference.
+  DESCRIPTION
+  nullable    = false
+}
+
 variable "front_door_secret" {
   type = object({
     name                     = string
@@ -931,16 +941,6 @@ variable "role_assignments" {
   - `principal_type` - (Optional) The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
   
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
-  DESCRIPTION
-  nullable    = false
-}
-
-variable "front_door_rules" {
-  type        = map(any)
-  default     = {}
-  description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Rules.
-  refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule#arguments-reference for Azure Front door rules arguments reference.
   DESCRIPTION
   nullable    = false
 }

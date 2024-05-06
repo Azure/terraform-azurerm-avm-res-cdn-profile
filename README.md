@@ -616,6 +616,15 @@ Type: `set(string)`
 
 Default: `[]`
 
+### <a name="input_front_door_rules"></a> [front\_door\_rules](#input\_front\_door\_rules)
+
+Description:   Manages a Front Door (standard/premium) Rules.  
+  refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule#arguments-reference for Azure Front door rules arguments reference.
+
+Type: `map(any)`
+
+Default: `{}`
+
 ### <a name="input_front_door_secret"></a> [front\_door\_secret](#input\_front\_door\_secret)
 
 Description:   Manages a Front Door (standard/premium) Secret.
@@ -744,15 +753,6 @@ map(object({
     delegated_managed_identity_resource_id = optional(string, null)
   }))
 ```
-
-Default: `{}`
-
-### <a name="input_rules"></a> [rules](#input\_rules)
-
-Description:   Manages a Front Door (standard/premium) Rules.  
-  refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule#arguments-reference for Azure Front door rules arguments reference.
-
-Type: `map(any)`
 
 Default: `{}`
 
