@@ -9,15 +9,6 @@ variable "resource_group_name" {
   description = "The resource group where the resources will be deployed."
 }
 
-variable "cdn_endpoint_custom_domains" {
-  type        = map(any) #TODO
-  default     = {}
-  description = <<DESCRIPTION
-  Manages a Custom Domain for a CDN Endpoint.
-  DESCRIPTION
-  nullable    = false
-}
-
 variable "cdn_endpoints" {
   type = map(object({
     name                      = string
@@ -260,23 +251,6 @@ variable "enable_telemetry" {
   DESCRIPTION
 }
 
-variable "endpoints" {
-  type = map(object({
-    name    = string
-    enabled = optional(bool, true)
-    tags    = optional(map(any))
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Endpoint.
-  
-  - `name` - (Required) The name which should be used for this Front Door Endpoint.  
-  - `enabled` - (Optional) Specifies if this Front Door Endpoint is enabled? Defaults to true.
-  - 'tags' - (Optional) Specifies a mapping of tags which should be assigned to the Front Door Endpoint.
-  DESCRIPTION
-  nullable    = false
-}
-
 variable "front_door_custom_domains" {
   type = map(object({
     name        = string
@@ -299,6 +273,23 @@ variable "front_door_custom_domains" {
     - 'certificate_type' - (Optional) Defines the source of the SSL certificate. Possible values include 'CustomerCertificate' and 'ManagedCertificate'. Defaults to 'ManagedCertificate'.
     - 'minimum_tls_version' - (Optional) TLS protocol version that will be used for Https. Possible values include 'TLS10' and 'TLS12'. Defaults to 'TLS12'.
     - 'cdn_frontdoor_secret_id' - (Optional) Resource ID of the Front Door Secret.
+  DESCRIPTION
+  nullable    = false
+}
+
+variable "front_door_endpoints" {
+  type = map(object({
+    name    = string
+    enabled = optional(bool, true)
+    tags    = optional(map(any))
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Endpoint.
+  
+  - `name` - (Required) The name which should be used for this Front Door Endpoint.  
+  - `enabled` - (Optional) Specifies if this Front Door Endpoint is enabled? Defaults to true.
+  - 'tags' - (Optional) Specifies a mapping of tags which should be assigned to the Front Door Endpoint.
   DESCRIPTION
   nullable    = false
 }
@@ -467,6 +458,336 @@ variable "front_door_firewall_policies" {
   }
 }
 
+variable "front_door_origin_groups" {
+  type = map(object({
+    name = string
+    health_probe = optional(map(object({
+      interval_in_seconds = number
+      path                = optional(string, "/")
+      protocol            = string
+      request_type        = optional(string, "HEAD")
+    })), {})
+    load_balancing = map(object({
+      additional_latency_in_milliseconds = optional(number, 50)
+      sample_size                        = optional(number, 4)
+      successful_samples_required        = optional(number, 3)
+    }))
+  }))
+  # The below 2 properties will be enabled in near future
+  # restore_traffic_time_to_healed_or_new_endpoint_in_minutes = optional(number, 10)
+  # session_affinity_enabled = optional(bool, true)
+  default     = {}
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Origin group.
+  
+  - `name` - (Required) The name which should be used for this Front Door Origin Group. 
+  - `load_balancing` - (Required) A load_balancing block as defined below:-
+      - 'additional_latency_in_milliseconds' - (Optional) Specifies the additional latency in milliseconds for probes to fall into the lowest latency bucket. Possible values are between 0 and 1000 milliseconds (inclusive). Defaults to 50
+      - 'sample_size' - (Optional) Specifies the number of samples to consider for load balancing decisions. Possible values are between 0 and 255 (inclusive). Defaults to 4.
+      - 'successful_samples_required' - (Optional) Specifies the number of samples within the sample period that must succeed. Possible values are between 0 and 255 (inclusive). Defaults to 3.
+  - 'health_probe' - (Optional) A health_probe block as defined below:-
+      - 'protocol' - (Required) Specifies the protocol to use for health probe. Possible values are Http and Https.
+      - 'interval_in_seconds' - (Required) Specifies the number of seconds between health probes. Possible values are between 5 and 31536000 seconds (inclusive).
+      - 'request_type' - (Optional) Specifies the type of health probe request that is made. Possible values are GET and HEAD. Defaults to HEAD.
+      - 'path' - (Optional) Specifies the path relative to the origin that is used to determine the health of the origin. Defaults to /.
+  DESCRIPTION
+  nullable    = false
+
+  # validation {
+  #   condition = alltrue(
+  #     [
+  #       for _, v in var.front_door_origin_groups :
+  #       v.restore_traffic_time_to_healed_or_new_endpoint_in_minutes >= 0 && v.restore_traffic_time_to_healed_or_new_endpoint_in_minutes <= 50
+  #     ]
+  #   )
+  #   error_message = "Possible values must be between 0 & 50 minutes"
+  # }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_origin_groups :
+        alltrue(
+          [
+            for _, x in v["health_probe"] : contains(["Http", "Https"], x["protocol"])
+          ]
+        )
+      ]
+    )
+    error_message = "Value must be either HTTP or HTTPS"
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_origin_groups :
+        alltrue(
+          [
+            for _, x in v["health_probe"] : x["interval_in_seconds"] >= 5 && x["interval_in_seconds"] <= 31536000
+          ]
+        )
+      ]
+    )
+    error_message = "Possible values must be between 5 & 31536000 seconds"
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_origin_groups :
+        alltrue(
+          [
+            for _, x in v["health_probe"] : contains(["GET", "HEAD"], x["request_type"])
+          ]
+        )
+      ]
+    )
+    error_message = "Value must be either GET or HEAD"
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_origin_groups :
+        alltrue(
+          [
+            for _, x in v["load_balancing"] : x["additional_latency_in_milliseconds"] >= 0 && x["additional_latency_in_milliseconds"] <= 1000
+          ]
+        )
+      ]
+    )
+    error_message = "Possible values must be between 0 & 1000 milliseconds"
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_origin_groups :
+        alltrue(
+          [
+            for _, x in v["load_balancing"] : x["sample_size"] >= 0 && x["sample_size"] <= 255
+          ]
+        )
+      ]
+    )
+    error_message = "Possible values must be between 0 & 255"
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_origin_groups :
+        alltrue(
+          [
+            for _, x in v["load_balancing"] : x["successful_samples_required"] >= 0 && x["successful_samples_required"] <= 255
+          ]
+        )
+      ]
+    )
+    error_message = "Possible values must be between 0 & 255"
+  }
+}
+
+variable "front_door_origins" {
+  type = map(object({
+    name                           = string
+    origin_group_name              = string
+    host_name                      = string
+    certificate_name_check_enabled = string
+    enabled                        = optional(bool, true)
+    http_port                      = optional(number, 80)
+    https_port                     = optional(number, 443)
+    host_header                    = optional(string, null)
+    priority                       = optional(number, 1)
+    weight                         = optional(number, 500)
+    private_link = optional(map(object({
+      request_message        = string
+      target_type            = optional(string, null)
+      location               = string
+      private_link_target_id = string
+    })), null)
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Origin.
+  
+  - `name` - (Required) The name which should be used for this Front Door Origin.
+  - 'origin_group_name' - (Required) The name of the origin group to associate the origin with.
+  - `host_name` - (Required) The IPv4 address, IPv6 address or Domain name of the Origin.
+  - 'certificate_name_check_enabled' - (Required) Specifies whether certificate name checks are enabled for this origin.
+  - 'enabled' - (Optional) Should the origin be enabled? Possible values are true or false. Defaults to true.
+  - 'http_port' - (Optional) The value of the HTTP port. Must be between 1 and 65535. Defaults to 80
+  - 'https_port' - (Optional) The value of the HTTPS port. Must be between 1 and 65535. Defaults to 443.
+  - 'origin_host_header' - (Optional) The host header value (an IPv4 address, IPv6 address or Domain name) which is sent to the origin with each request. If unspecified the hostname from the request will be used.
+  - 'priority' - (Optional) Priority of origin in given origin group for load balancing. Higher priorities will not be used for load balancing if any lower priority origin is healthy. Must be between 1 and 5 (inclusive). Defaults to 1
+  - 'private_link' - (Optional) A private_link block as defined below:-
+      - 'request_message' - (Optional) Specifies the request message that will be submitted to the private_link_target_id when requesting the private link endpoint connection. Values must be between 1 and 140 characters in length. Defaults to Access request for CDN FrontDoor Private Link Origin.
+      - 'target_type' - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are blob, blob_secondary, web and sites.
+      - 'location' - (Required) Specifies the location where the Private Link resource should exist. Changing this forces a new resource to be created.
+  - 'weight' - (Optional) The weight of the origin in a given origin group for load balancing. Must be between 1 and 1000. Defaults to 500.
+  DESCRIPTION
+  nullable    = false
+
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_origins : v.http_port >= 1 && v.http_port <= 65535
+      ]
+    )
+    error_message = "Possible values must be between 1 & 65535"
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_origins : v.https_port >= 1 && v.https_port <= 65535
+      ]
+    )
+    error_message = "Possible values must be between 1 & 65535"
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_origins : v.priority >= 1 && v.priority <= 5
+      ]
+    )
+    error_message = "Possible values must be between 1 & 5"
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_origins : v.weight >= 1 && v.weight <= 1000
+      ]
+    )
+    error_message = "Possible values must be between 1 & 1000"
+  }
+  # Need to verify below validation
+  validation {
+    condition = alltrue(
+      [
+        for v in var.front_door_origins : v.private_link == null ? true : alltrue(
+          [
+            for x in v.private_link : length(x.request_message) >= 10 && length(x.request_message) <= 140
+          ]
+        )
+      ]
+    )
+    error_message = "Values must be between 1 and 140 characters in length"
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_origins : v["private_link"] == null ? true : alltrue(
+          [
+            for _, x in v["private_link"] : x["target_type"] == null ? true : contains(["blob", "blob_secondary", "web", "sites"], x["target_type"])
+          ]
+        )
+      ]
+    )
+    error_message = "Possible values are 'blob', 'blob_secondary', 'web' and 'sites'. Set it to 'null' for Load balancer as origin"
+  }
+}
+
+variable "front_door_routes" {
+  type = map(object({
+    name                      = string
+    origin_group_name         = string
+    origin_names              = list(string)
+    endpoint_name             = string
+    forwarding_protocol       = optional(string, "HttpsOnly")
+    supported_protocols       = list(string)
+    patterns_to_match         = list(string)
+    link_to_default_domain    = optional(bool, true)
+    https_redirect_enabled    = optional(bool, true)
+    custom_domain_names       = optional(list(string))
+    enabled                   = optional(bool, true)
+    rule_set_names            = optional(list(string))
+    cdn_frontdoor_origin_path = optional(string, null)
+    cache = optional(map(object({
+      query_string_caching_behavior = optional(string, "IgnoreQueryString")
+      query_strings                 = optional(list(string))
+      compression_enabled           = optional(bool, false)
+      content_types_to_compress     = optional(list(string))
+    })), {})
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Route.
+  
+  - `name` - (Required) The name which should be used for this Front Door Route. Valid values must begin with a letter or number, end with a letter or number and may only contain letters, numbers and hyphens with a maximum length of 90 characters.
+  - 'origin_group_name' - (Required) The name of the origin group to associate the route with.
+  - `origin_names` - (Required) The name of the origins to associate the route with.
+  - 'endpoint_name' - (Required) The name of the origins to associate the route with.
+  - 'forwarding_protocol' - (Optional) The Protocol that will be use when forwarding traffic to backends. Possible values are 'HttpOnly', 'HttpsOnly' or 'MatchRequest'. Defaults to 'MatchRequest'.
+  - 'patterns_to_match' - (Required) The route patterns of the rule.
+  - 'supported_protocols' - (Required) One or more Protocols supported by this Front Door Route. Possible values are 'Http' or 'Https'.
+  - 'https_redirect_enabled' - (Optional) Automatically redirect HTTP traffic to HTTPS traffic? Possible values are true or false. Defaults to true.
+  - 'link_to_default_domain' - (Optional) Should this Front Door Route be linked to the default endpoint? Possible values include true or false. Defaults to true.
+  - 'cache' - (Optional) A cache block as defined below:-
+      - 'query_string_caching_behavior' - (Optional) Defines how the Front Door Route will cache requests that include query strings. Possible values include 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'. Defaults to 'IgnoreQueryString'.
+      - 'query_strings' - (Optional) Query strings to include or ignore.
+      - 'compression_enabled' - (Optional) Is content compression enabled? Possible values are true or false. Defaults to false.
+      - 'content_types_to_compress' - (Optional) A list of one or more Content types (formerly known as MIME types) to compress. Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'.
+  DESCRIPTION
+  nullable    = false
+
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_routes :
+        can(regex("^[a-zA-Z0-9][-a-zA-Z0-9]{0,88}[a-zA-Z0-9]$", v.name))
+      ]
+    )
+    error_message = "Valid values must begin with a letter or number, end with a letter or number and may only contain letters, numbers and hyphens with a maximum length of 90 characters."
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_routes :
+        contains(["HttpOnly", "HttpsOnly", "MatchRequest"], v.forwarding_protocol)
+      ]
+    )
+    error_message = "Possible values are 'HttpOnly', 'HttpsOnly' or 'MatchRequest'.Defaults to 'HttpsOnly'"
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_routes : length(v.supported_protocols) > 0 && alltrue([for protocol in v.supported_protocols : protocol == "Http" || protocol == "Https"]) &&
+        (!v.https_redirect_enabled || (contains(v.supported_protocols, "Http") && contains(v.supported_protocols, "Https")))
+      ]
+    )
+    error_message = "Possible values are 'Http', 'Https' only. If 'https_redirect_enabled' is set to true the 'supported_protocols' field must contain both 'Http' and 'Https' values. "
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_routes :
+        alltrue(
+          [
+            for _, x in v["cache"] : contains(["IgnoreQueryString", "IgnoreSpecifiedQueryStrings", "IncludeSpecifiedQueryStrings", "UseQueryString"], x["query_string_caching_behavior"])
+          ]
+        )
+      ]
+    )
+    error_message = "Possible values includes 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'. Defaults to 'IgnoreQueryString'."
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.front_door_routes :
+        alltrue(
+          [
+            for _, x in v["cache"] : alltrue([for y in x["content_types_to_compress"] : contains(["application/eot", "application/font", "application/font-sfnt", "application/javascript", "application/json", "application/opentype", "application/otf", "application/pkcs7-mime", "application/truetype", "application/ttf", "application/vnd.ms-fontobject", "application/xhtml+xml", "application/xml", "application/xml+rss", "application/x-font-opentype", "application/x-font-truetype", "application/x-font-ttf", "application/x-httpd-cgi", "application/x-mpegurl", "application/x-opentype", "application/x-otf", "application/x-perl", "application/x-ttf", "application/x-javascript", "font/eot", "font/ttf", "font/otf", "font/opentype", "image/svg+xml", "text/css", "text/csv", "text/html", "text/javascript", "text/js", "text/plain", "text/richtext", "text/tab-separated-values", "text/xml", "text/x-script", "text/x-component", "text/x-java-source"], y)])
+          ]
+        )
+      ]
+    )
+    error_message = "Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'."
+  }
+}
+
+variable "front_door_rule_sets" {
+  type        = set(string)
+  default     = []
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Rule Set.. The following properties can be specified:
+  - `name` - (Required) The name which should be used for this Front Door Rule Set.
+  DESCRIPTION
+}
+
 variable "front_door_secret" {
   type = object({
     name                     = string
@@ -571,229 +892,6 @@ variable "managed_identities" {
   nullable    = false
 }
 
-variable "origin" {
-  type = map(object({
-    name                           = string
-    origin_group_name              = string
-    host_name                      = string
-    certificate_name_check_enabled = string
-    enabled                        = optional(bool, true)
-    http_port                      = optional(number, 80)
-    https_port                     = optional(number, 443)
-    host_header                    = optional(string, null)
-    priority                       = optional(number, 1)
-    weight                         = optional(number, 500)
-    private_link = optional(map(object({
-      request_message        = string
-      target_type            = optional(string, null)
-      location               = string
-      private_link_target_id = string
-    })), null)
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Origin.
-  
-  - `name` - (Required) The name which should be used for this Front Door Origin.
-  - 'origin_group_name' - (Required) The name of the origin group to associate the origin with.
-  - `host_name` - (Required) The IPv4 address, IPv6 address or Domain name of the Origin.
-  - 'certificate_name_check_enabled' - (Required) Specifies whether certificate name checks are enabled for this origin.
-  - 'enabled' - (Optional) Should the origin be enabled? Possible values are true or false. Defaults to true.
-  - 'http_port' - (Optional) The value of the HTTP port. Must be between 1 and 65535. Defaults to 80
-  - 'https_port' - (Optional) The value of the HTTPS port. Must be between 1 and 65535. Defaults to 443.
-  - 'origin_host_header' - (Optional) The host header value (an IPv4 address, IPv6 address or Domain name) which is sent to the origin with each request. If unspecified the hostname from the request will be used.
-  - 'priority' - (Optional) Priority of origin in given origin group for load balancing. Higher priorities will not be used for load balancing if any lower priority origin is healthy. Must be between 1 and 5 (inclusive). Defaults to 1
-  - 'private_link' - (Optional) A private_link block as defined below:-
-      - 'request_message' - (Optional) Specifies the request message that will be submitted to the private_link_target_id when requesting the private link endpoint connection. Values must be between 1 and 140 characters in length. Defaults to Access request for CDN FrontDoor Private Link Origin.
-      - 'target_type' - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are blob, blob_secondary, web and sites.
-      - 'location' - (Required) Specifies the location where the Private Link resource should exist. Changing this forces a new resource to be created.
-  - 'weight' - (Optional) The weight of the origin in a given origin group for load balancing. Must be between 1 and 1000. Defaults to 500.
-  DESCRIPTION
-  nullable    = false
-
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.origin : v.http_port >= 1 && v.http_port <= 65535
-      ]
-    )
-    error_message = "Possible values must be between 1 & 65535"
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.origin : v.https_port >= 1 && v.https_port <= 65535
-      ]
-    )
-    error_message = "Possible values must be between 1 & 65535"
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.origin : v.priority >= 1 && v.priority <= 5
-      ]
-    )
-    error_message = "Possible values must be between 1 & 5"
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.origin : v.weight >= 1 && v.weight <= 1000
-      ]
-    )
-    error_message = "Possible values must be between 1 & 1000"
-  }
-  # Need to verify below validation
-  validation {
-    condition = alltrue(
-      [
-        for v in var.origin : v.private_link == null ? true : alltrue(
-          [
-            for x in v.private_link : length(x.request_message) >= 10 && length(x.request_message) <= 140
-          ]
-        )
-      ]
-    )
-    error_message = "Values must be between 1 and 140 characters in length"
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.origin : v["private_link"] == null ? true : alltrue(
-          [
-            for _, x in v["private_link"] : x["target_type"] == null ? true : contains(["blob", "blob_secondary", "web", "sites"], x["target_type"])
-          ]
-        )
-      ]
-    )
-    error_message = "Possible values are 'blob', 'blob_secondary', 'web' and 'sites'. Set it to 'null' for Load balancer as origin"
-  }
-}
-
-variable "origin_groups" {
-  type = map(object({
-    name = string
-    health_probe = optional(map(object({
-      interval_in_seconds = number
-      path                = optional(string, "/")
-      protocol            = string
-      request_type        = optional(string, "HEAD")
-    })), {})
-    load_balancing = map(object({
-      additional_latency_in_milliseconds = optional(number, 50)
-      sample_size                        = optional(number, 4)
-      successful_samples_required        = optional(number, 3)
-    }))
-  }))
-  # The below 2 properties will be enabled in near future
-  # restore_traffic_time_to_healed_or_new_endpoint_in_minutes = optional(number, 10)
-  # session_affinity_enabled = optional(bool, true)
-  default     = {}
-  description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Origin group.
-  
-  - `name` - (Required) The name which should be used for this Front Door Origin Group. 
-  - `load_balancing` - (Required) A load_balancing block as defined below:-
-      - 'additional_latency_in_milliseconds' - (Optional) Specifies the additional latency in milliseconds for probes to fall into the lowest latency bucket. Possible values are between 0 and 1000 milliseconds (inclusive). Defaults to 50
-      - 'sample_size' - (Optional) Specifies the number of samples to consider for load balancing decisions. Possible values are between 0 and 255 (inclusive). Defaults to 4.
-      - 'successful_samples_required' - (Optional) Specifies the number of samples within the sample period that must succeed. Possible values are between 0 and 255 (inclusive). Defaults to 3.
-  - 'health_probe' - (Optional) A health_probe block as defined below:-
-      - 'protocol' - (Required) Specifies the protocol to use for health probe. Possible values are Http and Https.
-      - 'interval_in_seconds' - (Required) Specifies the number of seconds between health probes. Possible values are between 5 and 31536000 seconds (inclusive).
-      - 'request_type' - (Optional) Specifies the type of health probe request that is made. Possible values are GET and HEAD. Defaults to HEAD.
-      - 'path' - (Optional) Specifies the path relative to the origin that is used to determine the health of the origin. Defaults to /.
-  DESCRIPTION
-  nullable    = false
-
-  # validation {
-  #   condition = alltrue(
-  #     [
-  #       for _, v in var.origin_groups :
-  #       v.restore_traffic_time_to_healed_or_new_endpoint_in_minutes >= 0 && v.restore_traffic_time_to_healed_or_new_endpoint_in_minutes <= 50
-  #     ]
-  #   )
-  #   error_message = "Possible values must be between 0 & 50 minutes"
-  # }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.origin_groups :
-        alltrue(
-          [
-            for _, x in v["health_probe"] : contains(["Http", "Https"], x["protocol"])
-          ]
-        )
-      ]
-    )
-    error_message = "Value must be either HTTP or HTTPS"
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.origin_groups :
-        alltrue(
-          [
-            for _, x in v["health_probe"] : x["interval_in_seconds"] >= 5 && x["interval_in_seconds"] <= 31536000
-          ]
-        )
-      ]
-    )
-    error_message = "Possible values must be between 5 & 31536000 seconds"
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.origin_groups :
-        alltrue(
-          [
-            for _, x in v["health_probe"] : contains(["GET", "HEAD"], x["request_type"])
-          ]
-        )
-      ]
-    )
-    error_message = "Value must be either GET or HEAD"
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.origin_groups :
-        alltrue(
-          [
-            for _, x in v["load_balancing"] : x["additional_latency_in_milliseconds"] >= 0 && x["additional_latency_in_milliseconds"] <= 1000
-          ]
-        )
-      ]
-    )
-    error_message = "Possible values must be between 0 & 1000 milliseconds"
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.origin_groups :
-        alltrue(
-          [
-            for _, x in v["load_balancing"] : x["sample_size"] >= 0 && x["sample_size"] <= 255
-          ]
-        )
-      ]
-    )
-    error_message = "Possible values must be between 0 & 255"
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.origin_groups :
-        alltrue(
-          [
-            for _, x in v["load_balancing"] : x["successful_samples_required"] >= 0 && x["successful_samples_required"] <= 255
-          ]
-        )
-      ]
-    )
-    error_message = "Possible values must be between 0 & 255"
-  }
-}
-
 variable "response_timeout_seconds" {
   type        = number
   default     = 120
@@ -837,130 +935,23 @@ variable "role_assignments" {
   nullable    = false
 }
 
-variable "routes" {
-  type = map(object({
-    name                      = string
-    origin_group_name         = string
-    origin_names              = list(string)
-    endpoint_name             = string
-    forwarding_protocol       = optional(string, "HttpsOnly")
-    supported_protocols       = list(string)
-    patterns_to_match         = list(string)
-    link_to_default_domain    = optional(bool, true)
-    https_redirect_enabled    = optional(bool, true)
-    custom_domain_names       = optional(list(string))
-    enabled                   = optional(bool, true)
-    rule_set_names            = optional(list(string))
-    cdn_frontdoor_origin_path = optional(string, null)
-    cache = optional(map(object({
-      query_string_caching_behavior = optional(string, "IgnoreQueryString")
-      query_strings                 = optional(list(string))
-      compression_enabled           = optional(bool, false)
-      content_types_to_compress     = optional(list(string))
-    })), {})
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Route.
-  
-  - `name` - (Required) The name which should be used for this Front Door Route. Valid values must begin with a letter or number, end with a letter or number and may only contain letters, numbers and hyphens with a maximum length of 90 characters.
-  - 'origin_group_name' - (Required) The name of the origin group to associate the route with.
-  - `origin_names` - (Required) The name of the origins to associate the route with.
-  - 'endpoint_name' - (Required) The name of the origins to associate the route with.
-  - 'forwarding_protocol' - (Optional) The Protocol that will be use when forwarding traffic to backends. Possible values are 'HttpOnly', 'HttpsOnly' or 'MatchRequest'. Defaults to 'MatchRequest'.
-  - 'patterns_to_match' - (Required) The route patterns of the rule.
-  - 'supported_protocols' - (Required) One or more Protocols supported by this Front Door Route. Possible values are 'Http' or 'Https'.
-  - 'https_redirect_enabled' - (Optional) Automatically redirect HTTP traffic to HTTPS traffic? Possible values are true or false. Defaults to true.
-  - 'link_to_default_domain' - (Optional) Should this Front Door Route be linked to the default endpoint? Possible values include true or false. Defaults to true.
-  - 'cache' - (Optional) A cache block as defined below:-
-      - 'query_string_caching_behavior' - (Optional) Defines how the Front Door Route will cache requests that include query strings. Possible values include 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'. Defaults to 'IgnoreQueryString'.
-      - 'query_strings' - (Optional) Query strings to include or ignore.
-      - 'compression_enabled' - (Optional) Is content compression enabled? Possible values are true or false. Defaults to false.
-      - 'content_types_to_compress' - (Optional) A list of one or more Content types (formerly known as MIME types) to compress. Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'.
-  DESCRIPTION
-  nullable    = false
-
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.routes :
-        can(regex("^[a-zA-Z0-9][-a-zA-Z0-9]{0,88}[a-zA-Z0-9]$", v.name))
-      ]
-    )
-    error_message = "Valid values must begin with a letter or number, end with a letter or number and may only contain letters, numbers and hyphens with a maximum length of 90 characters."
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.routes :
-        contains(["HttpOnly", "HttpsOnly", "MatchRequest"], v.forwarding_protocol)
-      ]
-    )
-    error_message = "Possible values are 'HttpOnly', 'HttpsOnly' or 'MatchRequest'.Defaults to 'HttpsOnly'"
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.routes : length(v.supported_protocols) > 0 && alltrue([for protocol in v.supported_protocols : protocol == "Http" || protocol == "Https"]) &&
-        (!v.https_redirect_enabled || (contains(v.supported_protocols, "Http") && contains(v.supported_protocols, "Https")))
-      ]
-    )
-    error_message = "Possible values are 'Http', 'Https' only. If 'https_redirect_enabled' is set to true the 'supported_protocols' field must contain both 'Http' and 'Https' values. "
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.routes :
-        alltrue(
-          [
-            for _, x in v["cache"] : contains(["IgnoreQueryString", "IgnoreSpecifiedQueryStrings", "IncludeSpecifiedQueryStrings", "UseQueryString"], x["query_string_caching_behavior"])
-          ]
-        )
-      ]
-    )
-    error_message = "Possible values includes 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'. Defaults to 'IgnoreQueryString'."
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.routes :
-        alltrue(
-          [
-            for _, x in v["cache"] : alltrue([for y in x["content_types_to_compress"] : contains(["application/eot", "application/font", "application/font-sfnt", "application/javascript", "application/json", "application/opentype", "application/otf", "application/pkcs7-mime", "application/truetype", "application/ttf", "application/vnd.ms-fontobject", "application/xhtml+xml", "application/xml", "application/xml+rss", "application/x-font-opentype", "application/x-font-truetype", "application/x-font-ttf", "application/x-httpd-cgi", "application/x-mpegurl", "application/x-opentype", "application/x-otf", "application/x-perl", "application/x-ttf", "application/x-javascript", "font/eot", "font/ttf", "font/otf", "font/opentype", "image/svg+xml", "text/css", "text/csv", "text/html", "text/javascript", "text/js", "text/plain", "text/richtext", "text/tab-separated-values", "text/xml", "text/x-script", "text/x-component", "text/x-java-source"], y)])
-          ]
-        )
-      ]
-    )
-    error_message = "Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'."
-  }
-}
-
-variable "rule_sets" {
-  type        = set(string)
-  default     = []
-  description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Rule Set.. The following properties can be specified:
-  - `name` - (Required) The name which should be used for this Front Door Rule Set.
-  DESCRIPTION
-}
-
-variable "rules" {
+variable "front_door_rules" {
   type        = map(any)
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Rule. 
+  Manages a Front Door (standard/premium) Rules.
   refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule#arguments-reference for Azure Front door rules arguments reference.
   DESCRIPTION
   nullable    = false
 }
 
-variable "sku_name" {
+variable "sku" {
   type        = string
   default     = "Standard_AzureFrontDoor"
   description = "The SKU name of the Azure Front Door. Default is `Standard`. Possible values are `standard` and `premium`.SKU name for CDN can be 'Standard_Akamai', 'Standard_ChinaCdn, 'Standard_Microsoft','Standard_Verizon' or 'Premium_Verizon'"
 
   validation {
-    condition     = contains(["Standard_AzureFrontDoor", "Premium_AzureFrontDoor", "Standard_Akamai", "Standard_ChinaCdn", "Standard_Microsoft", "Standard_Verizon", "Premium_Verizon"], var.sku_name)
+    condition     = contains(["Standard_AzureFrontDoor", "Premium_AzureFrontDoor", "Standard_Akamai", "Standard_ChinaCdn", "Standard_Microsoft", "Standard_Verizon", "Premium_Verizon"], var.sku)
     error_message = "The SKU must be either 'Standard' or 'Premium' for Front Door. For CDN use correct SKU name"
   }
 }

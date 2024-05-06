@@ -146,9 +146,9 @@ module "azurerm_cdn_frontdoor_profile" {
   enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
-  sku_name            = "Standard_AzureFrontDoor"
+  sku                 = "Standard_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
-  origin_groups = {
+  front_door_origin_groups = {
     og1 = {
       name = "og1"
       health_probe = {
@@ -168,7 +168,7 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-  origin = {
+  front_door_origins = {
     origin1 = {
       name                           = "example-origin"
       origin_group_name              = "og1"
@@ -208,7 +208,7 @@ module "azurerm_cdn_frontdoor_profile" {
 
   }
 
-  endpoints = {
+  front_door_endpoints = {
     ep1 = {
       name = module.naming.cdn_endpoint.name_unique
       tags = {
@@ -217,7 +217,7 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  routes = {
+  front_door_routes = {
     route1 = {
       name                   = "route1"
       endpoint_name          = "ep1"
@@ -239,9 +239,9 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  rule_sets = ["ruleset1", "ruleset2"]
+  front_door_rule_sets = ["ruleset1", "ruleset2"]
 
-  rules = {
+  front_door_rules = {
     rule3 = {
       name              = "examplerule3"
       order             = 1

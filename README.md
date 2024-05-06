@@ -44,7 +44,6 @@ The following resources are used by this module:
 
 - [azapi_resource.front_door_profile](https://registry.terraform.io/providers/Azure/azapi/1.9.0/docs/resources/resource) (resource)
 - [azurerm_cdn_endpoint.endpoint](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint) (resource)
-- [azurerm_cdn_endpoint_custom_domain.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint_custom_domain) (resource)
 - [azurerm_cdn_frontdoor_custom_domain.cds](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_custom_domain) (resource)
 - [azurerm_cdn_frontdoor_custom_domain_association.association](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_custom_domain_association) (resource)
 - [azurerm_cdn_frontdoor_endpoint.endpoints](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_endpoint) (resource)
@@ -83,14 +82,6 @@ Type: `string`
 ## Optional Inputs
 
 The following input variables are optional (have default values):
-
-### <a name="input_cdn_endpoint_custom_domains"></a> [cdn\_endpoint\_custom\_domains](#input\_cdn\_endpoint\_custom\_domains)
-
-Description:   Manages a Custom Domain for a CDN Endpoint.
-
-Type: `map(any)`
-
-Default: `{}`
 
 ### <a name="input_cdn_endpoints"></a> [cdn\_endpoints](#input\_cdn\_endpoints)
 
@@ -326,26 +317,6 @@ Type: `bool`
 
 Default: `true`
 
-### <a name="input_endpoints"></a> [endpoints](#input\_endpoints)
-
-Description:   Manages a Front Door (standard/premium) Endpoint.
-
-  - `name` - (Required) The name which should be used for this Front Door Endpoint.  
-  - `enabled` - (Optional) Specifies if this Front Door Endpoint is enabled? Defaults to true.
-  - 'tags' - (Optional) Specifies a mapping of tags which should be assigned to the Front Door Endpoint.
-
-Type:
-
-```hcl
-map(object({
-    name    = string
-    enabled = optional(bool, true)
-    tags    = optional(map(any))
-  }))
-```
-
-Default: `{}`
-
 ### <a name="input_front_door_custom_domains"></a> [front\_door\_custom\_domains](#input\_front\_door\_custom\_domains)
 
 Description:   Manages a Front Door (standard/premium) Custom Domain.
@@ -370,6 +341,26 @@ map(object({
       minimum_tls_version     = optional(string, "TLS13")
       cdn_frontdoor_secret_id = optional(string, null)
     })
+  }))
+```
+
+Default: `{}`
+
+### <a name="input_front_door_endpoints"></a> [front\_door\_endpoints](#input\_front\_door\_endpoints)
+
+Description:   Manages a Front Door (standard/premium) Endpoint.
+
+  - `name` - (Required) The name which should be used for this Front Door Endpoint.  
+  - `enabled` - (Optional) Specifies if this Front Door Endpoint is enabled? Defaults to true.
+  - 'tags' - (Optional) Specifies a mapping of tags which should be assigned to the Front Door Endpoint.
+
+Type:
+
+```hcl
+map(object({
+    name    = string
+    enabled = optional(bool, true)
+    tags    = optional(map(any))
   }))
 ```
 
@@ -489,6 +480,142 @@ map(object({
 
 Default: `{}`
 
+### <a name="input_front_door_origin_groups"></a> [front\_door\_origin\_groups](#input\_front\_door\_origin\_groups)
+
+Description:   Manages a Front Door (standard/premium) Origin group.
+
+  - `name` - (Required) The name which should be used for this Front Door Origin Group.
+  - `load_balancing` - (Required) A load\_balancing block as defined below:-
+      - 'additional\_latency\_in\_milliseconds' - (Optional) Specifies the additional latency in milliseconds for probes to fall into the lowest latency bucket. Possible values are between 0 and 1000 milliseconds (inclusive). Defaults to 50
+      - 'sample\_size' - (Optional) Specifies the number of samples to consider for load balancing decisions. Possible values are between 0 and 255 (inclusive). Defaults to 4.
+      - 'successful\_samples\_required' - (Optional) Specifies the number of samples within the sample period that must succeed. Possible values are between 0 and 255 (inclusive). Defaults to 3.
+  - 'health\_probe' - (Optional) A health\_probe block as defined below:-
+      - 'protocol' - (Required) Specifies the protocol to use for health probe. Possible values are Http and Https.
+      - 'interval\_in\_seconds' - (Required) Specifies the number of seconds between health probes. Possible values are between 5 and 31536000 seconds (inclusive).
+      - 'request\_type' - (Optional) Specifies the type of health probe request that is made. Possible values are GET and HEAD. Defaults to HEAD.
+      - 'path' - (Optional) Specifies the path relative to the origin that is used to determine the health of the origin. Defaults to /.
+
+Type:
+
+```hcl
+map(object({
+    name = string
+    health_probe = optional(map(object({
+      interval_in_seconds = number
+      path                = optional(string, "/")
+      protocol            = string
+      request_type        = optional(string, "HEAD")
+    })), {})
+    load_balancing = map(object({
+      additional_latency_in_milliseconds = optional(number, 50)
+      sample_size                        = optional(number, 4)
+      successful_samples_required        = optional(number, 3)
+    }))
+  }))
+```
+
+Default: `{}`
+
+### <a name="input_front_door_origins"></a> [front\_door\_origins](#input\_front\_door\_origins)
+
+Description:   Manages a Front Door (standard/premium) Origin.
+
+  - `name` - (Required) The name which should be used for this Front Door Origin.
+  - 'origin\_group\_name' - (Required) The name of the origin group to associate the origin with.
+  - `host_name` - (Required) The IPv4 address, IPv6 address or Domain name of the Origin.
+  - 'certificate\_name\_check\_enabled' - (Required) Specifies whether certificate name checks are enabled for this origin.
+  - 'enabled' - (Optional) Should the origin be enabled? Possible values are true or false. Defaults to true.
+  - 'http\_port' - (Optional) The value of the HTTP port. Must be between 1 and 65535. Defaults to 80
+  - 'https\_port' - (Optional) The value of the HTTPS port. Must be between 1 and 65535. Defaults to 443.
+  - 'origin\_host\_header' - (Optional) The host header value (an IPv4 address, IPv6 address or Domain name) which is sent to the origin with each request. If unspecified the hostname from the request will be used.
+  - 'priority' - (Optional) Priority of origin in given origin group for load balancing. Higher priorities will not be used for load balancing if any lower priority origin is healthy. Must be between 1 and 5 (inclusive). Defaults to 1
+  - 'private\_link' - (Optional) A private\_link block as defined below:-
+      - 'request\_message' - (Optional) Specifies the request message that will be submitted to the private\_link\_target\_id when requesting the private link endpoint connection. Values must be between 1 and 140 characters in length. Defaults to Access request for CDN FrontDoor Private Link Origin.
+      - 'target\_type' - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are blob, blob\_secondary, web and sites.
+      - 'location' - (Required) Specifies the location where the Private Link resource should exist. Changing this forces a new resource to be created.
+  - 'weight' - (Optional) The weight of the origin in a given origin group for load balancing. Must be between 1 and 1000. Defaults to 500.
+
+Type:
+
+```hcl
+map(object({
+    name                           = string
+    origin_group_name              = string
+    host_name                      = string
+    certificate_name_check_enabled = string
+    enabled                        = optional(bool, true)
+    http_port                      = optional(number, 80)
+    https_port                     = optional(number, 443)
+    host_header                    = optional(string, null)
+    priority                       = optional(number, 1)
+    weight                         = optional(number, 500)
+    private_link = optional(map(object({
+      request_message        = string
+      target_type            = optional(string, null)
+      location               = string
+      private_link_target_id = string
+    })), null)
+  }))
+```
+
+Default: `{}`
+
+### <a name="input_front_door_routes"></a> [front\_door\_routes](#input\_front\_door\_routes)
+
+Description:   Manages a Front Door (standard/premium) Route.
+
+  - `name` - (Required) The name which should be used for this Front Door Route. Valid values must begin with a letter or number, end with a letter or number and may only contain letters, numbers and hyphens with a maximum length of 90 characters.
+  - 'origin\_group\_name' - (Required) The name of the origin group to associate the route with.
+  - `origin_names` - (Required) The name of the origins to associate the route with.
+  - 'endpoint\_name' - (Required) The name of the origins to associate the route with.
+  - 'forwarding\_protocol' - (Optional) The Protocol that will be use when forwarding traffic to backends. Possible values are 'HttpOnly', 'HttpsOnly' or 'MatchRequest'. Defaults to 'MatchRequest'.
+  - 'patterns\_to\_match' - (Required) The route patterns of the rule.
+  - 'supported\_protocols' - (Required) One or more Protocols supported by this Front Door Route. Possible values are 'Http' or 'Https'.
+  - 'https\_redirect\_enabled' - (Optional) Automatically redirect HTTP traffic to HTTPS traffic? Possible values are true or false. Defaults to true.
+  - 'link\_to\_default\_domain' - (Optional) Should this Front Door Route be linked to the default endpoint? Possible values include true or false. Defaults to true.
+  - 'cache' - (Optional) A cache block as defined below:-
+      - 'query\_string\_caching\_behavior' - (Optional) Defines how the Front Door Route will cache requests that include query strings. Possible values include 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'. Defaults to 'IgnoreQueryString'.
+      - 'query\_strings' - (Optional) Query strings to include or ignore.
+      - 'compression\_enabled' - (Optional) Is content compression enabled? Possible values are true or false. Defaults to false.
+      - 'content\_types\_to\_compress' - (Optional) A list of one or more Content types (formerly known as MIME types) to compress. Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'.
+
+Type:
+
+```hcl
+map(object({
+    name                      = string
+    origin_group_name         = string
+    origin_names              = list(string)
+    endpoint_name             = string
+    forwarding_protocol       = optional(string, "HttpsOnly")
+    supported_protocols       = list(string)
+    patterns_to_match         = list(string)
+    link_to_default_domain    = optional(bool, true)
+    https_redirect_enabled    = optional(bool, true)
+    custom_domain_names       = optional(list(string))
+    enabled                   = optional(bool, true)
+    rule_set_names            = optional(list(string))
+    cdn_frontdoor_origin_path = optional(string, null)
+    cache = optional(map(object({
+      query_string_caching_behavior = optional(string, "IgnoreQueryString")
+      query_strings                 = optional(list(string))
+      compression_enabled           = optional(bool, false)
+      content_types_to_compress     = optional(list(string))
+    })), {})
+  }))
+```
+
+Default: `{}`
+
+### <a name="input_front_door_rule_sets"></a> [front\_door\_rule\_sets](#input\_front\_door\_rule\_sets)
+
+Description:   Manages a Front Door (standard/premium) Rule Set.. The following properties can be specified:
+  - `name` - (Required) The name which should be used for this Front Door Rule Set.
+
+Type: `set(string)`
+
+Default: `[]`
+
 ### <a name="input_front_door_secret"></a> [front\_door\_secret](#input\_front\_door\_secret)
 
 Description:   Manages a Front Door (standard/premium) Secret.
@@ -581,86 +708,6 @@ object({
 
 Default: `{}`
 
-### <a name="input_origin"></a> [origin](#input\_origin)
-
-Description:   Manages a Front Door (standard/premium) Origin.
-
-  - `name` - (Required) The name which should be used for this Front Door Origin.
-  - 'origin\_group\_name' - (Required) The name of the origin group to associate the origin with.
-  - `host_name` - (Required) The IPv4 address, IPv6 address or Domain name of the Origin.
-  - 'certificate\_name\_check\_enabled' - (Required) Specifies whether certificate name checks are enabled for this origin.
-  - 'enabled' - (Optional) Should the origin be enabled? Possible values are true or false. Defaults to true.
-  - 'http\_port' - (Optional) The value of the HTTP port. Must be between 1 and 65535. Defaults to 80
-  - 'https\_port' - (Optional) The value of the HTTPS port. Must be between 1 and 65535. Defaults to 443.
-  - 'origin\_host\_header' - (Optional) The host header value (an IPv4 address, IPv6 address or Domain name) which is sent to the origin with each request. If unspecified the hostname from the request will be used.
-  - 'priority' - (Optional) Priority of origin in given origin group for load balancing. Higher priorities will not be used for load balancing if any lower priority origin is healthy. Must be between 1 and 5 (inclusive). Defaults to 1
-  - 'private\_link' - (Optional) A private\_link block as defined below:-
-      - 'request\_message' - (Optional) Specifies the request message that will be submitted to the private\_link\_target\_id when requesting the private link endpoint connection. Values must be between 1 and 140 characters in length. Defaults to Access request for CDN FrontDoor Private Link Origin.
-      - 'target\_type' - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are blob, blob\_secondary, web and sites.
-      - 'location' - (Required) Specifies the location where the Private Link resource should exist. Changing this forces a new resource to be created.
-  - 'weight' - (Optional) The weight of the origin in a given origin group for load balancing. Must be between 1 and 1000. Defaults to 500.
-
-Type:
-
-```hcl
-map(object({
-    name                           = string
-    origin_group_name              = string
-    host_name                      = string
-    certificate_name_check_enabled = string
-    enabled                        = optional(bool, true)
-    http_port                      = optional(number, 80)
-    https_port                     = optional(number, 443)
-    host_header                    = optional(string, null)
-    priority                       = optional(number, 1)
-    weight                         = optional(number, 500)
-    private_link = optional(map(object({
-      request_message        = string
-      target_type            = optional(string, null)
-      location               = string
-      private_link_target_id = string
-    })), null)
-  }))
-```
-
-Default: `{}`
-
-### <a name="input_origin_groups"></a> [origin\_groups](#input\_origin\_groups)
-
-Description:   Manages a Front Door (standard/premium) Origin group.
-
-  - `name` - (Required) The name which should be used for this Front Door Origin Group.
-  - `load_balancing` - (Required) A load\_balancing block as defined below:-
-      - 'additional\_latency\_in\_milliseconds' - (Optional) Specifies the additional latency in milliseconds for probes to fall into the lowest latency bucket. Possible values are between 0 and 1000 milliseconds (inclusive). Defaults to 50
-      - 'sample\_size' - (Optional) Specifies the number of samples to consider for load balancing decisions. Possible values are between 0 and 255 (inclusive). Defaults to 4.
-      - 'successful\_samples\_required' - (Optional) Specifies the number of samples within the sample period that must succeed. Possible values are between 0 and 255 (inclusive). Defaults to 3.
-  - 'health\_probe' - (Optional) A health\_probe block as defined below:-
-      - 'protocol' - (Required) Specifies the protocol to use for health probe. Possible values are Http and Https.
-      - 'interval\_in\_seconds' - (Required) Specifies the number of seconds between health probes. Possible values are between 5 and 31536000 seconds (inclusive).
-      - 'request\_type' - (Optional) Specifies the type of health probe request that is made. Possible values are GET and HEAD. Defaults to HEAD.
-      - 'path' - (Optional) Specifies the path relative to the origin that is used to determine the health of the origin. Defaults to /.
-
-Type:
-
-```hcl
-map(object({
-    name = string
-    health_probe = optional(map(object({
-      interval_in_seconds = number
-      path                = optional(string, "/")
-      protocol            = string
-      request_type        = optional(string, "HEAD")
-    })), {})
-    load_balancing = map(object({
-      additional_latency_in_milliseconds = optional(number, 50)
-      sample_size                        = optional(number, 4)
-      successful_samples_required        = optional(number, 3)
-    }))
-  }))
-```
-
-Default: `{}`
-
 ### <a name="input_response_timeout_seconds"></a> [response\_timeout\_seconds](#input\_response\_timeout\_seconds)
 
 Description: Specifies the maximum response timeout in seconds. Possible values are between 16 and 240 seconds (inclusive). Defaults to 120 seconds.
@@ -700,72 +747,16 @@ map(object({
 
 Default: `{}`
 
-### <a name="input_routes"></a> [routes](#input\_routes)
-
-Description:   Manages a Front Door (standard/premium) Route.
-
-  - `name` - (Required) The name which should be used for this Front Door Route. Valid values must begin with a letter or number, end with a letter or number and may only contain letters, numbers and hyphens with a maximum length of 90 characters.
-  - 'origin\_group\_name' - (Required) The name of the origin group to associate the route with.
-  - `origin_names` - (Required) The name of the origins to associate the route with.
-  - 'endpoint\_name' - (Required) The name of the origins to associate the route with.
-  - 'forwarding\_protocol' - (Optional) The Protocol that will be use when forwarding traffic to backends. Possible values are 'HttpOnly', 'HttpsOnly' or 'MatchRequest'. Defaults to 'MatchRequest'.
-  - 'patterns\_to\_match' - (Required) The route patterns of the rule.
-  - 'supported\_protocols' - (Required) One or more Protocols supported by this Front Door Route. Possible values are 'Http' or 'Https'.
-  - 'https\_redirect\_enabled' - (Optional) Automatically redirect HTTP traffic to HTTPS traffic? Possible values are true or false. Defaults to true.
-  - 'link\_to\_default\_domain' - (Optional) Should this Front Door Route be linked to the default endpoint? Possible values include true or false. Defaults to true.
-  - 'cache' - (Optional) A cache block as defined below:-
-      - 'query\_string\_caching\_behavior' - (Optional) Defines how the Front Door Route will cache requests that include query strings. Possible values include 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'. Defaults to 'IgnoreQueryString'.
-      - 'query\_strings' - (Optional) Query strings to include or ignore.
-      - 'compression\_enabled' - (Optional) Is content compression enabled? Possible values are true or false. Defaults to false.
-      - 'content\_types\_to\_compress' - (Optional) A list of one or more Content types (formerly known as MIME types) to compress. Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'.
-
-Type:
-
-```hcl
-map(object({
-    name                      = string
-    origin_group_name         = string
-    origin_names              = list(string)
-    endpoint_name             = string
-    forwarding_protocol       = optional(string, "HttpsOnly")
-    supported_protocols       = list(string)
-    patterns_to_match         = list(string)
-    link_to_default_domain    = optional(bool, true)
-    https_redirect_enabled    = optional(bool, true)
-    custom_domain_names       = optional(list(string))
-    enabled                   = optional(bool, true)
-    rule_set_names            = optional(list(string))
-    cdn_frontdoor_origin_path = optional(string, null)
-    cache = optional(map(object({
-      query_string_caching_behavior = optional(string, "IgnoreQueryString")
-      query_strings                 = optional(list(string))
-      compression_enabled           = optional(bool, false)
-      content_types_to_compress     = optional(list(string))
-    })), {})
-  }))
-```
-
-Default: `{}`
-
-### <a name="input_rule_sets"></a> [rule\_sets](#input\_rule\_sets)
-
-Description:   Manages a Front Door (standard/premium) Rule Set.. The following properties can be specified:
-  - `name` - (Required) The name which should be used for this Front Door Rule Set.
-
-Type: `set(string)`
-
-Default: `[]`
-
 ### <a name="input_rules"></a> [rules](#input\_rules)
 
-Description:   Manages a Front Door (standard/premium) Rule.   
+Description:   Manages a Front Door (standard/premium) Rules.  
   refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule#arguments-reference for Azure Front door rules arguments reference.
 
 Type: `map(any)`
 
 Default: `{}`
 
-### <a name="input_sku_name"></a> [sku\_name](#input\_sku\_name)
+### <a name="input_sku"></a> [sku](#input\_sku)
 
 Description: The SKU name of the Azure Front Door. Default is `Standard`. Possible values are `standard` and `premium`.SKU name for CDN can be 'Standard\_Akamai', 'Standard\_ChinaCdn, 'Standard\_Microsoft','Standard\_Verizon' or 'Premium\_Verizon'
 

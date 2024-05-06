@@ -50,12 +50,3 @@ resource "azurerm_cdn_endpoint" "endpoint" {
     }
   }
 }
-
-resource "azurerm_cdn_endpoint_custom_domain" "example" {
-  for_each = var.cdn_endpoint_custom_domains
-
-  cdn_endpoint_id = azurerm_cdn_endpoint.endpoint[each.value.cdn_endpoint_key].id
-  host_name       = each.value.host_name
-  name            = each.value.name
-}
-

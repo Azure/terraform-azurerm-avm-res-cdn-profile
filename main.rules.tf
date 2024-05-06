@@ -1,12 +1,12 @@
 resource "azurerm_cdn_frontdoor_rule_set" "rule_set" {
-  for_each = var.rule_sets
+  for_each = var.front_door_rule_sets
 
   cdn_frontdoor_profile_id = azapi_resource.front_door_profile.id
   name                     = each.value
 }
 
 resource "azurerm_cdn_frontdoor_rule" "rules" {
-  for_each = var.rules
+  for_each = var.front_door_rules
 
   cdn_frontdoor_rule_set_id = azurerm_cdn_frontdoor_rule_set.rule_set[each.value.rule_set_name].id
   name                      = each.value.name
@@ -188,7 +188,7 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
       }
     }
     dynamic "request_method_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = { for key, value in try(each.value.conditions == null, {}) : key => value
         if key == "request_method_condition"
       }
       content {
@@ -239,13 +239,13 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
       }
     }
     dynamic "ssl_protocol_condition" {
-      for_each = { for key, value in each.value.conditions : key => value
+      for_each = try({ for key, value in try(each.value.conditions, {}) : key => value
         if key == "ssl_protocol_condition"
-      }
+      }, {})
       content {
-        match_values     = ssl_protocol_condition.value.match_values
+        match_values     = try(ssl_protocol_condition.value.match_values, null)
         negate_condition = try(ssl_protocol_condition.value.negate_condition, false)
-        operator         = ssl_protocol_condition.value.operator
+        operator         = try(ssl_protocol_condition.value.operator, null)
       }
     }
     dynamic "url_file_extension_condition" {

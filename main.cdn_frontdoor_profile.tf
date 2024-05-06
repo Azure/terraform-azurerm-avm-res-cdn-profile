@@ -20,7 +20,7 @@ resource "azapi_resource" "front_door_profile" {
       originResponseTimeoutSeconds = 20
     }
     sku = {
-      name = var.sku_name
+      name = var.sku
     }
   })
   location                  = "Global"

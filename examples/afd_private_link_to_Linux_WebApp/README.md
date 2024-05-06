@@ -54,65 +54,6 @@ resource "azurerm_service_plan" "appservice" {
   sku_name            = "P1v3"
 }
 
-# # Creating storage account for Web App
-# resource "azurerm_storage_account" "storage" {
-#   name                     = module.naming.storage_account.name_unique
-#   resource_group_name      = azurerm_resource_group.this.name
-#   location                 = azurerm_resource_group.this.location
-#   account_tier             = "Standard"
-#   account_replication_type = "ZRS"
-# }
-
-# # Creating storage account container for Web App
-# resource "azurerm_storage_container" "example" {
-#   name                  = module.naming.storage_container.name_unique
-#   storage_account_name  = azurerm_storage_account.storage.name
-#   container_access_type = "private"
-# }
-
-# # Creating storage account file share for Web App
-# resource "azurerm_storage_share" "example" {
-#   name                 = "share"
-#   storage_account_name = azurerm_storage_account.storage.name
-#   quota                = 1
-# }
-
-# # Creating storage account sas key for Web App
-# data "azurerm_storage_account_sas" "example" {
-#   connection_string = azurerm_storage_account.storage.primary_connection_string
-#   https_only        = true
-
-#   resource_types {
-#     service   = false
-#     container = false
-#     object    = true
-#   }
-
-#   services {
-#     blob  = true
-#     queue = false
-#     table = false
-#     file  = false
-#   }
-
-# # Change the start and expiry dates as per your use case
-#   start  = "2024-04-29"
-#   expiry = "2025-03-30"
-
-#   permissions {
-#     read    = false
-#     write   = true
-#     delete  = false
-#     list    = false
-#     add     = false
-#     create  = false
-#     update  = false
-#     process = false
-#     tag     = false
-#     filter  = false
-#   }
-# }
-
 # Creating the linux web app
 resource "azurerm_linux_web_app" "webapp" {
   location                      = azurerm_resource_group.this.location
@@ -143,11 +84,11 @@ module "azurerm_cdn_frontdoor_profile" {
   enable_telemetry         = var.enable_telemetry
   name                     = module.naming.cdn_profile.name_unique
   location                 = azurerm_resource_group.this.location
-  sku_name                 = "Premium_AzureFrontDoor"
+  sku                      = "Premium_AzureFrontDoor"
   resource_group_name      = azurerm_resource_group.this.name
   response_timeout_seconds = 120
   tags                     = { environment = "example" }
-  origin_groups = {
+  front_door_origin_groups = {
     og1 = {
       name = "og1"
       health_probe = {
@@ -167,7 +108,7 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-  origin = {
+  front_door_origins = {
     origin1 = {
       name                           = "example-origin1"
       origin_group_name              = "og1"
@@ -190,7 +131,7 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  endpoints = {
+  front_door_endpoints = {
     ep-1 = {
       name = "ep-1"
       tags = {
@@ -205,7 +146,7 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  routes = {
+  front_door_routes = {
     route1 = {
       name                   = "route1"
       endpoint_name          = "ep-1"
@@ -219,9 +160,9 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  rule_sets = ["ruleset1", "ruleset2"]
+  front_door_rule_sets = ["ruleset1", "ruleset2"]
 
-  rules = {
+  front_door_rules = {
     rule3 = {
       name              = "examplerule3"
       order             = 1

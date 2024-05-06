@@ -57,7 +57,7 @@ module "azurerm_cdn_profile" {
   enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
-  sku_name            = "Standard_Microsoft"
+  sku                 = "Standard_Microsoft"
   resource_group_name = azurerm_resource_group.this.name
   cdn_endpoints = {
     ep1 = {

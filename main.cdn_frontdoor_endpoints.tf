@@ -1,5 +1,5 @@
 resource "azurerm_cdn_frontdoor_endpoint" "endpoints" {
-  for_each = var.endpoints
+  for_each = var.front_door_endpoints
 
   cdn_frontdoor_profile_id = azapi_resource.front_door_profile.id
   name                     = each.value.name
@@ -8,7 +8,7 @@ resource "azurerm_cdn_frontdoor_endpoint" "endpoints" {
 }
 
 resource "azurerm_cdn_frontdoor_route" "routes" {
-  for_each = var.routes
+  for_each = var.front_door_routes
 
   cdn_frontdoor_endpoint_id       = azurerm_cdn_frontdoor_endpoint.endpoints[each.value.endpoint_name].id
   cdn_frontdoor_origin_group_id   = azurerm_cdn_frontdoor_origin_group.example[each.value.origin_group_name].id
@@ -36,18 +36,3 @@ resource "azurerm_cdn_frontdoor_route" "routes" {
 
   depends_on = [azurerm_cdn_frontdoor_origin.origins]
 }
-
-#  locals {
-# #   alloriginids = flatten([ for x in [azurerm_cdn_frontdoor_origin.origins] : [ x.id ] ])
-#     alloriginids= [for x in azurerm_cdn_frontdoor_origin.origins : x.id if contains(var.routes.origin_names, x.name)]
-# #   alloriginnames = flatten([ for x in [azurerm_cdn_frontdoor_origin.origins] : [ x.name ] ])
-# #  # originids = matchkeys(alloriginids,alloriginnames,var.routes.origin_names)
-# } 
-#  output "originids" {
-#    value = local.alloriginids
-#  }
-
-# output "filtered_values" {
-#   value = [for key, value in var.my_object : key => value if contains(var.filtered_keys, key)]
-# }
-
