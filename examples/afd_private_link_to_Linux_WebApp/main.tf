@@ -26,11 +26,12 @@ resource "azurerm_resource_group" "this" {
 
 # Creating App service plan with premium V3 SKU
 resource "azurerm_service_plan" "appservice" {
-  location            = azurerm_resource_group.this.location
-  name                = "my-appservice"
-  os_type             = "Linux"
-  resource_group_name = azurerm_resource_group.this.name
-  sku_name            = "P1v3"
+  location               = azurerm_resource_group.this.location
+  name                   = "my-appservice"
+  os_type                = "Linux"
+  resource_group_name    = azurerm_resource_group.this.name
+  sku_name               = "P1v3"
+  zone_balancing_enabled = true
 }
 
 # Creating the linux web app
@@ -43,7 +44,7 @@ resource "azurerm_linux_web_app" "webapp" {
   public_network_access_enabled = false
 
   site_config {
-    minimum_tls_version = "1.2"
+    minimum_tls_version = "1.2" # TLS1.3 is not yet supported in Terraform azurerm_linux_web_app
   }
 }
 
@@ -58,7 +59,6 @@ resource "azurerm_app_service_source_control" "sourcecontrol" {
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  #source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source                   = "../../"
   enable_telemetry         = var.enable_telemetry
   name                     = module.naming.cdn_profile.name_unique
@@ -117,12 +117,6 @@ module "azurerm_cdn_frontdoor_profile" {
         ENV = "example"
       }
     }
-    ep-2 = {
-      name = "ep-2"
-      tags = {
-        ENV = "example2"
-      }
-    }
   }
 
   front_door_routes = {
@@ -130,7 +124,7 @@ module "azurerm_cdn_frontdoor_profile" {
       name                   = "route1"
       endpoint_name          = "ep-1"
       origin_group_name      = "og1"
-      origin_names           = ["example-origin", "origin3"]
+      origin_names           = ["example-origin1"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
@@ -139,11 +133,11 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  front_door_rule_sets = ["ruleset1", "ruleset2"]
+  front_door_rule_sets = ["ruleset1"]
 
   front_door_rules = {
-    rule3 = {
-      name              = "examplerule3"
+    rule1 = {
+      name              = "examplerule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"
@@ -166,14 +160,6 @@ module "azurerm_cdn_frontdoor_profile" {
           cache_behavior                = "OverrideIfOriginMissing"
           cache_duration                = "365.23:59:59"
         }
-        # url_redirect_action = {
-        #   redirect_type        = "PermanentRedirect"
-        #   redirect_protocol    = "MatchRequest"
-        #   query_string         = "clientIp={client_ip}"
-        #   destination_path     = "/exampleredirection"
-        #   destination_hostname = "contoso.com"
-        #   destination_fragment = "UrlRedirect"
-        # }
         response_header_action = {
           header_action = "Append"
           header_name   = "headername"
@@ -191,12 +177,6 @@ module "azurerm_cdn_frontdoor_profile" {
           negate_condition = false
           match_values     = ["10.0.0.0/23"]
         }
-
-        # request_method_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-        # }
 
         query_string_condition = {
           negate_condition = false
@@ -260,71 +240,6 @@ module "azurerm_cdn_frontdoor_profile" {
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
         }
-
-        # socket_address_condition = {
-        #   operator         = "IPMatch"
-        #   negate_condition = false
-        #   match_values     = ["5.5.5.64/26"]
-        # }
-
-        # client_port_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["Mobile"]
-        # }
-
-        # server_port_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["80"]
-        # }
-
-        # ssl_protocol_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["TLSv1"]
-        # }
-
-        # request_uri_condition = {
-        #   negate_condition = false
-        #   operator         = "BeginsWith"
-        #   match_values     = ["J", "K"]
-        #   transforms       = ["Uppercase"]
-        # }
-
-
-        # host_name_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-        #   transforms       = ["Lowercase", "Trim"]
-        # }
-
-        # is_device_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["Mobile"]
-        # }
-
-        # post_args_condition = {
-        #   post_args_name = "customerName"
-        #   operator       = "BeginsWith"
-        #   match_values   = ["J", "K"]
-        #   transforms     = ["Uppercase"]
-        # }
-
-        # request_method_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["DELETE"]
-        # }
-
-        # url_filename_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["media.mp4"]
-        #   transforms       = ["Lowercase", "RemoveNulls", "Trim"]
-        # }
       }
     }
   }

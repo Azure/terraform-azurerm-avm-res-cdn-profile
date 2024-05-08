@@ -33,7 +33,7 @@ module "avm_storage_account" {
   resource_group_name       = azurerm_resource_group.this.name
   shared_access_key_enabled = true
   enable_telemetry          = true
-  account_replication_type  = "LRS"
+  account_replication_type  = "ZRS"
 }
 
 resource "azurerm_log_analytics_workspace" "workspace" {
@@ -86,7 +86,6 @@ Managed Identity
 Azure Monitor Alerts
 */
 module "azurerm_cdn_frontdoor_profile" {
-  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source              = "../../"
   enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
@@ -127,31 +126,6 @@ module "azurerm_cdn_frontdoor_profile" {
       priority                       = 1
       weight                         = 1
     }
-    origin2 = {
-      name                           = "origin2"
-      origin_group_name              = "og1"
-      enabled                        = true
-      certificate_name_check_enabled = false
-      host_name                      = "contoso1.com"
-      http_port                      = 80
-      https_port                     = 443
-      host_header                    = "www.contoso.com"
-      priority                       = 1
-      weight                         = 1
-    }
-    origin3 = {
-      name                           = "origin3"
-      origin_group_name              = "og1"
-      enabled                        = true
-      certificate_name_check_enabled = false
-      host_name                      = "contoso1.com"
-      http_port                      = 80
-      https_port                     = 443
-      host_header                    = "www.contoso.com"
-      priority                       = 1
-      weight                         = 1
-    }
-
   }
 
   front_door_endpoints = {
@@ -168,7 +142,7 @@ module "azurerm_cdn_frontdoor_profile" {
       name                   = "route1"
       endpoint_name          = "ep1"
       origin_group_name      = "og1"
-      origin_names           = ["example-origin", "origin3"]
+      origin_names           = ["example-origin"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
@@ -185,11 +159,11 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  front_door_rule_sets = ["ruleset1", "ruleset2"]
+  front_door_rule_sets = ["ruleset1"]
 
   front_door_rules = {
-    rule3 = {
-      name              = "examplerule3"
+    rule1 = {
+      name              = "examplerule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"
@@ -212,19 +186,13 @@ module "azurerm_cdn_frontdoor_profile" {
           cache_behavior                = "OverrideIfOriginMissing"
           cache_duration                = "365.23:59:59"
         }
-        # url_redirect_action = {
-        #   redirect_type        = "PermanentRedirect"
-        #   redirect_protocol    = "MatchRequest"
-        #   query_string         = "clientIp={client_ip}"
-        #   destination_path     = "/exampleredirection"
-        #   destination_hostname = "contoso.com"
-        #   destination_fragment = "UrlRedirect"
-        # }
+
         response_header_action = {
           header_action = "Append"
           header_name   = "headername"
           value         = "/abc"
         }
+
         request_header_action = {
           header_action = "Append"
           header_name   = "headername"
@@ -237,12 +205,6 @@ module "azurerm_cdn_frontdoor_profile" {
           negate_condition = false
           match_values     = ["10.0.0.0/23"]
         }
-
-        # request_method_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-        # }
 
         query_string_condition = {
           negate_condition = false
@@ -306,8 +268,6 @@ module "azurerm_cdn_frontdoor_profile" {
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
         }
-
-
       }
     }
   }
@@ -323,8 +283,9 @@ module "azurerm_cdn_frontdoor_profile" {
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
     }
     eventhub_diag = {
-      name                                     = "eventhubforwarding"
-      log_groups                               = ["allLogs", "audit"]
+      name           = "eventhubforwarding"
+      log_categories = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
+      # log_groups                               = ["allLogs", "audit"] # you can set either log_categories or log_groups.
       metric_categories                        = ["AllMetrics"]
       event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
       event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
@@ -337,15 +298,17 @@ module "azurerm_cdn_frontdoor_profile" {
       role_definition_id_or_name       = "Contributor"
       principal_id                     = data.azurerm_client_config.current.object_id
       skip_service_principal_aad_check = true
+      principal_type                   = "User"
     },
-    # role_assignment_2 = {
-    #   role_definition_id_or_name             = "Reader"
-    #   principal_id                           = "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
-    #   description                            = "Example role assignment 2 of reader role"
-    #   skip_service_principal_aad_check       = false
-    #   condition                              = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
-    #   condition_version                      = "2.0"
-    # }
+    role_assignment_2 = {
+      role_definition_id_or_name       = "Reader"
+      principal_id                     = "125a231e-cb67-4fe0-920d-457bab53b5e1"
+      description                      = "Example role assignment 2 of reader role"
+      skip_service_principal_aad_check = false
+      # condition                        = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
+      # condition_version                = "2.0"
+      principal_type                   = "User"
+    }
   }
 
   tags = {

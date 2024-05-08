@@ -200,7 +200,7 @@ variable "diagnostic_settings" {
   type = map(object({
     name                                     = optional(string, null)
     log_categories                           = optional(set(string), [])
-    log_groups                               = optional(set(string), ["allLogs"])
+    log_groups                               = optional(set(string), [])
     metric_categories                        = optional(set(string), ["AllMetrics"])
     log_analytics_destination_type           = optional(string, "Dedicated")
     workspace_resource_id                    = optional(string, null)
@@ -239,6 +239,15 @@ variable "diagnostic_settings" {
     )
     error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, or `event_hub_authorization_rule_resource_id`, must be set."
   }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.diagnostic_settings :
+        ((length(v.log_categories) > 0 && length(v.log_groups) > 0) ? false : true)
+      ]
+    )
+    error_message = "Set either Log categories or Log groups, you cant set both"
+  }
 }
 
 variable "enable_telemetry" {
@@ -258,7 +267,7 @@ variable "front_door_custom_domains" {
     host_name   = string
     tls = object({
       certificate_type        = optional(string, "ManagedCertificate")
-      minimum_tls_version     = optional(string, "TLS13")
+      minimum_tls_version     = optional(string, "TLS12") # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
       cdn_frontdoor_secret_id = optional(string, null)
     })
   }))
@@ -783,13 +792,13 @@ variable "front_door_rule_sets" {
   type        = set(string)
   default     = []
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Rule Set.. The following properties can be specified:
+  Manages a Front Door (standard/premium) Rule Sets.. The following properties can be specified:
   - `name` - (Required) The name which should be used for this Front Door Rule Set.
   DESCRIPTION
 }
 
 variable "front_door_rules" {
-  type        = map(any)
+  type        = any
   default     = {}
   description = <<DESCRIPTION
   Manages a Front Door (standard/premium) Rules.
@@ -918,17 +927,19 @@ variable "response_timeout_seconds" {
 #   nullable    = false
 # }
 variable "role_assignments" {
-  type = map(object({
-    role_definition_id_or_name             = string
-    principal_id                           = string
-    description                            = optional(string, null)
-    skip_service_principal_aad_check       = optional(bool, false)
-    condition                              = optional(string, null)
-    condition_version                      = optional(string, null)
-    delegated_managed_identity_resource_id = optional(string, null)
-  }))
-  default     = {}
-  description = <<DESCRIPTION
+    type = map(object({
+      role_definition_id_or_name             = string
+      principal_id                           = string
+      description                            = optional(string, null)
+      skip_service_principal_aad_check       = optional(bool, false)
+      condition                              = optional(string, null)
+      condition_version                      = optional(string, null)
+      delegated_managed_identity_resource_id = optional(string, null)
+      principal_type                         = optional(string, null)
+    }))
+    default     = {}
+    nullable    = false
+    description = <<DESCRIPTION
   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
   - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
@@ -942,8 +953,7 @@ variable "role_assignments" {
   
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
   DESCRIPTION
-  nullable    = false
-}
+  }
 
 variable "sku" {
   type        = string

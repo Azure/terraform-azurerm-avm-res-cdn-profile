@@ -25,14 +25,13 @@ resource "azurerm_resource_group" "this" {
 }
 
 resource "azurerm_dns_zone" "dnszone" {
-  name                = "sub-domain.domain.com"
+  name                = "avm-domain.domain.com"
   resource_group_name = azurerm_resource_group.this.name
 }
 
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source              = "../../"
   enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
@@ -72,18 +71,6 @@ module "azurerm_cdn_frontdoor_profile" {
       priority                       = 1
       weight                         = 1
     }
-    origin2 = {
-      name                           = "origin2"
-      origin_group_name              = "og1"
-      enabled                        = true
-      certificate_name_check_enabled = false
-      host_name                      = "contoso1.com"
-      http_port                      = 80
-      https_port                     = 443
-      host_header                    = "www.contoso.com"
-      priority                       = 1
-      weight                         = 1
-    }
     origin3 = {
       name                           = "origin3"
       origin_group_name              = "og1"
@@ -106,17 +93,16 @@ module "azurerm_cdn_frontdoor_profile" {
 
       tls = {
         certificate_type    = "ManagedCertificate"
-        minimum_tls_version = "TLS13"
+        minimum_tls_version = "TLS12" # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
       }
     },
     cd2 = {
       name        = "contoso2"
       dns_zone_id = azurerm_dns_zone.dnszone.id
       host_name   = "contoso2.fabrikam.com"
-      #associated_route_names = ["route1"]
       tls = {
         certificate_type    = "ManagedCertificate"
-        minimum_tls_version = "TLS13"
+        minimum_tls_version = "TLS12" # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
       }
     }
   }
@@ -125,12 +111,6 @@ module "azurerm_cdn_frontdoor_profile" {
       name = "ep1"
       tags = {
         ENV = "example"
-      }
-    }
-    ep2 = {
-      name = "ep2"
-      tags = {
-        ENV = "example2"
       }
     }
   }
@@ -158,7 +138,7 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  front_door_rule_sets = ["ruleset1", "ruleset2"]
+  front_door_rule_sets = ["ruleset1"]
 
   front_door_rules = {
     rule3 = {
@@ -185,14 +165,6 @@ module "azurerm_cdn_frontdoor_profile" {
           cache_behavior                = "OverrideIfOriginMissing"
           cache_duration                = "365.23:59:59"
         }
-        # url_redirect_action = {
-        #   redirect_type        = "PermanentRedirect"
-        #   redirect_protocol    = "MatchRequest"
-        #   query_string         = "clientIp={client_ip}"
-        #   destination_path     = "/exampleredirection"
-        #   destination_hostname = "contoso.com"
-        #   destination_fragment = "UrlRedirect"
-        # }
         response_header_action = {
           header_action = "Append"
           header_name   = "headername"
@@ -210,12 +182,6 @@ module "azurerm_cdn_frontdoor_profile" {
           negate_condition = false
           match_values     = ["10.0.0.0/23"]
         }
-
-        # request_method_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-        # }
 
         query_string_condition = {
           negate_condition = false
@@ -279,74 +245,8 @@ module "azurerm_cdn_frontdoor_profile" {
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
         }
-
-        # socket_address_condition = {
-        #   operator         = "IPMatch"
-        #   negate_condition = false
-        #   match_values     = ["5.5.5.64/26"]
-        # }
-
-        # client_port_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["Mobile"]
-        # }
-
-        # server_port_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["80"]
-        # }
-
-        # ssl_protocol_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["TLSv1"]
-        # }
-
-        # request_uri_condition = {
-        #   negate_condition = false
-        #   operator         = "BeginsWith"
-        #   match_values     = ["J", "K"]
-        #   transforms       = ["Uppercase"]
-        # }
-
-
-        # host_name_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-        #   transforms       = ["Lowercase", "Trim"]
-        # }
-
-        # is_device_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["Mobile"]
-        # }
-
-        # post_args_condition = {
-        #   post_args_name = "customerName"
-        #   operator       = "BeginsWith"
-        #   match_values   = ["J", "K"]
-        #   transforms     = ["Uppercase"]
-        # }
-
-        # request_method_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["DELETE"]
-        # }
-
-        # url_filename_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["media.mp4"]
-        #   transforms       = ["Lowercase", "RemoveNulls", "Trim"]
-        # }
       }
     }
   }
-
 }
 
