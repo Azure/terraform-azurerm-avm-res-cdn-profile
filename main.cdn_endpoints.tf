@@ -50,3 +50,13 @@ resource "azurerm_cdn_endpoint" "endpoint" {
     }
   }
 }
+
+# resource "azurerm_management_lock" "endpointlock" {
+#   for_each = var.cdn_endpoints
+#   depends_on = [azurerm_cdn_endpoint.endpoint]
+#   count = var.lock != null ? 1 : 0
+#   lock_level = var.lock.kind
+#   name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
+#   scope      = azurerm_cdn_endpoint.endpoint[each.key].id
+#   notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+# }
