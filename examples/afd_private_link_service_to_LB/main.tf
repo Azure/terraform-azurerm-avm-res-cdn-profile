@@ -157,8 +157,8 @@ module "azurerm_cdn_frontdoor_profile" {
   front_door_rule_sets = ["ruleset1"]
 
   front_door_rules = {
-    rule3 = {
-      name              = "examplerule3"
+    rule1 = {
+      name              = "examplerule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"

@@ -302,7 +302,7 @@ module "azurerm_cdn_frontdoor_profile" {
     },
     role_assignment_2 = {
       role_definition_id_or_name       = "Reader"
-      principal_id                     = "125a231e-cb67-4fe0-920d-457bab53b5e1"
+      principal_id                     = "125****-c***-4f**-**0d-******53b5**" # replace the principal id with appropriate one
       description                      = "Example role assignment 2 of reader role"
       skip_service_principal_aad_check = false
       # condition                        = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
@@ -314,18 +314,17 @@ module "azurerm_cdn_frontdoor_profile" {
   tags = {
     environment = "production"
   }
-  /*      
+   
   # A lock needs to be removed before destroy
    lock = {
        name = "lock-cdnprofile" # optional
        kind = "CanNotDelete"
      }
-  */
+  
   managed_identities = {
     system_assigned = true
     user_assigned_resource_ids = [
       azurerm_user_assigned_identity.identity_for_keyvault.id
     ]
   }
-
 }

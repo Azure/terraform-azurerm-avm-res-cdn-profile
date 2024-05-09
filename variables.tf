@@ -701,7 +701,7 @@ variable "front_door_routes" {
     patterns_to_match         = list(string)
     link_to_default_domain    = optional(bool, true)
     https_redirect_enabled    = optional(bool, true)
-    custom_domain_names       = optional(list(string))
+    custom_domain_names       = optional(list(string),[])
     enabled                   = optional(bool, true)
     rule_set_names            = optional(list(string))
     cdn_frontdoor_origin_path = optional(string, null)

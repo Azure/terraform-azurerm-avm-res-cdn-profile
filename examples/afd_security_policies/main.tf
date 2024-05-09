@@ -25,13 +25,12 @@ resource "azurerm_resource_group" "this" {
 
 # resource block for DNS zones
 resource "azurerm_dns_zone" "dnszone" {
-  name                = "sub-domain.domain.com"
+  name                = "avm-domain.domain.com"
   resource_group_name = azurerm_resource_group.this.name
 }
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  #source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source              = "../../"
   enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
@@ -60,7 +59,7 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   front_door_origins = {
     origin1 = {
-      name                           = "example-origin"
+      name                           = "example-origin1"
       origin_group_name              = "og1"
       enabled                        = true
       certificate_name_check_enabled = false
@@ -111,10 +110,10 @@ module "azurerm_cdn_frontdoor_profile" {
         ENV = "example2"
       }
     }
-    ep33 = {
+    ep3 = {
       name = "ep3"
       tags = {
-        ENV = "example2"
+        ENV = "example3"
       }
     }
   }
@@ -134,7 +133,6 @@ module "azurerm_cdn_frontdoor_profile" {
       name        = "customdomain2"
       dns_zone_id = azurerm_dns_zone.dnszone.id
       host_name   = "contoso2.fabrikam.com"
-      #associated_route_names = ["route1"]
       tls = {
         certificate_type    = "ManagedCertificate"
         minimum_tls_version = "TLS12"
@@ -147,7 +145,7 @@ module "azurerm_cdn_frontdoor_profile" {
       name                   = "route1"
       endpoint_name          = "ep1"
       origin_group_name      = "og1"
-      origin_names           = ["example-origin", "origin3"]
+      origin_names           = ["example-origin1"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       custom_domain_names    = ["example-customDomain", "customdomain2"]
@@ -163,13 +161,35 @@ module "azurerm_cdn_frontdoor_profile" {
         }
       }
     }
+    route2 = {
+      name                   = "route2"
+      endpoint_name          = "ep2"
+      origin_group_name      = "og1"
+      origin_names           = ["origin2"]
+      forwarding_protocol    = "HttpsOnly"
+      https_redirect_enabled = true
+      # custom_domain_names    = ["example-customDomain", "customdomain2"]
+      patterns_to_match      = ["/*"]
+      supported_protocols    = ["Http", "Https"]
+    }
+    route3 = {
+      name                   = "route3"
+      endpoint_name          = "ep3"
+      origin_group_name      = "og1"
+      origin_names           = ["origin3"]
+      forwarding_protocol    = "HttpsOnly"
+      https_redirect_enabled = true
+      # custom_domain_names    = ["example-customDomain", "customdomain2"]
+      patterns_to_match      = ["/*"]
+      supported_protocols    = ["Http", "Https"]
+    }
   }
 
   front_door_rule_sets = ["ruleset1", "ruleset2"]
 
   front_door_rules = {
-    rule3 = {
-      name              = "examplerule3"
+    rule1 = {
+      name              = "examplerule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"
@@ -191,14 +211,6 @@ module "azurerm_cdn_frontdoor_profile" {
           cache_behavior                = "OverrideIfOriginMissing"
           cache_duration                = "365.23:59:59"
         }
-        # url_redirect_action = {
-        #   redirect_type        = "PermanentRedirect"
-        #   redirect_protocol    = "MatchRequest"
-        #   query_string         = "clientIp={client_ip}"
-        #   destination_path     = "/exampleredirection"
-        #   destination_hostname = "contoso.com"
-        #   destination_fragment = "UrlRedirect"
-        # }
         response_header_action = {
           header_action = "Append"
           header_name   = "headername"
@@ -210,19 +222,13 @@ module "azurerm_cdn_frontdoor_profile" {
           value         = "/abc"
         }
       }
-      # Upto 10 match conditions are allowed, comment/uncomment based on your requirements
+
       conditions = {
         remote_address_condition = {
           operator         = "IPMatch"
           negate_condition = false
           match_values     = ["10.0.0.0/23"]
         }
-
-        # request_method_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-        # }
 
         query_string_condition = {
           negate_condition = false
@@ -286,71 +292,6 @@ module "azurerm_cdn_frontdoor_profile" {
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
         }
-
-        # socket_address_condition = {
-        #   operator         = "IPMatch"
-        #   negate_condition = false
-        #   match_values     = ["5.5.5.64/26"]
-        # }
-
-        # client_port_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["Mobile"]
-        # }
-
-        # server_port_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["80"]
-        # }
-
-        # ssl_protocol_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["TLSv1"]
-        # }
-
-        # request_uri_condition = {
-        #   negate_condition = false
-        #   operator         = "BeginsWith"
-        #   match_values     = ["J", "K"]
-        #   transforms       = ["Uppercase"]
-        # }
-
-
-        # host_name_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-        #   transforms       = ["Lowercase", "Trim"]
-        # }
-
-        # is_device_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["Mobile"]
-        # }
-
-        # post_args_condition = {
-        #   post_args_name = "customerName"
-        #   operator       = "BeginsWith"
-        #   match_values   = ["J", "K"]
-        #   transforms     = ["Uppercase"]
-        # }
-
-        # request_method_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["DELETE"]
-        # }
-
-        # url_filename_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["media.mp4"]
-        #   transforms       = ["Lowercase", "RemoveNulls", "Trim"]
-        # }
       }
     }
   }
@@ -416,8 +357,8 @@ module "azurerm_cdn_frontdoor_profile" {
       # if using Standard sku , then managed rules are not supported, hence remove the below input variables
       managed_rules = {
         mr1 = {
-          type    = "DefaultRuleSet"
-          version = "1.0" #2.0
+          type    = "Microsoft_DefaultRuleSet"
+          version = "2.1" 
           action  = "Log"
           exclusions = {
             exclusion1 = {
@@ -433,7 +374,7 @@ module "azurerm_cdn_frontdoor_profile" {
                 rule1 = {
                   rule_id = "933100"
                   enabled = false
-                  action  = "Block"
+                  action  = "Log"
                 }
               }
             }
@@ -450,7 +391,7 @@ module "azurerm_cdn_frontdoor_profile" {
               rules = {
                 rule1 = {
                   rule_id = "942200"
-                  action  = "Block"
+                  action  = "Log"
                   exclusions = {
                     exclusion1 = {
                       match_variable = "QueryStringArgNames"
@@ -532,7 +473,7 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   front_door_security_policies = {
     secpol1 = {
-      name = "firewallpolicyforep1and2"
+      name = "firewallpolicyforep1"
       firewall = {
         front_door_firewall_policy_name = "examplecdnfdwafpolicy1"
         association = {
@@ -543,7 +484,7 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
     secpol3 = {
-      name = "firewallpolicyforep33"
+      name = "firewallpolicyforep2andep3"
       firewall = {
         front_door_firewall_policy_name = "examplecdnfdwafpolicy2"
         association = {
