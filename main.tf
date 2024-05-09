@@ -18,12 +18,14 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
     for_each = each.value.log_categories
     content {
       category = enabled_log.value
+   
     }
   }
   dynamic "enabled_log" {
     for_each = each.value.log_groups
     content {
       category_group = enabled_log.value
+      
     }
   }
   dynamic "metric" {
@@ -36,8 +38,7 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
 
 
 # Role assignments
-  # Example resource declaration
-  resource "azurerm_role_assignment" "this" {
+resource "azurerm_role_assignment" "this" {
     for_each                               = var.role_assignments
     scope                                  = azapi_resource.front_door_profile.id
     role_definition_id                     = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : null
@@ -50,14 +51,12 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
     principal_type                         = each.value.principal_type
   }
 
-# Example resource implementation
+
 resource "azurerm_management_lock" "this" {
   count = var.lock != null ? 1 : 0
-
   lock_level = var.lock.kind
   name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
   scope      = azapi_resource.front_door_profile.id
   notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
-
   depends_on = [azapi_resource.front_door_profile]
 }

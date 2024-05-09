@@ -26,15 +26,15 @@ resource "azurerm_resource_group" "this" {
 
 data "azurerm_client_config" "current" {}
 
-module "avm_storage_account" {
-  source                    = "Azure/avm-res-storage-storageaccount/azurerm"
-  version                   = "0.1.1"
-  name                      = module.naming.storage_account.name_unique
-  resource_group_name       = azurerm_resource_group.this.name
-  shared_access_key_enabled = true
-  enable_telemetry          = true
-  account_replication_type  = "ZRS"
-}
+# module "avm_storage_account" {
+#   source                    = "Azure/avm-res-storage-storageaccount/azurerm"
+#   version                   = "0.1.1"
+#   name                      = module.naming.storage_account.name_unique
+#   resource_group_name       = azurerm_resource_group.this.name
+#   shared_access_key_enabled = true
+#   enable_telemetry          = true
+#   account_replication_type  = "ZRS"
+# }
 
 resource "azurerm_log_analytics_workspace" "workspace" {
   location            = azurerm_resource_group.this.location
@@ -274,24 +274,23 @@ module "azurerm_cdn_frontdoor_profile" {
 
   diagnostic_settings = {
     workspaceandstorage_diag = {
-      name                           = " workspaceandstorage_diag"
+      name                           = "workspaceandstorage_diag"
       metric_categories              = ["AllMetrics"]
       log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      log_analytics_destination_type = "Dedicated"
+      log_analytics_destination_type = azurerm_log_analytics_workspace.workspace.id == null ? null : "Dedicated"
       workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
-      storage_account_resource_id    = module.avm_storage_account.id
+      #storage_account_resource_id    = module.avm_storage_account.id
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
     }
     eventhub_diag = {
       name           = "eventhubforwarding"
-      log_categories = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      # log_groups                               = ["allLogs", "audit"] # you can set either log_categories or log_groups.
+      #log_categories = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
+      log_groups                               = ["allLogs","Audit"] # you can set either log_categories or log_groups.
       metric_categories                        = ["AllMetrics"]
       event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
       event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
     }
   }
-
 
   role_assignments = {
     self_contributor = {
@@ -313,14 +312,15 @@ module "azurerm_cdn_frontdoor_profile" {
 
   tags = {
     environment = "production"
+    costcenter  = "IT"
   }
-   
-  # A lock needs to be removed before destroy
-   lock = {
-       name = "lock-cdnprofile" # optional
-       kind = "CanNotDelete"
-     }
-  
+      
+  # A lock needs to be removed before destroy or before making changes
+  #  lock = {
+  #      name = "lock-cdnprofile" # optional
+  #      kind = "CanNotDelete"
+  #    }
+
   managed_identities = {
     system_assigned = true
     user_assigned_resource_ids = [
