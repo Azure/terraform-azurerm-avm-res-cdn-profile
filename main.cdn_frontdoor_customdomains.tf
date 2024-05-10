@@ -26,8 +26,8 @@ resource "azurerm_cdn_frontdoor_custom_domain_association" "association" {
 locals {
   custom_domain_routes = {
     for domain in azurerm_cdn_frontdoor_custom_domain.cds : domain.name => [
-      for route in azurerm_cdn_frontdoor_route.routes : route.id
-      if contains(try(route.cdn_frontdoor_custom_domain_ids == null, tolist([])), domain.id)
+      for route in try(azurerm_cdn_frontdoor_route.routes,[]) : route.id
+      if contains(try(route.cdn_frontdoor_custom_domain_ids == "", ["h"]), domain.id)
     ]
   }
 }

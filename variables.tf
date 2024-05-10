@@ -701,7 +701,7 @@ variable "front_door_routes" {
     patterns_to_match         = list(string)
     link_to_default_domain    = optional(bool, true)
     https_redirect_enabled    = optional(bool, true)
-    custom_domain_names       = optional(list(string),[])
+    custom_domain_names       = optional(list(string), [])
     enabled                   = optional(bool, true)
     rule_set_names            = optional(list(string))
     cdn_frontdoor_origin_path = optional(string, null)
@@ -810,156 +810,159 @@ variable "front_door_rule_sets" {
 variable "front_door_rules" {
   type = map(object({
     name              = string
-    rule_set_name     = string
-    origin_group_name = string
     order             = number
-    behavior_on_match = optional(string,"Continue")
+    origin_group_name = string
+    rule_set_name     = string
+    behavior_on_match = optional(string, "Continue")
+
     actions = object({
-      url_rewrite_action = optional(object({
+      url_rewrite_actions = optional(list(object({
         source_pattern          = string
         destination             = string
-        preserve_unmatched_path = optional(bool,false)
-      }))
-      url_redirect_action = optional(object({
+        preserve_unmatched_path = optional(bool, false)
+      })), [])
+      url_redirect_actions = optional(list(object({
         redirect_type        = string
         destination_hostname = string
-        redirect_protocol    = optional(string,"Https")
-        destination_path     = optional(string,"")
-        query_string         = optional(string,"")
-        destination_fragment = optional(string,"")
-      }))
-      route_configuration_override_action = optional(object({
-        set_origin_groupid = bool
+        redirect_protocol    = optional(string, "Https") #Set default as per security best practice. TF default is MatchRequest
+        destination_path     = optional(string, "")
+        query_string         = optional(string, "")
+        destination_fragment = optional(string, "")
+      })), [])
+      route_configuration_override_actions = optional(list(object({
+        set_origin_groupid            = bool
         cache_duration                = optional(string) #d.HH:MM:SS (365.23:59:59)
         cdn_frontdoor_origin_group_id = optional(string)
-        forwarding_protocol           = optional(string,"HttpsOnly")
-        query_string_caching_behavior = optional(string)
+        forwarding_protocol           = optional(string, "HttpsOnly")
+        query_string_caching_behavior = optional(string) #TODO Default ?
         query_string_parameters       = optional(list(string))
-        compression_enabled           = optional(bool)
+        compression_enabled           = optional(bool, false)
         cache_behavior                = optional(string)
-      }))
-      request_header_action = optional(object({
+      })), [])
+      request_header_actions = optional(list(object({
         header_action = string
         header_name   = string
         value         = optional(string)
-      }))
-      response_header_action = optional(object({
+      })), [])
+      response_header_actions = optional(list(object({
         header_action = string
         header_name   = string
         value         = optional(string)
-      }))
+      })), [])
     })
-    conditions = object({
-      remote_address_condition = optional(object({
-        operator         = optional(string,"IPMatch")
-        negate_condition = optional(bool,false)
+    conditions = optional(object({
+      remote_address_conditions = optional(list(object({
+        operator         = optional(string, "IPMatch")
+        negate_condition = optional(bool, false)
         match_values     = optional(list(string))
-      }))
-      request_method_condition = optional(object({
+      })), [])
+      request_method_conditions = optional(list(object({
         match_values     = list(string)
-        operator         = optional(string,"Equal")
-        negate_condition = optional(bool,false)
-      }))
-      query_string_condition = optional(object({
+        operator         = optional(string, "Equal")
+        negate_condition = optional(bool, false)
+      })), [])
+      query_string_conditions = optional(list(object({
         operator         = string
-        negate_condition = optional(bool,false)
+        negate_condition = optional(bool, false)
         match_values     = optional(list(string))
         transforms       = optional(list(string))
-      }))
-      post_args_condition = optional(object({
+      })), [])
+      post_args_conditions = optional(list(object({
         post_args_name   = string
         operator         = string
-        negate_condition = optional(bool,false)
+        negate_condition = optional(bool, false)
         match_values     = optional(list(string))
         transforms       = optional(list(string))
-      }))
-      request_uri_condition = optional(object({
+      })), [])
+      request_uri_conditions = optional(list(object({
         operator         = string
         negate_condition = optional(bool)
         match_values     = optional(list(string))
         transforms       = optional(list(string))
-      }))
-      request_header_condition = optional(object({
+      })), [])
+      request_header_conditions = optional(list(object({
         header_name      = string
         operator         = string
-        negate_condition = optional(bool,false)
+        negate_condition = optional(bool, false)
         match_values     = optional(list(string))
         transforms       = optional(list(string))
-      }))
-      request_body_condition = optional(object({
+      })), [])
+      request_body_conditions = optional(list(object({
         operator         = string
         match_values     = list(string)
-        negate_condition = optional(bool,false)
+        negate_condition = optional(bool, false)
         transforms       = optional(list(string))
-      }))
-      request_scheme_condition = optional(object({
-        operator         = optional(string,"Equal")
-        negate_condition = optional(bool,false)
+      })), [])
+      request_scheme_conditions = optional(list(object({
+        operator         = optional(string, "Equal")
+        negate_condition = optional(bool, false)
         match_values     = optional(list(string))
-      }))
-      url_path_condition = optional(object({
+      })), [])
+      url_path_conditions = optional(list(object({
         operator         = string
-        negate_condition = optional(bool,false)
+        negate_condition = optional(bool, false)
         match_values     = optional(list(string))
         transforms       = optional(list(string))
-      }))
-      url_file_extension_condition = optional(object({
+      })), [])
+      url_file_extension_conditions = optional(list(object({
         operator         = string
-        negate_condition = optional(bool,false)
+        negate_condition = optional(bool, false)
         match_values     = list(string)
         transforms       = optional(list(string))
-      }))
-      url_filename_condition = optional(object({
+      })), [])
+      url_filename_conditions = optional(list(object({
         operator         = string
         match_values     = optional(list(string))
-        negate_condition = optional(bool,false)
+        negate_condition = optional(bool, false)
         transforms       = optional(list(string))
-      }))
-      http_version_condition = optional(object({
-        operator         = optional(string,"Equal")
+      })), [])
+      http_version_conditions = optional(list(object({
+        operator         = optional(string, "Equal")
         match_values     = list(string)
-        negate_condition = optional(bool,false)
-      }))
-      cookies_condition = optional(object({
+        negate_condition = optional(bool, false)
+      })), [])
+      cookies_conditions = optional(list(object({
         cookie_name      = string
         operator         = string
-        negate_condition = optional(bool,false)
+        negate_condition = optional(bool, false)
         match_values     = optional(list(string))
         transforms       = optional(list(string))
-      }))
-      is_device_condition = optional(object({
+      })), [])
+      is_device_conditions = optional(list(object({
         operator         = optional(string)
-        negate_condition = optional(bool,false)
+        negate_condition = optional(bool, false)
         match_values     = optional(string)
-      }))
-      socket_address_condition = optional(object({
-        operator         = optional(string,"IPMatch")
-        negate_condition = optional(bool,false)
+      })), [])
+      socket_address_conditions = optional(list(object({
+        operator         = optional(string, "IPMatch")
+        negate_condition = optional(bool, false)
         match_values     = optional(list(string))
-      }))
-      client_port_condition = optional(object({
+      })), [])
+      client_port_conditions = optional(list(object({
         operator         = string
-        negate_condition = optional(bool,false)
+        negate_condition = optional(bool, false)
         match_values     = optional(list(number))
-      }))
-      server_port_condition = optional(object({
+      })), [])
+      server_port_conditions = optional(list(object({
         operator         = string
-        negate_condition = optional(bool,false)
-        match_values     = list(number)        
-      }))
-      host_name_condition = optional(object({
+        negate_condition = optional(bool, false)
+        match_values     = list(number)
+      })), [])
+      host_name_conditions = optional(list(object({
         operator         = string
         match_values     = optional(list(string))
         transforms       = optional(list(string))
-        negate_condition = optional(bool,false)
-      }))
-      ssl_protocol_condition = optional(object({
+        negate_condition = optional(bool, false)
+      })), [])
+      ssl_protocol_conditions = optional(list(object({
         match_values     = list(string)
-        operator         = optional(string,"Equal")
-        negate_condition = optional(bool,false)
-      }))
-    })
+        operator         = optional(string, "Equal")
+        negate_condition = optional(bool, false)
+      })), [])
+    }))
   }))
+  default  = {}
+  nullable = false
 }
 
 
@@ -1084,19 +1087,19 @@ variable "response_timeout_seconds" {
 #   nullable    = false
 # }
 variable "role_assignments" {
-    type = map(object({
-      role_definition_id_or_name             = string
-      principal_id                           = string
-      description                            = optional(string, null)
-      skip_service_principal_aad_check       = optional(bool, false)
-      condition                              = optional(string, null)
-      condition_version                      = optional(string, null)
-      delegated_managed_identity_resource_id = optional(string, null)
-      principal_type                         = optional(string, null)
-    }))
-    default     = {}
-    nullable    = false
-    description = <<DESCRIPTION
+  type = map(object({
+    role_definition_id_or_name             = string
+    principal_id                           = string
+    description                            = optional(string, null)
+    skip_service_principal_aad_check       = optional(bool, false)
+    condition                              = optional(string, null)
+    condition_version                      = optional(string, null)
+    delegated_managed_identity_resource_id = optional(string, null)
+    principal_type                         = optional(string, null)
+  }))
+  default     = {}
+  nullable    = false
+  description = <<DESCRIPTION
   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
   - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
@@ -1110,7 +1113,7 @@ variable "role_assignments" {
   
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
   DESCRIPTION
-  }
+}
 
 variable "sku" {
   type        = string

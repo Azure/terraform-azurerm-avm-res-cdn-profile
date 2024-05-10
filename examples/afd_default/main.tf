@@ -141,7 +141,7 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  front_door_rule_sets = ["ruleset1"]
+  front_door_rule_sets = ["ruleset1", "ruleset2"]
 
   front_door_rules = {
     rule1 = {
@@ -152,12 +152,12 @@ module "azurerm_cdn_frontdoor_profile" {
       origin_group_name = "og1"
       actions = {
 
-        url_rewrite_action = {
+        url_rewrite_actions = [{
           source_pattern          = "/"
           destination             = "/index3.html"
           preserve_unmatched_path = false
-        }
-        route_configuration_override_action = {
+        }]
+        route_configuration_override_actions = [{
           set_origin_groupid            = true
           forwarding_protocol           = "HttpsOnly"
           query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
@@ -165,90 +165,195 @@ module "azurerm_cdn_frontdoor_profile" {
           compression_enabled           = true
           cache_behavior                = "OverrideIfOriginMissing"
           cache_duration                = "365.23:59:59"
-        }
-        response_header_action = {
+        }]
+        response_header_actions = [{
           header_action = "Append"
           header_name   = "headername"
           value         = "/abc"
-        }
-        request_header_action = {
+        }]
+        request_header_actions = [{
           header_action = "Append"
           header_name   = "headername"
           value         = "/abc"
-        }
+        }]
       }
 
       conditions = {
-        remote_address_condition = {
+        remote_address_conditions = [{
           operator         = "IPMatch"
           negate_condition = false
           match_values     = ["10.0.0.0/23"]
-        }
+        }]
 
-        query_string_condition = {
+        query_string_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_header_condition = {
+        request_header_conditions = [{
           header_name      = "headername"
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_body_condition = {
+        request_body_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_scheme_condition = {
+        request_scheme_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["HTTP"]
-        }
+        }]
 
-        url_path_condition = {
+        url_path_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        url_file_extension_condition = {
+        url_file_extension_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        url_filename_condition = {
+        url_filename_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        http_version_condition = {
+        http_version_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["2.0"]
-        }
+        }]
 
-        cookies_condition = {
+        cookies_conditions = [{
           cookie_name      = "cookie"
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
       }
     }
-   
+    rule2 = {
+      name              = "examplerule2"
+      order             = 1
+      behavior_on_match = "Continue"
+      rule_set_name     = "ruleset2"
+      origin_group_name = "og1"
+      actions = {
+
+        url_rewrite_actions = [{
+          source_pattern          = "/"
+          destination             = "/index3.html"
+          preserve_unmatched_path = false
+        }]
+        route_configuration_override_actions = [{
+          set_origin_groupid            = true
+          forwarding_protocol           = "HttpsOnly"
+          query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
+          query_string_parameters       = ["foo", "clientIp={client_ip}"]
+          compression_enabled           = true
+          cache_behavior                = "OverrideIfOriginMissing"
+          cache_duration                = "365.23:59:59"
+        }]
+        response_header_actions = [{
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }]
+        request_header_actions = [{
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }]
+      }
+
+      conditions = {
+        remote_address_conditions = [{
+          operator         = "IPMatch"
+          negate_condition = false
+          match_values     = ["10.0.0.0/23"]
+        }]
+
+        query_string_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_header_conditions = [{
+          header_name      = "headername"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_body_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_scheme_conditions = [{
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["HTTP"]
+        }]
+
+        url_path_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        url_file_extension_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        url_filename_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        http_version_conditions = [{
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["2.0"]
+        }]
+
+        cookies_conditions = [{
+          cookie_name      = "cookie"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+      }
+    }
   }
+
 }

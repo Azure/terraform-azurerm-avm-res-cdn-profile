@@ -283,9 +283,9 @@ module "azurerm_cdn_frontdoor_profile" {
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
     }
     eventhub_diag = {
-      name           = "eventhubforwarding"
+      name = "eventhubforwarding"
       #log_categories = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      log_groups                               = ["allLogs","Audit"] # you can set either log_categories or log_groups.
+      log_groups                               = ["allLogs", "Audit"] # you can set either log_categories or log_groups.
       metric_categories                        = ["AllMetrics"]
       event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
       event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
@@ -306,7 +306,7 @@ module "azurerm_cdn_frontdoor_profile" {
       skip_service_principal_aad_check = false
       # condition                        = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
       # condition_version                = "2.0"
-      principal_type                   = "User"
+      principal_type = "User"
     }
   }
 
@@ -314,7 +314,7 @@ module "azurerm_cdn_frontdoor_profile" {
     environment = "production"
     costcenter  = "IT"
   }
-      
+
   # A lock needs to be removed before destroy or before making changes
   #  lock = {
   #      name = "lock-cdnprofile" # optional
