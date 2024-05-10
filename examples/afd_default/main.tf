@@ -141,7 +141,7 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  front_door_rule_sets = ["ruleset1", "ruleset2"]
+  front_door_rule_sets = ["ruleset1"]
 
   front_door_rules = {
     rule1 = {
@@ -153,14 +153,12 @@ module "azurerm_cdn_frontdoor_profile" {
       actions = {
 
         url_rewrite_action = {
-          actiontype              = "url_rewrite_action"
           source_pattern          = "/"
           destination             = "/index3.html"
           preserve_unmatched_path = false
         }
         route_configuration_override_action = {
           set_origin_groupid            = true
-          actiontype                    = "route_configuration_override_action"
           forwarding_protocol           = "HttpsOnly"
           query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
           query_string_parameters       = ["foo", "clientIp={client_ip}"]
@@ -251,115 +249,6 @@ module "azurerm_cdn_frontdoor_profile" {
         }
       }
     }
-    rule2 = {
-      name              = "examplerule1"
-      order             = 1
-      behavior_on_match = "Continue"
-      rule_set_name     = "ruleset2"
-      origin_group_name = "og1"
-      actions = {
-
-        route_configuration_override_action = {
-          set_origin_groupid            = true
-          actiontype                    = "route_configuration_override_action"
-          forwarding_protocol           = "HttpsOnly"
-          query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
-          query_string_parameters       = ["foo", "clientIp={client_ip}"]
-          compression_enabled           = true
-          cache_behavior                = "OverrideIfOriginMissing"
-          cache_duration                = "365.23:59:59"
-        }
-        url_redirect_action = {
-          redirect_type        = "PermanentRedirect"
-          redirect_protocol    = "MatchRequest"
-          query_string         = "clientIp={client_ip}"
-          destination_path     = "/exampleredirection"
-          destination_hostname = "contoso.com"
-          destination_fragment = "UrlRedirect"
-        }
-        response_header_action = {
-          header_action = "Append"
-          header_name   = "headername"
-          value         = "/abc"
-        }
-        request_header_action = {
-          header_action = "Append"
-          header_name   = "headername"
-          value         = "/abc"
-        }
-      }
-
-      conditions = {
-        request_method_condition = {
-          operator         = "Equal"
-          negate_condition = false
-          match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-        }
-
-        socket_address_condition = {
-          operator         = "IPMatch"
-          negate_condition = false
-          match_values     = ["5.5.5.64/26"]
-        }
-
-        client_port_condition = {
-          operator         = "Equal"
-          negate_condition = false
-          match_values     = ["Mobile"]
-        }
-
-        server_port_condition = {
-          operator         = "Equal"
-          negate_condition = false
-          match_values     = ["80"]
-        }
-
-        ssl_protocol_condition = {
-          operator         = "Equal"
-          negate_condition = false
-          match_values     = ["TLSv1"]
-        }
-
-        request_uri_condition = {
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }
-
-        host_name_condition = {
-          operator         = "Equal"
-          negate_condition = false
-          match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-          transforms       = ["Lowercase", "Trim"]
-        }
-
-        is_device_condition = {
-          operator         = "Equal"
-          negate_condition = false
-          match_values     = ["Mobile"]
-        }
-
-        post_args_condition = {
-          post_args_name = "customerName"
-          operator       = "BeginsWith"
-          match_values   = ["J", "K"]
-          transforms     = ["Uppercase"]
-        }
-
-        request_method_condition = {
-          operator         = "Equal"
-          negate_condition = false
-          match_values     = ["DELETE"]
-        }
-
-        url_filename_condition = {
-          operator         = "Equal"
-          negate_condition = false
-          match_values     = ["media.mp4"]
-          transforms       = ["Lowercase", "RemoveNulls", "Trim"]
-        }
-      }
-    }
+   
   }
 }

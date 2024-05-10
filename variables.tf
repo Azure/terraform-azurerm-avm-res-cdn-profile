@@ -797,15 +797,172 @@ variable "front_door_rule_sets" {
   DESCRIPTION
 }
 
+# variable "front_door_rules" {
+#   type        = any
+#   default     = {}
+#   description = <<DESCRIPTION
+#   Manages a Front Door (standard/premium) Rules.
+#   refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule#arguments-reference for Azure Front door rules arguments reference.
+#   DESCRIPTION
+#   nullable    = false
+# }
+
 variable "front_door_rules" {
-  type        = any
-  default     = {}
-  description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Rules.
-  refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule#arguments-reference for Azure Front door rules arguments reference.
-  DESCRIPTION
-  nullable    = false
+  type = map(object({
+    name              = string
+    rule_set_name     = string
+    origin_group_name = string
+    order             = number
+    behavior_on_match = optional(string,"Continue")
+    actions = object({
+      url_rewrite_action = optional(object({
+        source_pattern          = string
+        destination             = string
+        preserve_unmatched_path = optional(bool,false)
+      }))
+      url_redirect_action = optional(object({
+        redirect_type        = string
+        destination_hostname = string
+        redirect_protocol    = optional(string,"Https")
+        destination_path     = optional(string,"")
+        query_string         = optional(string,"")
+        destination_fragment = optional(string,"")
+      }))
+      route_configuration_override_action = optional(object({
+        set_origin_groupid = bool
+        cache_duration                = optional(string) #d.HH:MM:SS (365.23:59:59)
+        cdn_frontdoor_origin_group_id = optional(string)
+        forwarding_protocol           = optional(string,"HttpsOnly")
+        query_string_caching_behavior = optional(string)
+        query_string_parameters       = optional(list(string))
+        compression_enabled           = optional(bool)
+        cache_behavior                = optional(string)
+      }))
+      request_header_action = optional(object({
+        header_action = string
+        header_name   = string
+        value         = optional(string)
+      }))
+      response_header_action = optional(object({
+        header_action = string
+        header_name   = string
+        value         = optional(string)
+      }))
+    })
+    conditions = object({
+      remote_address_condition = optional(object({
+        operator         = optional(string,"IPMatch")
+        negate_condition = optional(bool,false)
+        match_values     = optional(list(string))
+      }))
+      request_method_condition = optional(object({
+        match_values     = list(string)
+        operator         = optional(string,"Equal")
+        negate_condition = optional(bool,false)
+      }))
+      query_string_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool,false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      post_args_condition = optional(object({
+        post_args_name   = string
+        operator         = string
+        negate_condition = optional(bool,false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      request_uri_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      request_header_condition = optional(object({
+        header_name      = string
+        operator         = string
+        negate_condition = optional(bool,false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      request_body_condition = optional(object({
+        operator         = string
+        match_values     = list(string)
+        negate_condition = optional(bool,false)
+        transforms       = optional(list(string))
+      }))
+      request_scheme_condition = optional(object({
+        operator         = optional(string,"Equal")
+        negate_condition = optional(bool,false)
+        match_values     = optional(list(string))
+      }))
+      url_path_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool,false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      url_file_extension_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool,false)
+        match_values     = list(string)
+        transforms       = optional(list(string))
+      }))
+      url_filename_condition = optional(object({
+        operator         = string
+        match_values     = optional(list(string))
+        negate_condition = optional(bool,false)
+        transforms       = optional(list(string))
+      }))
+      http_version_condition = optional(object({
+        operator         = optional(string,"Equal")
+        match_values     = list(string)
+        negate_condition = optional(bool,false)
+      }))
+      cookies_condition = optional(object({
+        cookie_name      = string
+        operator         = string
+        negate_condition = optional(bool,false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      }))
+      is_device_condition = optional(object({
+        operator         = optional(string)
+        negate_condition = optional(bool,false)
+        match_values     = optional(string)
+      }))
+      socket_address_condition = optional(object({
+        operator         = optional(string,"IPMatch")
+        negate_condition = optional(bool,false)
+        match_values     = optional(list(string))
+      }))
+      client_port_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool,false)
+        match_values     = optional(list(number))
+      }))
+      server_port_condition = optional(object({
+        operator         = string
+        negate_condition = optional(bool,false)
+        match_values     = list(number)        
+      }))
+      host_name_condition = optional(object({
+        operator         = string
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+        negate_condition = optional(bool,false)
+      }))
+      ssl_protocol_condition = optional(object({
+        match_values     = list(string)
+        operator         = optional(string,"Equal")
+        negate_condition = optional(bool,false)
+      }))
+    })
+  }))
 }
+
+
 
 variable "front_door_secret" {
   type = object({

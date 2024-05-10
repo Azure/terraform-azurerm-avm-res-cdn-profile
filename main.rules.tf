@@ -20,9 +20,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
       }
 
       content {
-        header_action = request_header_action.value.header_action
-        header_name   = request_header_action.value.header_name
-        value         = request_header_action.value.value
+        header_action = try(request_header_action.value.header_action,null)
+        header_name   = try(request_header_action.value.header_name,null)
+        value         = try(request_header_action.value.value,null)
       }
     }
     dynamic "response_header_action" {
@@ -31,9 +31,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
       }
 
       content {
-        header_action = response_header_action.value.header_action
-        header_name   = response_header_action.value.header_name
-        value         = response_header_action.value.value
+        header_action = try(response_header_action.value.header_action,null)
+        header_name   = try(response_header_action.value.header_name,null)
+        value         = try(response_header_action.value.value,null)
       }
     }
     dynamic "route_configuration_override_action" {
@@ -42,13 +42,13 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
       }
 
       content {
-        cache_behavior                = route_configuration_override_action.value.cache_behavior
-        cache_duration                = route_configuration_override_action.value.cache_duration
-        cdn_frontdoor_origin_group_id = try(route_configuration_override_action.value.set_origin_groupid == true ? azurerm_cdn_frontdoor_origin_group.example[each.value.origin_group_name].id : null)
-        compression_enabled           = route_configuration_override_action.value.compression_enabled
+        cache_behavior                = try(route_configuration_override_action.value.cache_behavior, null)
+        cache_duration                = try(route_configuration_override_action.value.cache_duration, null)
+        cdn_frontdoor_origin_group_id = try(route_configuration_override_action.value.set_origin_groupid == true ? azurerm_cdn_frontdoor_origin_group.example[each.value.origin_group_name].id : null, null)
+        compression_enabled           = try(route_configuration_override_action.value.compression_enabled, null)
         forwarding_protocol           = try(route_configuration_override_action.value.forwarding_protocol, null)
         query_string_caching_behavior = try(route_configuration_override_action.value.query_string_caching_behavior, null)
-        query_string_parameters       = route_configuration_override_action.value.query_string_parameters
+        query_string_parameters       = try(route_configuration_override_action.value.query_string_parameters, null)
       }
     }
     dynamic "url_redirect_action" {
@@ -57,12 +57,12 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
       }
 
       content {
-        destination_hostname = url_redirect_action.value.destination_hostname
-        redirect_type        = url_redirect_action.value.redirect_type
-        destination_fragment = try(url_redirect_action.value.destination_fragment, "")
-        destination_path     = try(url_redirect_action.value.destination_path, "")
-        query_string         = try(url_redirect_action.value.query_string, "")
-        redirect_protocol    = try(url_redirect_action.value.redirect_protocol, "MatchRequest")
+        destination_hostname = try(url_redirect_action.value.destination_hostname, null)
+        redirect_type        = try(url_redirect_action.value.redirect_type, null)
+        destination_fragment = try(url_redirect_action.value.destination_fragment, null)
+        destination_path     = try(url_redirect_action.value.destination_path, null)
+        query_string         = try(url_redirect_action.value.query_string, null)
+        redirect_protocol    = try(url_redirect_action.value.redirect_protocol, null)
       }
     }
     dynamic "url_rewrite_action" {
@@ -71,9 +71,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
       }
 
       content {
-        destination             = url_rewrite_action.value.destination
-        source_pattern          = url_rewrite_action.value.source_pattern
-        preserve_unmatched_path = try(url_rewrite_action.value.preserve_unmatched_path, false)
+        destination             = try(url_rewrite_action.value.destination, null)
+        source_pattern          = try(url_rewrite_action.value.source_pattern, null)
+        preserve_unmatched_path = try(url_rewrite_action.value.preserve_unmatched_path, null)
       }
     }
   }
@@ -83,9 +83,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "client_port_condition"
       }
       content {
-        operator         = client_port_condition.value.operator
-        match_values     = client_port_condition.value.match_values
-        negate_condition = try(client_port_condition.value.negate_condition, false)
+        operator         = try(client_port_condition.value.operator, null)
+        match_values     = try(client_port_condition.value.match_values, null)
+        negate_condition = try(client_port_condition.value.negate_condition, null)
       }
     }
     dynamic "cookies_condition" {
@@ -93,11 +93,11 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "cookies_condition"
       }
       content {
-        cookie_name      = cookies_condition.value.cookie_name
-        operator         = cookies_condition.value.operator
-        match_values     = cookies_condition.value.match_values
-        negate_condition = try(cookies_condition.value.negate_condition, false)
-        transforms       = cookies_condition.value.transforms
+        cookie_name      = try(cookies_condition.value.cookie_name,null)
+        operator         = try(cookies_condition.value.operator,null)
+        match_values     = try(cookies_condition.value.match_values,null)
+        negate_condition = try(cookies_condition.value.negate_condition,null)
+        transforms       = try(cookies_condition.value.transforms, null)
       }
     }
     dynamic "host_name_condition" {
@@ -105,10 +105,10 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "host_name_condition"
       }
       content {
-        operator         = host_name_condition.value.operator
-        match_values     = host_name_condition.value.match_values
-        negate_condition = try(host_name_condition.value.negate_condition, false)
-        transforms       = host_name_condition.value.transforms
+        operator         = try(host_name_condition.value.operator,null)
+        match_values     = try(host_name_condition.value.match_values,null)
+        negate_condition = try(host_name_condition.value.negate_condition,null)
+        transforms       = try(host_name_condition.value.transforms,null)
       }
     }
     dynamic "http_version_condition" {
@@ -116,9 +116,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "http_version_condition"
       }
       content {
-        match_values     = http_version_condition.value.match_values
-        negate_condition = try(http_version_condition.value.negate_condition, false)
-        operator         = try(http_version_condition.value.operator, "Equal")
+        match_values     = try(http_version_condition.value.match_values,null)
+        negate_condition = try(http_version_condition.value.negate_condition,null)
+        operator         = try(http_version_condition.value.operator,null)
       }
     }
     dynamic "is_device_condition" {
@@ -126,8 +126,8 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "is_device_condition"
       }
       content {
-        match_values     = is_device_condition.value.match_values
-        negate_condition = try(is_device_condition.value.negate_condition, false)
+        match_values     = try(is_device_condition.value.match_values,null)
+        negate_condition = try(is_device_condition.value.negate_condition,null)
         operator         = try(is_device_condition.value.operator, "Equal")
       }
     }
@@ -136,11 +136,11 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "post_args_condition"
       }
       content {
-        operator         = post_args_condition.value.operator
-        post_args_name   = post_args_condition.value.post_args_name
-        match_values     = post_args_condition.value.match_values
-        negate_condition = try(post_args_condition.value.negate_condition, false)
-        transforms       = post_args_condition.value.transforms
+        operator         = try(post_args_condition.value.operator,null)
+        post_args_name   = try(post_args_condition.value.post_args_name,null)
+        match_values     = try(post_args_condition.value.match_values,null)
+        negate_condition = try(post_args_condition.value.negate_condition,null)
+        transforms       = try(post_args_condition.value.transforms,null)
       }
     }
     dynamic "query_string_condition" {
@@ -148,10 +148,10 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "query_string_condition"
       }
       content {
-        operator         = query_string_condition.value.operator
-        match_values     = query_string_condition.value.match_values
-        negate_condition = try(query_string_condition.value.negate_condition, false)
-        transforms       = query_string_condition.value.transforms
+        operator         = try(query_string_condition.value.operator,null)
+        match_values     = try(query_string_condition.value.match_values,null)
+        negate_condition = try(query_string_condition.value.negate_condition,null)
+        transforms       = try(query_string_condition.value.transforms,null)
       }
     }
     dynamic "remote_address_condition" {
@@ -159,9 +159,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "remote_address_condition"
       }
       content {
-        match_values     = remote_address_condition.value.match_values
-        negate_condition = try(remote_address_condition.value.negate_condition, false)
-        operator         = try(remote_address_condition.value.operator, "IPMatch")
+        match_values     = try(remote_address_condition.value.match_values,null)
+        negate_condition = try(remote_address_condition.value.negate_condition,null)
+        operator         = try(remote_address_condition.value.operator,null)
       }
     }
     dynamic "request_body_condition" {
@@ -169,10 +169,10 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "request_body_condition"
       }
       content {
-        match_values     = request_body_condition.value.match_values
-        operator         = request_body_condition.value.operator
-        negate_condition = try(request_body_condition.value.negate_condition, false)
-        transforms       = request_body_condition.value.transforms
+        match_values     = try(request_body_condition.value.match_values,null)
+        operator         = try(request_body_condition.value.operator,null)
+        negate_condition = try(request_body_condition.value.negate_condition,null)
+        transforms       = try(request_body_condition.value.transforms,null)
       }
     }
     dynamic "request_header_condition" {
@@ -180,11 +180,11 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "request_header_condition"
       }
       content {
-        header_name      = request_header_condition.value.header_name
-        operator         = request_header_condition.value.operator
-        match_values     = request_header_condition.value.match_values
-        negate_condition = try(request_header_condition.value.negate_condition, false)
-        transforms       = request_header_condition.value.transforms
+        header_name      = try(request_header_condition.value.header_name,null)
+        operator         = try(request_header_condition.value.operator,null)
+        match_values     = try(request_header_condition.value.match_values,null)
+        negate_condition = try(request_header_condition.value.negate_condition,null)
+        transforms       = try(request_header_condition.value.transforms,null)
       }
     }
     dynamic "request_method_condition" {
@@ -192,9 +192,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "request_method_condition"
       }
       content {
-        match_values     = request_method_condition.value.match_values
-        negate_condition = try(request_method_condition.value.negate_condition, false)
-        operator         = try(request_method_condition.value.operator, "Equal")
+        match_values     = try(request_method_condition.value.match_values,null)
+        negate_condition = try(request_method_condition.value.negate_condition,null)
+        operator         = try(request_method_condition.value.operator,null)
       }
     }
     dynamic "request_scheme_condition" {
@@ -202,9 +202,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "request_scheme_condition"
       }
       content {
-        match_values     = request_scheme_condition.value.match_values
-        negate_condition = try(request_scheme_condition.value.negate_condition, false)
-        operator         = try(request_scheme_condition.value.operator, "Equal")
+        match_values     = try(request_scheme_condition.value.match_values,null)
+        negate_condition = try(request_scheme_condition.value.negate_condition,null)
+        operator         = try(request_scheme_condition.value.operator,null)
       }
     }
     dynamic "request_uri_condition" {
@@ -212,10 +212,10 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "request_uri_condition"
       }
       content {
-        operator         = request_uri_condition.value.operator
-        match_values     = request_uri_condition.value.match_values
-        negate_condition = try(request_uri_condition.value.negate_condition, false)
-        transforms       = request_uri_condition.value.transforms
+        operator         = try(request_uri_condition.value.operator,null)
+        match_values     = try(request_uri_condition.value.match_values,null)
+        negate_condition = try(request_uri_condition.value.negate_condition,null)
+        transforms       = try(request_uri_condition.value.transforms,null)
       }
     }
     dynamic "server_port_condition" {
@@ -223,9 +223,9 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "server_port_condition"
       }
       content {
-        match_values     = server_port_condition.value.match_values
-        operator         = server_port_condition.value.operator
-        negate_condition = try(server_port_condition.value.negate_condition, false)
+        match_values     = try(server_port_condition.value.match_values,null)
+        operator         = try(server_port_condition.value.operator,null)
+        negate_condition = try(server_port_condition.value.negate_condition,null)
       }
     }
     dynamic "socket_address_condition" {
@@ -233,18 +233,18 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "socket_address_condition"
       }
       content {
-        match_values     = socket_address_condition.value.match_values
-        negate_condition = try(socket_address_condition.value.negate_condition, false)
-        operator         = try(socket_address_condition.value.operator, "IPMatch")
+        match_values     = try(socket_address_condition.value.match_values, null)
+        negate_condition = try(socket_address_condition.value.negate_condition, null)
+        operator         = try(socket_address_condition.value.operator, null)
       }
     }
     dynamic "ssl_protocol_condition" {
-      for_each = try({ for key, value in try(each.value.conditions, {}) : key => value
+      for_each = { for key, value in each.value.conditions : key => value
         if key == "ssl_protocol_condition"
-      }, {})
+      }
       content {
         match_values     = try(ssl_protocol_condition.value.match_values, null)
-        negate_condition = try(ssl_protocol_condition.value.negate_condition, false)
+        negate_condition = try(ssl_protocol_condition.value.negate_condition, null)
         operator         = try(ssl_protocol_condition.value.operator, null)
       }
     }
@@ -253,10 +253,10 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "url_file_extension_condition"
       }
       content {
-        match_values     = url_file_extension_condition.value.match_values
-        operator         = url_file_extension_condition.value.operator
-        negate_condition = try(url_file_extension_condition.value.negate_condition, false)
-        transforms       = url_file_extension_condition.value.transforms
+        match_values     = try(url_file_extension_condition.value.match_values, null)
+        operator         = try(url_file_extension_condition.value.operator, null)
+        negate_condition = try(url_file_extension_condition.value.negate_condition, null)
+        transforms       = try(url_file_extension_condition.value.transforms, null)
       }
     }
     dynamic "url_filename_condition" {
@@ -264,10 +264,10 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "url_filename_condition"
       }
       content {
-        operator         = url_filename_condition.value.operator
-        match_values     = url_filename_condition.value.match_values
-        negate_condition = try(url_filename_condition.value.negate_condition, false)
-        transforms       = url_filename_condition.value.transforms
+        operator         = try(url_filename_condition.value.operator, null)
+        match_values     = try(url_filename_condition.value.match_values, null)
+        negate_condition = try(url_filename_condition.value.negate_condition, null)
+        transforms       = try(url_filename_condition.value.transforms, null)
       }
     }
     dynamic "url_path_condition" {
@@ -275,10 +275,10 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
         if key == "url_path_condition"
       }
       content {
-        operator         = url_path_condition.value.operator
-        match_values     = url_path_condition.value.match_values
-        negate_condition = try(url_path_condition.value.negate_condition, false)
-        transforms       = url_path_condition.value.transforms
+        operator         = try(url_path_condition.value.operator, null)
+        match_values     = try(url_path_condition.value.match_values, null)
+        negate_condition = try(url_path_condition.value.negate_condition, null)
+        transforms       = try(url_path_condition.value.transforms, null)
       }
     }
   }
