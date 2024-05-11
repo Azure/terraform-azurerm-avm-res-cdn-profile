@@ -38,7 +38,7 @@ module "azurerm_cdn_frontdoor_profile" {
   sku                 = "Premium_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
   front_door_origin_groups = {
-    og1 = {
+    og1_key = {
       name = "og1"
       health_probe = {
         hp1 = {
@@ -58,79 +58,78 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
   front_door_origins = {
-    origin1 = {
-      name                           = "example-origin1"
-      origin_group_name              = "og1"
+    origin1_key = {
+      name                           = "origin1"
+      origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = false
-      host_name                      = "contoso.com"
+      host_name                      = "contoso1.com"
       http_port                      = 80
       https_port                     = 443
-      host_header                    = "www.contoso.com"
+      host_header                    = "www.contoso1.com"
       priority                       = 1
       weight                         = 1
     }
-    origin2 = {
+    origin2_key = {
       name                           = "origin2"
-      origin_group_name              = "og1"
+      origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = false
-      host_name                      = "contoso1.com"
+      host_name                      = "contoso2.com"
       http_port                      = 80
       https_port                     = 443
-      host_header                    = "www.contoso.com"
+      host_header                    = "www.contoso2.com"
       priority                       = 1
       weight                         = 1
     }
-    origin3 = {
+    origin3_key = {
       name                           = "origin3"
-      origin_group_name              = "og1"
+      origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = false
-      host_name                      = "contoso1.com"
+      host_name                      = "contoso3.com"
       http_port                      = 80
       https_port                     = 443
-      host_header                    = "www.contoso.com"
+      host_header                    = "www.contoso3.com"
       priority                       = 1
       weight                         = 1
     }
-
   }
 
   front_door_endpoints = {
-    ep1 = {
-      name = "ep1"
+    ep1_key = {
+      name = module.naming.cdn_endpoint.name_unique
       tags = {
-        ENV = "example"
+        ENV = "prod"
       }
     }
-    ep2 = {
-      name = "ep2"
+    ep2_key = {
+      name = module.naming.cdn_endpoint.name_unique
       tags = {
-        ENV = "example2"
+        ENV = "prod"
       }
     }
-    ep3 = {
-      name = "ep3"
+    ep3_key = {
+      name = module.naming.cdn_endpoint.name_unique
       tags = {
-        ENV = "example3"
+        ENV = "prod"
       }
     }
   }
 
   front_door_custom_domains = {
-    cd1 = {
-      name        = "example-customDomain"
+    cd1_key = {
+      name        = "contoso1customdomain"
       dns_zone_id = azurerm_dns_zone.dnszone.id
-      host_name   = "contoso.fabrikam.com"
+      host_name   = "contoso1.fabrikam.com"
 
       tls = {
         certificate_type    = "ManagedCertificate"
         minimum_tls_version = "TLS12"
       }
     },
-    cd2 = {
-      name        = "customdomain2"
+    cd2_key = {
+      name        = "contoso2customdomain"
       dns_zone_id = azurerm_dns_zone.dnszone.id
       host_name   = "contoso2.fabrikam.com"
       tls = {
@@ -141,14 +140,14 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 
   front_door_routes = {
-    route1 = {
+    route1_key = {
       name                   = "route1"
-      endpoint_name          = "ep1"
-      origin_group_name      = "og1"
-      origin_names           = ["example-origin1"]
+      endpoint_key           = "ep1_key"
+      origin_group_key       = "og1_key"
+      origin_keys            = ["origin1_key"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
-      custom_domain_names    = ["example-customDomain", "customdomain2"]
+      custom_domain_keys     = ["cd1_key", "cd2_key"]
       patterns_to_match      = ["/*"]
       supported_protocols    = ["Http", "Https"]
       rule_set_names         = ["ruleset1"]
@@ -161,22 +160,22 @@ module "azurerm_cdn_frontdoor_profile" {
         }
       }
     }
-    route2 = {
+    route2_key = {
       name                   = "route2"
-      endpoint_name          = "ep2"
-      origin_group_name      = "og1"
-      origin_names           = ["origin2"]
+      endpoint_key           = "ep2_key"
+      origin_group_key       = "og1_key"
+      origin_keys            = ["origin2_key"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       # custom_domain_names    = ["example-customDomain", "customdomain2"]
       patterns_to_match   = ["/*"]
       supported_protocols = ["Http", "Https"]
     }
-    route3 = {
+    route3_key = {
       name                   = "route3"
-      endpoint_name          = "ep3"
-      origin_group_name      = "og1"
-      origin_names           = ["origin3"]
+      endpoint_key           = "ep3_key"
+      origin_group_key       = "og1_key"
+      origin_keys            = ["origin3_key"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       # custom_domain_names    = ["example-customDomain", "customdomain2"]
@@ -188,12 +187,12 @@ module "azurerm_cdn_frontdoor_profile" {
   front_door_rule_sets = ["ruleset1", "ruleset2"]
 
   front_door_rules = {
-    rule1 = {
+    rule1_key = {
       name              = "examplerule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"
-      origin_group_name = "og1"
+      origin_group_key  = "og1_key"
       actions = {
 
         url_rewrite_actions = [{
@@ -293,10 +292,10 @@ module "azurerm_cdn_frontdoor_profile" {
         }]
       }
     }
-   }
+  }
 
   front_door_firewall_policies = {
-    fd_waf1 = {
+    fd_waf1_key = {
       name                              = "examplecdnfdwafpolicy1"
       resource_group_name               = azurerm_resource_group.this.name
       sku_name                          = "Premium_AzureFrontDoor" # Ensure SKU_name for WAF is similar to SKU_name for front door profile.
@@ -411,7 +410,7 @@ module "azurerm_cdn_frontdoor_profile" {
         }
       }
     }
-    fd_waf2 = {
+    fd_waf2_key = {
       name                              = "examplecdnfdwafpolicy2"
       resource_group_name               = azurerm_resource_group.this.name
       sku_name                          = "Premium_AzureFrontDoor" # Ensure SKU_name for WAF is similar to SKU_name for front door profile.
@@ -471,30 +470,33 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
   front_door_security_policies = {
-    secpol1 = {
-      name = "firewallpolicyforep1"
+    secpol1_key = {
+      name = "firewallpolicyforep1cd1"
       firewall = {
-        front_door_firewall_policy_name = "examplecdnfdwafpolicy1"
+        front_door_firewall_policy_key = "fd_waf1_key"
         association = {
-          endpoint_names    = ["ep1"]
-          domain_names      = ["cd1"]
+          endpoint_keys     = ["ep1_key"]
+          domain_keys       = ["cd1_key"]
           patterns_to_match = ["/*"]
         }
       }
     }
-    secpol3 = {
-      name = "firewallpolicyforep2andep3"
+    secpol3_key = {
+      name = "firewallpolicyforep2andep3cd2"
       firewall = {
-        front_door_firewall_policy_name = "examplecdnfdwafpolicy2"
+        front_door_firewall_policy_key = "fd_waf2_key"
         association = {
-          endpoint_names    = ["ep2", "ep3"]
-          domain_names      = ["cd2"]
+          endpoint_keys     = ["ep2_key", "ep3_key"]
+          domain_keys       = ["cd2_key"]
           patterns_to_match = ["/*"]
         }
       }
-
-
     }
   }
 }
 
+
+
+output "epcd" {
+value = module.azurerm_cdn_frontdoor_profile.epscds
+}

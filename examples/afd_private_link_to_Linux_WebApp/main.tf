@@ -68,7 +68,7 @@ module "azurerm_cdn_frontdoor_profile" {
   response_timeout_seconds = 120
   tags                     = { environment = "example" }
   front_door_origin_groups = {
-    og1 = {
+    og1_key = {
       name = "og1"
       health_probe = {
         hp1 = {
@@ -88,9 +88,9 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
   front_door_origins = {
-    origin1 = {
+    origin1_key = {
       name                           = "example-origin1"
-      origin_group_name              = "og1"
+      origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = true
       host_name                      = replace(replace(azurerm_linux_web_app.webapp.default_hostname, "https://", ""), "/", "")
@@ -111,20 +111,21 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 
   front_door_endpoints = {
-    ep-1 = {
-      name = "ep-1"
+    ep1_key = {
+      name = module.naming.cdn_endpoint.name_unique
       tags = {
         ENV = "example"
       }
     }
   }
+  front_door_rule_sets = ["ruleset1"]
 
   front_door_routes = {
     route1 = {
       name                   = "route1"
-      endpoint_name          = "ep-1"
-      origin_group_name      = "og1"
-      origin_names           = ["example-origin1"]
+      endpoint_key           = "ep1_key"
+      origin_group_key       = "og1_key"
+      origin_keys            = ["origin1_key"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
@@ -133,17 +134,14 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  front_door_rule_sets = ["ruleset1"]
-
   front_door_rules = {
     rule1 = {
       name              = "examplerule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"
-      origin_group_name = "og1"
+      origin_group_key  = "og1_key"
       actions = {
-
         url_rewrite_action = {
           actiontype              = "url_rewrite_action"
           source_pattern          = "/"
@@ -152,7 +150,6 @@ module "azurerm_cdn_frontdoor_profile" {
         }
         route_configuration_override_action = {
           set_origin_groupid            = true
-          actiontype                    = "route_configuration_override_action"
           forwarding_protocol           = "HttpsOnly"
           query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
           query_string_parameters       = ["foo", "clientIp={client_ip}"]

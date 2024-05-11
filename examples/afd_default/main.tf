@@ -33,7 +33,7 @@ module "azurerm_cdn_frontdoor_profile" {
   sku                 = "Standard_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
   front_door_origin_groups = {
-    og1 = {
+    og1_key = {
       name = "og1"
       health_probe = {
         hp1 = {
@@ -53,9 +53,9 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
   front_door_origins = {
-    origin1 = {
-      name                           = "example-origin"
-      origin_group_name              = "og1"
+    origin1_key = {
+      name                           = "origin1"
+      origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = false
       host_name                      = "contoso.com"
@@ -65,53 +65,54 @@ module "azurerm_cdn_frontdoor_profile" {
       priority                       = 1
       weight                         = 1
     }
-    origin2 = {
+    origin2_key = {
       name                           = "origin2"
-      origin_group_name              = "og1"
+      origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = false
       host_name                      = "contoso1.com"
       http_port                      = 80
       https_port                     = 443
-      host_header                    = "www.contoso.com"
+      host_header                    = "www.contoso1.com"
       priority                       = 1
       weight                         = 1
     }
-    origin3 = {
+    origin3_key = {
       name                           = "origin3"
-      origin_group_name              = "og1"
+      origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = false
-      host_name                      = "contoso1.com"
+      host_name                      = "contoso2.com"
       http_port                      = 80
       https_port                     = 443
-      host_header                    = "www.contoso.com"
+      host_header                    = "www.contoso2.com"
       priority                       = 1
       weight                         = 1
     }
   }
 
   front_door_endpoints = {
-    ep1 = {
-      name = "ep1"
+    ep1_key = {
+      name = module.naming.cdn_endpoint.name_unique
       tags = {
         ENV = "example"
       }
     }
-    ep2 = {
-      name = "ep2"
+    ep2_key = {
+      name = module.naming.cdn_endpoint.name_unique
       tags = {
         ENV = "example2"
       }
     }
   }
+  front_door_rule_sets = ["ruleset1", "ruleset2"]
 
   front_door_routes = {
-    route1 = {
+    route1_key = {
       name                      = "route1"
-      endpoint_name             = "ep1"
-      origin_group_name         = "og1"
-      origin_names              = ["example-origin", "origin3"]
+      endpoint_key              = "ep1_key"
+      origin_group_key          = "og1_key"
+      origin_keys               = ["origin1_key", "origin2_key"]
       forwarding_protocol       = "HttpsOnly"
       https_redirect_enabled    = true
       patterns_to_match         = ["/*"]
@@ -127,11 +128,11 @@ module "azurerm_cdn_frontdoor_profile" {
         }
       }
     }
-    route2 = {
+    route2_key = {
       name                      = "route2"
-      endpoint_name             = "ep2"
-      origin_group_name         = "og1"
-      origin_names              = ["origin2"]
+      endpoint_key              = "ep2_key"
+      origin_group_key          = "og1_key"
+      origin_keys               = ["origin2_key"]
       forwarding_protocol       = "HttpsOnly"
       https_redirect_enabled    = true
       patterns_to_match         = ["/*"]
@@ -141,15 +142,14 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  front_door_rule_sets = ["ruleset1", "ruleset2"]
 
   front_door_rules = {
-    rule1 = {
+    rule1_key = {
       name              = "examplerule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"
-      origin_group_name = "og1"
+      origin_group_key  = "og1_key"
       actions = {
 
         url_rewrite_actions = [{
@@ -249,12 +249,12 @@ module "azurerm_cdn_frontdoor_profile" {
         }]
       }
     }
-    rule2 = {
+    rule2_key = {
       name              = "examplerule2"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset2"
-      origin_group_name = "og1"
+      origin_group_key  = "og1_key"
       actions = {
 
         url_rewrite_actions = [{

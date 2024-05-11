@@ -39,7 +39,7 @@ module "azurerm_cdn_frontdoor_profile" {
   sku                 = "Standard_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
   front_door_origin_groups = {
-    og1 = {
+    og1_key = {
       name = "og1"
       health_probe = {
         hp1 = {
@@ -59,44 +59,43 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
   front_door_origins = {
-    origin1 = {
+    origin1_key = {
       name                           = "example-origin"
-      origin_group_name              = "og1"
-      enabled                        = true
-      certificate_name_check_enabled = false
-      host_name                      = "contoso.com"
-      http_port                      = 80
-      https_port                     = 443
-      host_header                    = "www.contoso.com"
-      priority                       = 1
-      weight                         = 1
-    }
-    origin3 = {
-      name                           = "origin3"
-      origin_group_name              = "og1"
+      origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = false
       host_name                      = "contoso1.com"
       http_port                      = 80
       https_port                     = 443
-      host_header                    = "www.contoso.com"
+      host_header                    = "www.contoso1.com"
       priority                       = 1
       weight                         = 1
     }
-
+    origin2_key = {
+      name                           = "origin2"
+      origin_group_key               = "og1_key"
+      enabled                        = true
+      certificate_name_check_enabled = false
+      host_name                      = "contoso2.com"
+      http_port                      = 80
+      https_port                     = 443
+      host_header                    = "www.contoso2.com"
+      priority                       = 1
+      weight                         = 1
+    }
   }
   front_door_custom_domains = {
-    cd1 = {
-      name        = "contoso"
+    contoso1_key = {
+      name        = "contoso1"
       dns_zone_id = azurerm_dns_zone.dnszone.id
-      host_name   = "contoso.fabrikam.com"
+      host_name   = "contoso1.fabrikam.com"
 
       tls = {
         certificate_type    = "ManagedCertificate"
         minimum_tls_version = "TLS12" # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
       }
     },
-    cd2 = {
+    contoso2_key = {
       name        = "contoso2"
       dns_zone_id = azurerm_dns_zone.dnszone.id
       host_name   = "contoso2.fabrikam.com"
@@ -107,26 +106,27 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
   front_door_endpoints = {
-    ep1 = {
+    ep1_key = {
       name = "ep1"
       tags = {
         ENV = "example"
       }
     }
   }
+  front_door_rule_sets = ["ruleset1"]
 
   front_door_routes = {
     route1 = {
-      name                   = "route1"
-      endpoint_name          = "ep1"
-      origin_group_name      = "og1"
-      origin_names           = ["example-origin", "origin3"]
-      forwarding_protocol    = "HttpsOnly"
-      https_redirect_enabled = true
-      patterns_to_match      = ["/*"]
-      supported_protocols    = ["Http", "Https"]
-      rule_set_names         = ["ruleset1"]
-      custom_domain_names    = ["contoso", "contoso2"]
+      name                    = "route1"
+      endpoint_key            = "ep1_key"
+      origin_group_key        = "og1_key"
+      origin_keys             = ["origin1_key", "origin2_key"]
+      forwarding_protocol     = "HttpsOnly"
+      https_redirect_enabled  = true
+      patterns_to_match       = ["/*"]
+      supported_protocols     = ["Http", "Https"]
+      rule_set_names          = ["ruleset1"]
+      custom_domain_name_keys = ["contoso1_key", "contoso2_key"]
       cache = {
         cache1 = {
           query_string_caching_behavior = "IgnoreSpecifiedQueryStrings"
@@ -138,114 +138,110 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  front_door_rule_sets = ["ruleset1"]
 
   front_door_rules = {
-    front_door_rules = {
-      rule1 = {
-        name              = "examplerule1"
-        order             = 1
-        behavior_on_match = "Continue"
-        rule_set_name     = "ruleset1"
-        origin_group_name = "og1"
-        actions = {
+    rule1 = {
+      name              = "examplerule1"
+      order             = 1
+      behavior_on_match = "Continue"
+      rule_set_name     = "ruleset1"
+      origin_group_key  = "og1_key"
+      actions = {
+        url_rewrite_actions = [{
+          source_pattern          = "/"
+          destination             = "/index3.html"
+          preserve_unmatched_path = false
+        }]
+        route_configuration_override_actions = [{
+          set_origin_groupid            = true
+          forwarding_protocol           = "HttpsOnly"
+          query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
+          query_string_parameters       = ["foo", "clientIp={client_ip}"]
+          compression_enabled           = true
+          cache_behavior                = "OverrideIfOriginMissing"
+          cache_duration                = "365.23:59:59"
+        }]
+        response_header_actions = [{
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }]
+        request_header_actions = [{
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }]
+      }
 
-          url_rewrite_actions = [{
-            source_pattern          = "/"
-            destination             = "/index3.html"
-            preserve_unmatched_path = false
-          }]
-          route_configuration_override_actions = [{
-            set_origin_groupid            = true
-            forwarding_protocol           = "HttpsOnly"
-            query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
-            query_string_parameters       = ["foo", "clientIp={client_ip}"]
-            compression_enabled           = true
-            cache_behavior                = "OverrideIfOriginMissing"
-            cache_duration                = "365.23:59:59"
-          }]
-          response_header_actions = [{
-            header_action = "Append"
-            header_name   = "headername"
-            value         = "/abc"
-          }]
-          request_header_actions = [{
-            header_action = "Append"
-            header_name   = "headername"
-            value         = "/abc"
-          }]
-        }
+      conditions = {
+        remote_address_conditions = [{
+          operator         = "IPMatch"
+          negate_condition = false
+          match_values     = ["10.0.0.0/23"]
+        }]
 
-        conditions = {
-          remote_address_conditions = [{
-            operator         = "IPMatch"
-            negate_condition = false
-            match_values     = ["10.0.0.0/23"]
-          }]
+        query_string_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
 
-          query_string_conditions = [{
-            negate_condition = false
-            operator         = "BeginsWith"
-            match_values     = ["J", "K"]
-            transforms       = ["Uppercase"]
-          }]
+        request_header_conditions = [{
+          header_name      = "headername"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
 
-          request_header_conditions = [{
-            header_name      = "headername"
-            negate_condition = false
-            operator         = "BeginsWith"
-            match_values     = ["J", "K"]
-            transforms       = ["Uppercase"]
-          }]
+        request_body_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
 
-          request_body_conditions = [{
-            negate_condition = false
-            operator         = "BeginsWith"
-            match_values     = ["J", "K"]
-            transforms       = ["Uppercase"]
-          }]
+        request_scheme_conditions = [{
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["HTTP"]
+        }]
 
-          request_scheme_conditions = [{
-            negate_condition = false
-            operator         = "Equal"
-            match_values     = ["HTTP"]
-          }]
+        url_path_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
 
-          url_path_conditions = [{
-            negate_condition = false
-            operator         = "BeginsWith"
-            match_values     = ["J", "K"]
-            transforms       = ["Uppercase"]
-          }]
+        url_file_extension_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
 
-          url_file_extension_conditions = [{
-            negate_condition = false
-            operator         = "BeginsWith"
-            match_values     = ["J", "K"]
-            transforms       = ["Uppercase"]
-          }]
+        url_filename_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
 
-          url_filename_conditions = [{
-            negate_condition = false
-            operator         = "BeginsWith"
-            match_values     = ["J", "K"]
-            transforms       = ["Uppercase"]
-          }]
+        http_version_conditions = [{
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["2.0"]
+        }]
 
-          http_version_conditions = [{
-            negate_condition = false
-            operator         = "Equal"
-            match_values     = ["2.0"]
-          }]
-
-          cookies_conditions = [{
-            cookie_name      = "cookie"
-            negate_condition = false
-            operator         = "BeginsWith"
-            match_values     = ["J", "K"]
-            transforms       = ["Uppercase"]
-          }]
-        }
+        cookies_conditions = [{
+          cookie_name      = "cookie"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
       }
     }
   }

@@ -93,7 +93,7 @@ module "azurerm_cdn_frontdoor_profile" {
   sku                 = "Standard_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
   front_door_origin_groups = {
-    og1 = {
+    og1_key = {
       name = "og1"
       health_probe = {
         hp1 = {
@@ -114,9 +114,9 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 
   front_door_origins = {
-    origin1 = {
-      name                           = "example-origin"
-      origin_group_name              = "og1"
+    origin1_key = {
+      name                           = "origin1"
+      origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = false
       host_name                      = "contoso.com"
@@ -127,22 +127,22 @@ module "azurerm_cdn_frontdoor_profile" {
       weight                         = 1
     }
   }
-
   front_door_endpoints = {
-    ep1 = {
-      name = "ep1"
+    ep1_key = {
+      name = module.naming.cdn_endpoint.name_unique
       tags = {
         ENV = "example"
       }
     }
   }
+  front_door_rule_sets = ["ruleset1"]
 
   front_door_routes = {
     route1 = {
       name                   = "route1"
-      endpoint_name          = "ep1"
-      origin_group_name      = "og1"
-      origin_names           = ["example-origin"]
+      endpoint_key           = "ep1_key"
+      origin_group_key       = "og1_key"
+      origin_keys            = ["origin1_key"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
@@ -159,115 +159,216 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  front_door_rule_sets = ["ruleset1"]
 
   front_door_rules = {
-    rule1 = {
+    rule1_key = {
       name              = "examplerule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"
-      origin_group_name = "og1"
+      origin_group_key  = "og1_key"
       actions = {
 
-        url_rewrite_action = {
-          actiontype              = "url_rewrite_action"
+        url_rewrite_actions = [{
           source_pattern          = "/"
           destination             = "/index3.html"
           preserve_unmatched_path = false
-        }
-        route_configuration_override_action = {
+        }]
+        route_configuration_override_actions = [{
           set_origin_groupid            = true
-          actiontype                    = "route_configuration_override_action"
           forwarding_protocol           = "HttpsOnly"
           query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
           query_string_parameters       = ["foo", "clientIp={client_ip}"]
           compression_enabled           = true
           cache_behavior                = "OverrideIfOriginMissing"
           cache_duration                = "365.23:59:59"
-        }
-
-        response_header_action = {
+        }]
+        response_header_actions = [{
           header_action = "Append"
           header_name   = "headername"
           value         = "/abc"
-        }
-
-        request_header_action = {
+        }]
+        request_header_actions = [{
           header_action = "Append"
           header_name   = "headername"
           value         = "/abc"
-        }
+        }]
       }
+
       conditions = {
-        remote_address_condition = {
+        remote_address_conditions = [{
           operator         = "IPMatch"
           negate_condition = false
           match_values     = ["10.0.0.0/23"]
-        }
+        }]
 
-        query_string_condition = {
+        query_string_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_header_condition = {
+        request_header_conditions = [{
           header_name      = "headername"
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_body_condition = {
+        request_body_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_scheme_condition = {
+        request_scheme_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["HTTP"]
-        }
+        }]
 
-        url_path_condition = {
+        url_path_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        url_file_extension_condition = {
+        url_file_extension_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        url_filename_condition = {
+        url_filename_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        http_version_condition = {
+        http_version_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["2.0"]
-        }
+        }]
 
-        cookies_condition = {
+        cookies_conditions = [{
           cookie_name      = "cookie"
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
+      }
+    }
+    rule2_key = {
+      name              = "examplerule2"
+      order             = 1
+      behavior_on_match = "Continue"
+      rule_set_name     = "ruleset2"
+      origin_group_key  = "og1_key"
+      actions = {
+
+        url_rewrite_actions = [{
+          source_pattern          = "/"
+          destination             = "/index3.html"
+          preserve_unmatched_path = false
+        }]
+        route_configuration_override_actions = [{
+          set_origin_groupid            = true
+          forwarding_protocol           = "HttpsOnly"
+          query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
+          query_string_parameters       = ["foo", "clientIp={client_ip}"]
+          compression_enabled           = true
+          cache_behavior                = "OverrideIfOriginMissing"
+          cache_duration                = "365.23:59:59"
+        }]
+        response_header_actions = [{
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }]
+        request_header_actions = [{
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }]
+      }
+
+      conditions = {
+        remote_address_conditions = [{
+          operator         = "IPMatch"
+          negate_condition = false
+          match_values     = ["10.0.0.0/23"]
+        }]
+
+        query_string_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_header_conditions = [{
+          header_name      = "headername"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_body_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_scheme_conditions = [{
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["HTTP"]
+        }]
+
+        url_path_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        url_file_extension_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        url_filename_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        http_version_conditions = [{
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["2.0"]
+        }]
+
+        cookies_conditions = [{
+          cookie_name      = "cookie"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
       }
     }
   }
@@ -301,7 +402,7 @@ module "azurerm_cdn_frontdoor_profile" {
     },
     role_assignment_2 = {
       role_definition_id_or_name       = "Reader"
-      principal_id                     = "125****-c***-4f**-**0d-******53b5**" # replace the principal id with appropriate one
+      principal_id                     = data.azurerm_client_config.current.object_id #"125****-c***-4f**-**0d-******53b5**" # replace the principal id with appropriate one
       description                      = "Example role assignment 2 of reader role"
       skip_service_principal_aad_check = false
       # condition                        = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"

@@ -594,7 +594,7 @@ variable "front_door_origin_groups" {
 variable "front_door_origins" {
   type = map(object({
     name                           = string
-    origin_group_name              = string
+    origin_group_key               = string
     host_name                      = string
     certificate_name_check_enabled = string
     enabled                        = optional(bool, true)
@@ -693,15 +693,15 @@ variable "front_door_origins" {
 variable "front_door_routes" {
   type = map(object({
     name                      = string
-    origin_group_name         = string
-    origin_names              = list(string)
-    endpoint_name             = string
+    origin_group_key          = string
+    origin_keys               = list(string)
+    endpoint_key              = string
     forwarding_protocol       = optional(string, "HttpsOnly")
     supported_protocols       = list(string)
     patterns_to_match         = list(string)
     link_to_default_domain    = optional(bool, true)
     https_redirect_enabled    = optional(bool, true)
-    custom_domain_names       = optional(list(string), [])
+    custom_domain_keys        = optional(list(string), [])
     enabled                   = optional(bool, true)
     rule_set_names            = optional(list(string))
     cdn_frontdoor_origin_path = optional(string, null)
@@ -797,21 +797,11 @@ variable "front_door_rule_sets" {
   DESCRIPTION
 }
 
-# variable "front_door_rules" {
-#   type        = any
-#   default     = {}
-#   description = <<DESCRIPTION
-#   Manages a Front Door (standard/premium) Rules.
-#   refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule#arguments-reference for Azure Front door rules arguments reference.
-#   DESCRIPTION
-#   nullable    = false
-# }
-
 variable "front_door_rules" {
   type = map(object({
     name              = string
     order             = number
-    origin_group_name = string
+    origin_group_key  = string
     rule_set_name     = string
     behavior_on_match = optional(string, "Continue")
 
@@ -830,11 +820,11 @@ variable "front_door_rules" {
         destination_fragment = optional(string, "")
       })), [])
       route_configuration_override_actions = optional(list(object({
-        set_origin_groupid            = bool
-        cache_duration                = optional(string) #d.HH:MM:SS (365.23:59:59)
-        cdn_frontdoor_origin_group_id = optional(string)
+        set_origin_groupid = bool
+        cache_duration     = optional(string) #d.HH:MM:SS (365.23:59:59)
+        #cdn_frontdoor_origin_group_id = optional(string) #TODO autocalculated. remove
         forwarding_protocol           = optional(string, "HttpsOnly")
-        query_string_caching_behavior = optional(string) #TODO Default ?
+        query_string_caching_behavior = optional(string) #TODO set Default ?
         query_string_parameters       = optional(list(string))
         compression_enabled           = optional(bool, false)
         cache_behavior                = optional(string)
@@ -966,7 +956,6 @@ variable "front_door_rules" {
 }
 
 
-
 variable "front_door_secret" {
   type = object({
     name                     = string
@@ -990,10 +979,10 @@ variable "front_door_security_policies" {
   type = map(object({
     name = string
     firewall = object({
-      front_door_firewall_policy_name = string
+      front_door_firewall_policy_key = string
       association = object({
-        domain_names      = optional(list(string), [])
-        endpoint_names    = optional(list(string), [])
+        domain_keys       = optional(list(string), [])
+        endpoint_keys     = optional(list(string), [])
         patterns_to_match = list(string)
       })
     })
@@ -1013,7 +1002,7 @@ variable "front_door_security_policies" {
   nullable    = false
 
   validation {
-    condition     = length(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_names, policy.firewall.association.endpoint_names)])) == length(distinct(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_names, policy.firewall.association.endpoint_names)])))
+    condition     = length(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_keys, policy.firewall.association.endpoint_keys)])) == length(distinct(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_keys, policy.firewall.association.endpoint_keys)])))
     error_message = "Endpoint/Custom domain is already being used, please provide unique association."
   }
   validation {
@@ -1021,12 +1010,12 @@ variable "front_door_security_policies" {
     error_message = "Security policy name must not be an empty string."
   }
   validation {
-    condition     = alltrue([for name, policy in var.front_door_security_policies : length(policy.firewall.association.domain_names) == 0 ? length(policy.firewall.association.endpoint_names) > 0 : true])
+    condition     = alltrue([for name, policy in var.front_door_security_policies : length(policy.firewall.association.domain_keys) == 0 ? length(policy.firewall.association.endpoint_keys) > 0 : true])
     error_message = "Provide either domain names or endpoint names or both."
   }
   validation {
     condition = alltrue([for name, policy in var.front_door_security_policies :
-    (length(policy.firewall.association.domain_names) > 0 || length(policy.firewall.association.endpoint_names) > 0) && (policy.firewall.association.domain_names != null || policy.firewall.association.endpoint_names != null)])
+    (length(policy.firewall.association.domain_keys) > 0 || length(policy.firewall.association.endpoint_keys) > 0) && (policy.firewall.association.domain_keys != null || policy.firewall.association.endpoint_keys != null)])
     error_message = "Provide either domain names or endpoint names or both, and ensure they are not empty."
   }
 }
