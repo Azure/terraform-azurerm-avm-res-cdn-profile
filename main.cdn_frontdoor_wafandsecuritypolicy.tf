@@ -53,7 +53,6 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "wafs" {
           selector       = try(exclusion.value.selector, null)
         }
       }
-
       dynamic "override" {
         for_each = try(managed_rule.value.overrides, null)
         content {
@@ -73,6 +72,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "wafs" {
               action  = rule.value.action
               rule_id = rule.value.rule_id
               enabled = try(rule.value.enabled, null)
+
               dynamic "exclusion" {
                 for_each = try(rule.value.exclusions, null)
                 content {
@@ -91,21 +91,25 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "wafs" {
 
 resource "azurerm_cdn_frontdoor_security_policy" "example" {
   for_each = try(var.front_door_security_policies != null ? var.front_door_security_policies : {})
+
   cdn_frontdoor_profile_id = azapi_resource.front_door_profile.id
   name                     = each.value.name
+
   security_policies {
     firewall {
       cdn_frontdoor_firewall_policy_id = azurerm_cdn_frontdoor_firewall_policy.wafs[each.value.firewall.front_door_firewall_policy_key].id
+
       association {
         patterns_to_match = ["/*"]
+
         dynamic "domain" {
-          for_each = try(local.filtered_epcds_for_security_policy[each.key], null)
+          for_each = local.filtered_epcds_for_security_policy[each.key]
           content {
             cdn_frontdoor_domain_id = domain.value
           }
         }
       }
-    }     
+    }
   }
 }
 

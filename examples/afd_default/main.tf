@@ -93,15 +93,15 @@ module "azurerm_cdn_frontdoor_profile" {
 
   front_door_endpoints = {
     ep1_key = {
-      name = module.naming.cdn_endpoint.name_unique
+      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "example"
+        ENV = "prod"
       }
     }
     ep2_key = {
-      name = module.naming.cdn_endpoint.name_unique
+      name = "ep2-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "example2"
+        ENV = "prod"
       }
     }
   }

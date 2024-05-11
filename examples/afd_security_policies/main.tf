@@ -98,19 +98,19 @@ module "azurerm_cdn_frontdoor_profile" {
 
   front_door_endpoints = {
     ep1_key = {
-      name = module.naming.cdn_endpoint.name_unique
+      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
       tags = {
         ENV = "prod"
       }
     }
     ep2_key = {
-      name = module.naming.cdn_endpoint.name_unique
+      name = "ep2-${module.naming.cdn_endpoint.name_unique}"
       tags = {
         ENV = "prod"
       }
     }
     ep3_key = {
-      name = module.naming.cdn_endpoint.name_unique
+      name = "ep3-${module.naming.cdn_endpoint.name_unique}"
       tags = {
         ENV = "prod"
       }
@@ -167,7 +167,7 @@ module "azurerm_cdn_frontdoor_profile" {
       origin_keys            = ["origin2_key"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
-      # custom_domain_names    = ["example-customDomain", "customdomain2"]
+      #custom_domain_keys     = ["cd1_key", "cd2_key"]
       patterns_to_match   = ["/*"]
       supported_protocols = ["Http", "Https"]
     }
@@ -178,7 +178,7 @@ module "azurerm_cdn_frontdoor_profile" {
       origin_keys            = ["origin3_key"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
-      # custom_domain_names    = ["example-customDomain", "customdomain2"]
+      #custom_domain_keys     = ["cd1_key", "cd2_key"]
       patterns_to_match   = ["/*"]
       supported_protocols = ["Http", "Https"]
     }
@@ -498,5 +498,5 @@ module "azurerm_cdn_frontdoor_profile" {
 
 
 output "epcd" {
-value = module.azurerm_cdn_frontdoor_profile.epscds
+  value = module.azurerm_cdn_frontdoor_profile.epscds
 }

@@ -16,7 +16,7 @@ resource "azurerm_cdn_frontdoor_route" "routes" {
   name                            = each.value.name
   patterns_to_match               = each.value.patterns_to_match
   supported_protocols             = each.value.supported_protocols
-  cdn_frontdoor_custom_domain_ids = [for k, v in azurerm_cdn_frontdoor_custom_domain.cds : v.id if contains(coalesce(each.value.custom_domain_keys, [""]), v.name)]
+  cdn_frontdoor_custom_domain_ids = local.route_custom_domains[each.key]
   cdn_frontdoor_origin_path       = each.value.cdn_frontdoor_origin_path
   cdn_frontdoor_rule_set_ids      = [for k, v in azurerm_cdn_frontdoor_rule_set.rule_set : v.id if contains(coalesce(each.value.rule_set_names, [""]), v.name)]
   enabled                         = each.value.enabled
@@ -36,3 +36,4 @@ resource "azurerm_cdn_frontdoor_route" "routes" {
 
   depends_on = [azurerm_cdn_frontdoor_origin.origins]
 }
+

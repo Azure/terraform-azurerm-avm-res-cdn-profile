@@ -32,15 +32,15 @@ resource "azurerm_resource_group" "this" {
 
 data "azurerm_client_config" "current" {}
 
-module "avm_storage_account" {
-  source                    = "Azure/avm-res-storage-storageaccount/azurerm"
-  version                   = "0.1.1"
-  name                      = module.naming.storage_account.name_unique
-  resource_group_name       = azurerm_resource_group.this.name
-  shared_access_key_enabled = true
-  enable_telemetry          = true
-  account_replication_type  = "LRS"
-}
+# module "avm_storage_account" {
+#   source                    = "Azure/avm-res-storage-storageaccount/azurerm"
+#   version                   = "0.1.1"
+#   name                      = module.naming.storage_account.name_unique
+#   resource_group_name       = azurerm_resource_group.this.name
+#   shared_access_key_enabled = true
+#   enable_telemetry          = true
+#   account_replication_type  = "ZRS"
+# }
 
 resource "azurerm_log_analytics_workspace" "workspace" {
   location            = azurerm_resource_group.this.location
@@ -92,7 +92,6 @@ Managed Identity
 Azure Monitor Alerts
 */
 module "azurerm_cdn_frontdoor_profile" {
-  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source              = "../../"
   enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
@@ -100,7 +99,7 @@ module "azurerm_cdn_frontdoor_profile" {
   sku                 = "Standard_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
   front_door_origin_groups = {
-    og1 = {
+    og1_key = {
       name = "og1"
       health_probe = {
         hp1 = {
@@ -121,9 +120,9 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 
   front_door_origins = {
-    origin1 = {
-      name                           = "example-origin"
-      origin_group_name              = "og1"
+    origin1_key = {
+      name                           = "origin1"
+      origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = false
       host_name                      = "contoso.com"
@@ -133,48 +132,23 @@ module "azurerm_cdn_frontdoor_profile" {
       priority                       = 1
       weight                         = 1
     }
-    origin2 = {
-      name                           = "origin2"
-      origin_group_name              = "og1"
-      enabled                        = true
-      certificate_name_check_enabled = false
-      host_name                      = "contoso1.com"
-      http_port                      = 80
-      https_port                     = 443
-      host_header                    = "www.contoso.com"
-      priority                       = 1
-      weight                         = 1
-    }
-    origin3 = {
-      name                           = "origin3"
-      origin_group_name              = "og1"
-      enabled                        = true
-      certificate_name_check_enabled = false
-      host_name                      = "contoso1.com"
-      http_port                      = 80
-      https_port                     = 443
-      host_header                    = "www.contoso.com"
-      priority                       = 1
-      weight                         = 1
-    }
-
   }
-
   front_door_endpoints = {
-    ep1 = {
-      name = "ep1"
+    ep1_key = {
+      name = module.naming.cdn_endpoint.name_unique
       tags = {
         ENV = "example"
       }
     }
   }
+  front_door_rule_sets = ["ruleset1"]
 
   front_door_routes = {
     route1 = {
       name                   = "route1"
-      endpoint_name          = "ep1"
-      origin_group_name      = "og1"
-      origin_names           = ["example-origin", "origin3"]
+      endpoint_key           = "ep1_key"
+      origin_group_key       = "og1_key"
+      origin_keys            = ["origin1_key"]
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
@@ -191,186 +165,275 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  front_door_rule_sets = ["ruleset1", "ruleset2"]
 
   front_door_rules = {
-    rule3 = {
-      name              = "examplerule3"
+    rule1_key = {
+      name              = "examplerule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"
-      origin_group_name = "og1"
+      origin_group_key  = "og1_key"
       actions = {
 
-        url_rewrite_action = {
-          actiontype              = "url_rewrite_action"
+        url_rewrite_actions = [{
           source_pattern          = "/"
           destination             = "/index3.html"
           preserve_unmatched_path = false
-        }
-        route_configuration_override_action = {
+        }]
+        route_configuration_override_actions = [{
           set_origin_groupid            = true
-          actiontype                    = "route_configuration_override_action"
           forwarding_protocol           = "HttpsOnly"
           query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
           query_string_parameters       = ["foo", "clientIp={client_ip}"]
           compression_enabled           = true
           cache_behavior                = "OverrideIfOriginMissing"
           cache_duration                = "365.23:59:59"
-        }
-        # url_redirect_action = {
-        #   redirect_type        = "PermanentRedirect"
-        #   redirect_protocol    = "MatchRequest"
-        #   query_string         = "clientIp={client_ip}"
-        #   destination_path     = "/exampleredirection"
-        #   destination_hostname = "contoso.com"
-        #   destination_fragment = "UrlRedirect"
-        # }
-        response_header_action = {
+        }]
+        response_header_actions = [{
           header_action = "Append"
           header_name   = "headername"
           value         = "/abc"
-        }
-        request_header_action = {
+        }]
+        request_header_actions = [{
           header_action = "Append"
           header_name   = "headername"
           value         = "/abc"
-        }
+        }]
       }
+
       conditions = {
-        remote_address_condition = {
+        remote_address_conditions = [{
           operator         = "IPMatch"
           negate_condition = false
           match_values     = ["10.0.0.0/23"]
-        }
+        }]
 
-        # request_method_condition = {
-        #   operator         = "Equal"
-        #   negate_condition = false
-        #   match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
-        # }
-
-        query_string_condition = {
+        query_string_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_header_condition = {
+        request_header_conditions = [{
           header_name      = "headername"
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_body_condition = {
+        request_body_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_scheme_condition = {
+        request_scheme_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["HTTP"]
-        }
+        }]
 
-        url_path_condition = {
+        url_path_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        url_file_extension_condition = {
+        url_file_extension_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        url_filename_condition = {
+        url_filename_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        http_version_condition = {
+        http_version_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["2.0"]
-        }
+        }]
 
-        cookies_condition = {
+        cookies_conditions = [{
           cookie_name      = "cookie"
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
+      }
+    }
+    rule2_key = {
+      name              = "examplerule2"
+      order             = 1
+      behavior_on_match = "Continue"
+      rule_set_name     = "ruleset2"
+      origin_group_key  = "og1_key"
+      actions = {
 
+        url_rewrite_actions = [{
+          source_pattern          = "/"
+          destination             = "/index3.html"
+          preserve_unmatched_path = false
+        }]
+        route_configuration_override_actions = [{
+          set_origin_groupid            = true
+          forwarding_protocol           = "HttpsOnly"
+          query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
+          query_string_parameters       = ["foo", "clientIp={client_ip}"]
+          compression_enabled           = true
+          cache_behavior                = "OverrideIfOriginMissing"
+          cache_duration                = "365.23:59:59"
+        }]
+        response_header_actions = [{
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }]
+        request_header_actions = [{
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }]
+      }
 
+      conditions = {
+        remote_address_conditions = [{
+          operator         = "IPMatch"
+          negate_condition = false
+          match_values     = ["10.0.0.0/23"]
+        }]
+
+        query_string_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_header_conditions = [{
+          header_name      = "headername"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_body_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_scheme_conditions = [{
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["HTTP"]
+        }]
+
+        url_path_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        url_file_extension_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        url_filename_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
+
+        http_version_conditions = [{
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["2.0"]
+        }]
+
+        cookies_conditions = [{
+          cookie_name      = "cookie"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["J", "K"]
+          transforms       = ["Uppercase"]
+        }]
       }
     }
   }
 
   diagnostic_settings = {
     workspaceandstorage_diag = {
-      name                           = " workspaceandstorage_diag"
+      name                           = "workspaceandstorage_diag"
       metric_categories              = ["AllMetrics"]
       log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      log_analytics_destination_type = "Dedicated"
+      log_analytics_destination_type = azurerm_log_analytics_workspace.workspace.id == null ? null : "Dedicated"
       workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
-      storage_account_resource_id    = module.avm_storage_account.id
+      #storage_account_resource_id    = module.avm_storage_account.id
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
     }
     eventhub_diag = {
-      name                                     = "eventhubforwarding"
-      log_groups                               = ["allLogs", "audit"]
+      name = "eventhubforwarding"
+      #log_categories = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
+      log_groups                               = ["allLogs", "Audit"] # you can set either log_categories or log_groups.
       metric_categories                        = ["AllMetrics"]
       event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
       event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
     }
   }
 
-
   role_assignments = {
     self_contributor = {
       role_definition_id_or_name       = "Contributor"
       principal_id                     = data.azurerm_client_config.current.object_id
       skip_service_principal_aad_check = true
+      principal_type                   = "User"
     },
-    # role_assignment_2 = {
-    #   role_definition_id_or_name             = "Reader"
-    #   principal_id                           = "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
-    #   description                            = "Example role assignment 2 of reader role"
-    #   skip_service_principal_aad_check       = false
-    #   condition                              = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
-    #   condition_version                      = "2.0"
-    # }
+    role_assignment_2 = {
+      role_definition_id_or_name       = "Reader"
+      principal_id                     = data.azurerm_client_config.current.object_id #"125****-c***-4f**-**0d-******53b5**" # replace the principal id with appropriate one
+      description                      = "Example role assignment 2 of reader role"
+      skip_service_principal_aad_check = false
+      # condition                        = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
+      # condition_version                = "2.0"
+      principal_type = "User"
+    }
   }
 
   tags = {
     environment = "production"
+    costcenter  = "IT"
   }
-  /*      
-  # A lock needs to be removed before destroy
-   lock = {
-       name = "lock-cdnprofile" # optional
-       kind = "CanNotDelete"
-     }
-  */
+
+  # A lock needs to be removed before destroy or before making changes
+  #  lock = {
+  #      name = "lock-cdnprofile" # optional
+  #      kind = "CanNotDelete"
+  #    }
+
   managed_identities = {
     system_assigned = true
     user_assigned_resource_ids = [
       azurerm_user_assigned_identity.identity_for_keyvault.id
     ]
   }
-
 }
 ```
 
@@ -427,12 +490,6 @@ No outputs.
 ## Modules
 
 The following Modules are called:
-
-### <a name="module_avm_storage_account"></a> [avm\_storage\_account](#module\_avm\_storage\_account)
-
-Source: Azure/avm-res-storage-storageaccount/azurerm
-
-Version: 0.1.1
 
 ### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
 

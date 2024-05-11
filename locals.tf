@@ -4,6 +4,9 @@ locals {
   }
   managed_identity_type              = var.managed_identities.system_assigned ? ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "SystemAssigned, UserAssigned" : "SystemAssigned") : ((length(var.managed_identities.user_assigned_resource_ids) > 0) ? "UserAssigned" : null)
   role_definition_resource_substring = "providers/Microsoft.Authorization/roleDefinitions"
+  route_custom_domains = {
+    for k, v in var.front_door_routes : k => [for cd in v.custom_domain_keys : azurerm_cdn_frontdoor_custom_domain.cds[cd].id]
+  }
 }
 
 output "epscds" {

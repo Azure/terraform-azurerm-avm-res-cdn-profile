@@ -226,10 +226,10 @@ variable "diagnostic_settings" {
   DESCRIPTION
   nullable    = false
 
-  validation {
-    condition     = alltrue([for _, v in var.diagnostic_settings : contains(["Dedicated", "AzureDiagnostics"], v.log_analytics_destination_type)])
-    error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
-  }
+  # validation {
+  #   condition     = alltrue([for _, v in var.diagnostic_settings : contains(["Dedicated", "AzureDiagnostics"], v.log_analytics_destination_type)])
+  #   error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
+  # }
   validation {
     condition = alltrue(
       [
@@ -955,7 +955,6 @@ variable "front_door_rules" {
   nullable = false
 }
 
-
 variable "front_door_secret" {
   type = object({
     name                     = string
@@ -1087,7 +1086,6 @@ variable "role_assignments" {
     principal_type                         = optional(string, null)
   }))
   default     = {}
-  nullable    = false
   description = <<DESCRIPTION
   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
@@ -1102,6 +1100,7 @@ variable "role_assignments" {
   
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
   DESCRIPTION
+  nullable    = false
 }
 
 variable "sku" {

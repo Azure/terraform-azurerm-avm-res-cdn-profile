@@ -294,7 +294,7 @@ Type:
 map(object({
     name                                     = optional(string, null)
     log_categories                           = optional(set(string), [])
-    log_groups                               = optional(set(string), ["allLogs"])
+    log_groups                               = optional(set(string), [])
     metric_categories                        = optional(set(string), ["AllMetrics"])
     log_analytics_destination_type           = optional(string, "Dedicated")
     workspace_resource_id                    = optional(string, null)
@@ -338,7 +338,7 @@ map(object({
     host_name   = string
     tls = object({
       certificate_type        = optional(string, "ManagedCertificate")
-      minimum_tls_version     = optional(string, "TLS13")
+      minimum_tls_version     = optional(string, "TLS12") # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
       cdn_frontdoor_secret_id = optional(string, null)
     })
   }))
@@ -540,7 +540,7 @@ Type:
 ```hcl
 map(object({
     name                           = string
-    origin_group_name              = string
+    origin_group_key               = string
     host_name                      = string
     certificate_name_check_enabled = string
     enabled                        = optional(bool, true)
@@ -584,15 +584,15 @@ Type:
 ```hcl
 map(object({
     name                      = string
-    origin_group_name         = string
-    origin_names              = list(string)
-    endpoint_name             = string
+    origin_group_key          = string
+    origin_keys               = list(string)
+    endpoint_key              = string
     forwarding_protocol       = optional(string, "HttpsOnly")
     supported_protocols       = list(string)
     patterns_to_match         = list(string)
     link_to_default_domain    = optional(bool, true)
     https_redirect_enabled    = optional(bool, true)
-    custom_domain_names       = optional(list(string))
+    custom_domain_keys        = optional(list(string), [])
     enabled                   = optional(bool, true)
     rule_set_names            = optional(list(string))
     cdn_frontdoor_origin_path = optional(string, null)
@@ -609,7 +609,7 @@ Default: `{}`
 
 ### <a name="input_front_door_rule_sets"></a> [front\_door\_rule\_sets](#input\_front\_door\_rule\_sets)
 
-Description:   Manages a Front Door (standard/premium) Rule Set.. The following properties can be specified:
+Description:   Manages a Front Door (standard/premium) Rule Sets.. The following properties can be specified:
   - `name` - (Required) The name which should be used for this Front Door Rule Set.
 
 Type: `set(string)`
@@ -618,10 +618,165 @@ Default: `[]`
 
 ### <a name="input_front_door_rules"></a> [front\_door\_rules](#input\_front\_door\_rules)
 
-Description:   Manages a Front Door (standard/premium) Rules.  
-  refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule#arguments-reference for Azure Front door rules arguments reference.
+Description: n/a
 
-Type: `map(any)`
+Type:
+
+```hcl
+map(object({
+    name              = string
+    order             = number
+    origin_group_key  = string
+    rule_set_name     = string
+    behavior_on_match = optional(string, "Continue")
+
+    actions = object({
+      url_rewrite_actions = optional(list(object({
+        source_pattern          = string
+        destination             = string
+        preserve_unmatched_path = optional(bool, false)
+      })), [])
+      url_redirect_actions = optional(list(object({
+        redirect_type        = string
+        destination_hostname = string
+        redirect_protocol    = optional(string, "Https") #Set default as per security best practice. TF default is MatchRequest
+        destination_path     = optional(string, "")
+        query_string         = optional(string, "")
+        destination_fragment = optional(string, "")
+      })), [])
+      route_configuration_override_actions = optional(list(object({
+        set_origin_groupid = bool
+        cache_duration     = optional(string) #d.HH:MM:SS (365.23:59:59)
+        #cdn_frontdoor_origin_group_id = optional(string) #TODO autocalculated. remove
+        forwarding_protocol           = optional(string, "HttpsOnly")
+        query_string_caching_behavior = optional(string) #TODO set Default ?
+        query_string_parameters       = optional(list(string))
+        compression_enabled           = optional(bool, false)
+        cache_behavior                = optional(string)
+      })), [])
+      request_header_actions = optional(list(object({
+        header_action = string
+        header_name   = string
+        value         = optional(string)
+      })), [])
+      response_header_actions = optional(list(object({
+        header_action = string
+        header_name   = string
+        value         = optional(string)
+      })), [])
+    })
+    conditions = optional(object({
+      remote_address_conditions = optional(list(object({
+        operator         = optional(string, "IPMatch")
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+      })), [])
+      request_method_conditions = optional(list(object({
+        match_values     = list(string)
+        operator         = optional(string, "Equal")
+        negate_condition = optional(bool, false)
+      })), [])
+      query_string_conditions = optional(list(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      })), [])
+      post_args_conditions = optional(list(object({
+        post_args_name   = string
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      })), [])
+      request_uri_conditions = optional(list(object({
+        operator         = string
+        negate_condition = optional(bool)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      })), [])
+      request_header_conditions = optional(list(object({
+        header_name      = string
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      })), [])
+      request_body_conditions = optional(list(object({
+        operator         = string
+        match_values     = list(string)
+        negate_condition = optional(bool, false)
+        transforms       = optional(list(string))
+      })), [])
+      request_scheme_conditions = optional(list(object({
+        operator         = optional(string, "Equal")
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+      })), [])
+      url_path_conditions = optional(list(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      })), [])
+      url_file_extension_conditions = optional(list(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = list(string)
+        transforms       = optional(list(string))
+      })), [])
+      url_filename_conditions = optional(list(object({
+        operator         = string
+        match_values     = optional(list(string))
+        negate_condition = optional(bool, false)
+        transforms       = optional(list(string))
+      })), [])
+      http_version_conditions = optional(list(object({
+        operator         = optional(string, "Equal")
+        match_values     = list(string)
+        negate_condition = optional(bool, false)
+      })), [])
+      cookies_conditions = optional(list(object({
+        cookie_name      = string
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+      })), [])
+      is_device_conditions = optional(list(object({
+        operator         = optional(string)
+        negate_condition = optional(bool, false)
+        match_values     = optional(string)
+      })), [])
+      socket_address_conditions = optional(list(object({
+        operator         = optional(string, "IPMatch")
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(string))
+      })), [])
+      client_port_conditions = optional(list(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = optional(list(number))
+      })), [])
+      server_port_conditions = optional(list(object({
+        operator         = string
+        negate_condition = optional(bool, false)
+        match_values     = list(number)
+      })), [])
+      host_name_conditions = optional(list(object({
+        operator         = string
+        match_values     = optional(list(string))
+        transforms       = optional(list(string))
+        negate_condition = optional(bool, false)
+      })), [])
+      ssl_protocol_conditions = optional(list(object({
+        match_values     = list(string)
+        operator         = optional(string, "Equal")
+        negate_condition = optional(bool, false)
+      })), [])
+    }))
+  }))
+```
 
 Default: `{}`
 
@@ -661,10 +816,10 @@ Type:
 map(object({
     name = string
     firewall = object({
-      front_door_firewall_policy_name = string
+      front_door_firewall_policy_key = string
       association = object({
-        domain_names      = optional(list(string), [])
-        endpoint_names    = optional(list(string), [])
+        domain_keys       = optional(list(string), [])
+        endpoint_keys     = optional(list(string), [])
         patterns_to_match = list(string)
       })
     })
@@ -751,6 +906,7 @@ map(object({
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
+    principal_type                         = optional(string, null)
   }))
 ```
 
@@ -775,6 +931,10 @@ Default: `null`
 ## Outputs
 
 The following outputs are exported:
+
+### <a name="output_epscds"></a> [epscds](#output\_epscds)
+
+Description: n/a
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
