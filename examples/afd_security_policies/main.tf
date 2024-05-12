@@ -494,9 +494,3 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 }
-
-
-
-output "epcd" {
-  value = module.azurerm_cdn_frontdoor_profile.epscds
-}

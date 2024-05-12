@@ -17,7 +17,7 @@ resource "azapi_resource" "front_door_profile" {
   type = "Microsoft.Cdn/profiles@2023-07-01-preview"
   body = jsonencode({
     properties = {
-      originResponseTimeoutSeconds = 20
+      originResponseTimeoutSeconds = var.response_timeout_seconds
     }
     sku = {
       name = var.sku

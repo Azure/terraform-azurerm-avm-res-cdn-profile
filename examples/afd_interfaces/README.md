@@ -9,7 +9,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.74"
+      version = "~> 3.103.1"
     }
   }
 }
@@ -32,15 +32,15 @@ resource "azurerm_resource_group" "this" {
 
 data "azurerm_client_config" "current" {}
 
-# module "avm_storage_account" {
-#   source                    = "Azure/avm-res-storage-storageaccount/azurerm"
-#   version                   = "0.1.1"
-#   name                      = module.naming.storage_account.name_unique
-#   resource_group_name       = azurerm_resource_group.this.name
-#   shared_access_key_enabled = true
-#   enable_telemetry          = true
-#   account_replication_type  = "ZRS"
-# }
+module "avm_storage_account" {
+  source                    = "Azure/avm-res-storage-storageaccount/azurerm"
+  version                   = "0.1.1"
+  name                      = module.naming.storage_account.name_unique
+  resource_group_name       = azurerm_resource_group.this.name
+  shared_access_key_enabled = true
+  enable_telemetry          = true
+  account_replication_type  = "ZRS"
+}
 
 resource "azurerm_log_analytics_workspace" "workspace" {
   location            = azurerm_resource_group.this.location
@@ -57,7 +57,7 @@ resource "azurerm_eventhub_namespace" "eventhub_namespace" {
   tags = {
     environment = "Production"
   }
-  zone_redundant = false
+  zone_redundant = true
 }
 
 resource "azurerm_eventhub" "eventhub" {
@@ -135,16 +135,16 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   front_door_endpoints = {
     ep1_key = {
-      name = module.naming.cdn_endpoint.name_unique
+      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "example"
+        env = "prod"
       }
     }
   }
   front_door_rule_sets = ["ruleset1"]
 
   front_door_routes = {
-    route1 = {
+    route1_key = {
       name                   = "route1"
       endpoint_key           = "ep1_key"
       origin_group_key       = "og1_key"
@@ -168,115 +168,10 @@ module "azurerm_cdn_frontdoor_profile" {
 
   front_door_rules = {
     rule1_key = {
-      name              = "examplerule1"
+      name              = "rule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"
-      origin_group_key  = "og1_key"
-      actions = {
-
-        url_rewrite_actions = [{
-          source_pattern          = "/"
-          destination             = "/index3.html"
-          preserve_unmatched_path = false
-        }]
-        route_configuration_override_actions = [{
-          set_origin_groupid            = true
-          forwarding_protocol           = "HttpsOnly"
-          query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
-          query_string_parameters       = ["foo", "clientIp={client_ip}"]
-          compression_enabled           = true
-          cache_behavior                = "OverrideIfOriginMissing"
-          cache_duration                = "365.23:59:59"
-        }]
-        response_header_actions = [{
-          header_action = "Append"
-          header_name   = "headername"
-          value         = "/abc"
-        }]
-        request_header_actions = [{
-          header_action = "Append"
-          header_name   = "headername"
-          value         = "/abc"
-        }]
-      }
-
-      conditions = {
-        remote_address_conditions = [{
-          operator         = "IPMatch"
-          negate_condition = false
-          match_values     = ["10.0.0.0/23"]
-        }]
-
-        query_string_conditions = [{
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        request_header_conditions = [{
-          header_name      = "headername"
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        request_body_conditions = [{
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        request_scheme_conditions = [{
-          negate_condition = false
-          operator         = "Equal"
-          match_values     = ["HTTP"]
-        }]
-
-        url_path_conditions = [{
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        url_file_extension_conditions = [{
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        url_filename_conditions = [{
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        http_version_conditions = [{
-          negate_condition = false
-          operator         = "Equal"
-          match_values     = ["2.0"]
-        }]
-
-        cookies_conditions = [{
-          cookie_name      = "cookie"
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-      }
-    }
-    rule2_key = {
-      name              = "examplerule2"
-      order             = 1
-      behavior_on_match = "Continue"
-      rule_set_name     = "ruleset2"
       origin_group_key  = "og1_key"
       actions = {
 
@@ -384,9 +279,9 @@ module "azurerm_cdn_frontdoor_profile" {
       name                           = "workspaceandstorage_diag"
       metric_categories              = ["AllMetrics"]
       log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      log_analytics_destination_type = azurerm_log_analytics_workspace.workspace.id == null ? null : "Dedicated"
+      log_analytics_destination_type = "Dedicated"
       workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
-      #storage_account_resource_id    = module.avm_storage_account.id
+      storage_account_resource_id    = module.avm_storage_account.id
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
     }
     eventhub_diag = {
@@ -444,13 +339,13 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.74)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.103.1)
 
 ## Providers
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.74)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.103.1)
 
 ## Resources
 
@@ -490,6 +385,12 @@ No outputs.
 ## Modules
 
 The following Modules are called:
+
+### <a name="module_avm_storage_account"></a> [avm\_storage\_account](#module\_avm\_storage\_account)
+
+Source: Azure/avm-res-storage-storageaccount/azurerm
+
+Version: 0.1.1
 
 ### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
 

@@ -7,8 +7,5 @@ locals {
   route_custom_domains = {
     for k, v in var.front_door_routes : k => [for cd in v.custom_domain_keys : azurerm_cdn_frontdoor_custom_domain.cds[cd].id]
   }
-}
 
-output "epscds" {
-  value = local.filtered_epcds_for_security_policy
 }

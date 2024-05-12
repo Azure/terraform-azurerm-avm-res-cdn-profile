@@ -200,7 +200,7 @@ variable "diagnostic_settings" {
   type = map(object({
     name                                     = optional(string, null)
     log_categories                           = optional(set(string), [])
-    log_groups                               = optional(set(string), [])
+    log_groups                               = optional(set(string), ["allLogs"])
     metric_categories                        = optional(set(string), ["AllMetrics"])
     log_analytics_destination_type           = optional(string, "Dedicated")
     workspace_resource_id                    = optional(string, null)
@@ -226,10 +226,10 @@ variable "diagnostic_settings" {
   DESCRIPTION
   nullable    = false
 
-  # validation {
-  #   condition     = alltrue([for _, v in var.diagnostic_settings : contains(["Dedicated", "AzureDiagnostics"], v.log_analytics_destination_type)])
-  #   error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
-  # }
+  validation {
+    condition     = alltrue([for _, v in var.diagnostic_settings : contains(["Dedicated", "AzureDiagnostics"], v.log_analytics_destination_type)])
+    error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
+  }
   validation {
     condition = alltrue(
       [
@@ -951,8 +951,13 @@ variable "front_door_rules" {
       })), [])
     }))
   }))
-  default  = {}
-  nullable = false
+  default     = {}
+  nullable    = false
+  description = <<DESCRIPTION
+  Manages a Front Door (standard/premium) Rules.
+  
+  - `name` - (Required) The name which should be used for this Front Door Secret. 
+  DESCRIPTION
 }
 
 variable "front_door_secret" {
@@ -1083,9 +1088,10 @@ variable "role_assignments" {
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
-    principal_type                         = optional(string, null)
+    # principal_type                         = optional(string, null)
   }))
   default     = {}
+  nullable    = false
   description = <<DESCRIPTION
   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
@@ -1100,7 +1106,6 @@ variable "role_assignments" {
   
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
   DESCRIPTION
-  nullable    = false
 }
 
 variable "sku" {
