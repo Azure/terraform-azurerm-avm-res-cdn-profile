@@ -279,14 +279,14 @@ module "azurerm_cdn_frontdoor_profile" {
       name                           = "workspaceandstorage_diag"
       metric_categories              = ["AllMetrics"]
       log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
+      log_groups                     = [] #must explicitly set since log_groups defaults to ["allLogs"]
       log_analytics_destination_type = "Dedicated"
       workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
       storage_account_resource_id    = module.avm_storage_account.id
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
     }
     eventhub_diag = {
-      name = "eventhubforwarding"
-      #log_categories = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
+      name                                     = "eventhubforwarding"
       log_groups                               = ["allLogs", "Audit"] # you can set either log_categories or log_groups.
       metric_categories                        = ["AllMetrics"]
       event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id

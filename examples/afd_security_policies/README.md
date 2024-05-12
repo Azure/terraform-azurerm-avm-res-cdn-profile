@@ -500,12 +500,6 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 }
-
-
-
-output "epcd" {
-  value = module.azurerm_cdn_frontdoor_profile.epscds
-}
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -551,11 +545,7 @@ Default: `true`
 
 ## Outputs
 
-The following outputs are exported:
-
-### <a name="output_epcd"></a> [epcd](#output\_epcd)
-
-Description: n/a
+No outputs.
 
 ## Modules
 

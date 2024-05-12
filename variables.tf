@@ -952,12 +952,12 @@ variable "front_door_rules" {
     }))
   }))
   default     = {}
-  nullable    = false
   description = <<DESCRIPTION
   Manages a Front Door (standard/premium) Rules.
   
   - `name` - (Required) The name which should be used for this Front Door Secret. 
   DESCRIPTION
+  nullable    = false
 }
 
 variable "front_door_secret" {
@@ -1091,7 +1091,6 @@ variable "role_assignments" {
     # principal_type                         = optional(string, null)
   }))
   default     = {}
-  nullable    = false
   description = <<DESCRIPTION
   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
@@ -1106,6 +1105,7 @@ variable "role_assignments" {
   
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
   DESCRIPTION
+  nullable    = false
 }
 
 variable "sku" {

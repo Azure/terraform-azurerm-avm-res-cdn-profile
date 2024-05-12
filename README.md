@@ -294,7 +294,7 @@ Type:
 map(object({
     name                                     = optional(string, null)
     log_categories                           = optional(set(string), [])
-    log_groups                               = optional(set(string), [])
+    log_groups                               = optional(set(string), ["allLogs"])
     metric_categories                        = optional(set(string), ["AllMetrics"])
     log_analytics_destination_type           = optional(string, "Dedicated")
     workspace_resource_id                    = optional(string, null)
@@ -618,7 +618,9 @@ Default: `[]`
 
 ### <a name="input_front_door_rules"></a> [front\_door\_rules](#input\_front\_door\_rules)
 
-Description: n/a
+Description:   Manages a Front Door (standard/premium) Rules.
+
+  - `name` - (Required) The name which should be used for this Front Door Secret.
 
 Type:
 
@@ -906,7 +908,7 @@ map(object({
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
-    principal_type                         = optional(string, null)
+    # principal_type                         = optional(string, null)
   }))
 ```
 
@@ -931,10 +933,6 @@ Default: `null`
 ## Outputs
 
 The following outputs are exported:
-
-### <a name="output_epscds"></a> [epscds](#output\_epscds)
-
-Description: n/a
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
