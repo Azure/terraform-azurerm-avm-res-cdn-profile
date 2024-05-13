@@ -113,7 +113,7 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   front_door_endpoints = {
     ep1_key = {
-      name = "ep1"
+      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
       tags = {
         ENV = "example"
       }
@@ -143,7 +143,6 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
 
   front_door_rules = {
     rule1 = {
