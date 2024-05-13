@@ -138,7 +138,6 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-
   front_door_rules = {
     rule1 = {
       name              = "examplerule1"

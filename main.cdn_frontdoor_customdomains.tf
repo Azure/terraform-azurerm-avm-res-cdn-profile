@@ -18,16 +18,8 @@ resource "azurerm_cdn_frontdoor_custom_domain_association" "association" {
   for_each = azurerm_cdn_frontdoor_custom_domain.cds
 
   cdn_frontdoor_custom_domain_id = each.value.id
-  cdn_frontdoor_route_ids        = local.custom_domain_routes[each.value.name]
+  cdn_frontdoor_route_ids        = local.custom_domain_routes[each.key]
 }
 
 
 
-locals {
-  custom_domain_routes = {
-    for domain in azurerm_cdn_frontdoor_custom_domain.cds : domain.name => [
-      for route in try(azurerm_cdn_frontdoor_route.routes, []) : route.id
-      if contains(try(length(route.cdn_frontdoor_custom_domain_ids)) > 0 ? route.cdn_frontdoor_custom_domain_ids : [], domain.id)
-    ]
-  }
-}
