@@ -814,7 +814,7 @@ variable "front_door_rules" {
       url_redirect_actions = optional(list(object({
         redirect_type        = string
         destination_hostname = string
-        redirect_protocol    = optional(string, "Https") #Set default as per security best practice. TF default is MatchRequest
+        redirect_protocol    = optional(string, "Https") 
         destination_path     = optional(string, "")
         query_string         = optional(string, "")
         destination_fragment = optional(string, "")
@@ -822,9 +822,8 @@ variable "front_door_rules" {
       route_configuration_override_actions = optional(list(object({
         set_origin_groupid = bool
         cache_duration     = optional(string) #d.HH:MM:SS (365.23:59:59)
-        #cdn_frontdoor_origin_group_id = optional(string) #TODO autocalculated. remove
         forwarding_protocol           = optional(string, "HttpsOnly")
-        query_string_caching_behavior = optional(string) #TODO set Default ?
+        query_string_caching_behavior = optional(string) 
         query_string_parameters       = optional(list(string))
         compression_enabled           = optional(bool, false)
         cache_behavior                = optional(string)
