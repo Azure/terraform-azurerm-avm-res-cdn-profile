@@ -926,7 +926,7 @@ variable "front_door_rules" {
       is_device_conditions = optional(list(object({
         operator         = optional(string)
         negate_condition = optional(bool, false)
-        match_values     = optional(string)
+        match_values     = optional(list(string))
       })), [])
       socket_address_conditions = optional(list(object({
         operator         = optional(string, "IPMatch")

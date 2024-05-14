@@ -257,7 +257,7 @@ module "azurerm_cdn_frontdoor_profile" {
       origin_group_key  = "og1_key"
       actions = {
 
-        url_redirect_action = [{
+        url_redirect_actions = [{
           redirect_type        = "PermanentRedirect"
           redirect_protocol    = "MatchRequest"
           query_string         = "clientIp={client_ip}"
@@ -287,70 +287,70 @@ module "azurerm_cdn_frontdoor_profile" {
       }
 
       conditions = {
-        request_method_condition = [{
+        request_method_conditions = [{
           operator         = "Equal"
           negate_condition = false
           match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
         }]
 
-        socket_address_condition = [{
+        socket_address_conditions = [{
           operator         = "IPMatch"
           negate_condition = false
           match_values     = ["5.5.5.64/26"]
         }]
 
-        client_port_condition = [{
+        client_port_conditions = [{
           operator         = "Equal"
           negate_condition = false
-          match_values     = ["Mobile"]
+          match_values     = [80]
         }]
 
-        server_port_condition = [{
+        server_port_conditions = [{
           operator         = "Equal"
           negate_condition = false
-          match_values     = ["80"]
+          match_values     = [80]
         }]
 
-        ssl_protocol_condition = [{
+        ssl_protocol_conditions = [{
           operator         = "Equal"
           negate_condition = false
           match_values     = ["TLSv1"]
         }]
 
-        request_uri_condition = [{
+        request_uri_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
         }]
 
-        host_name_condition = [{
+        host_name_conditions = [{
           operator         = "Equal"
           negate_condition = false
           match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
           transforms       = ["Lowercase", "Trim"]
         }]
 
-        is_device_condition = [{
+        is_device_conditions = [{
           operator         = "Equal"
           negate_condition = false
           match_values     = ["Mobile"]
         }]
 
-        post_args_condition = [{
+        post_args_conditions = [{
           post_args_name = "customerName"
           operator       = "BeginsWith"
           match_values   = ["J", "K"]
           transforms     = ["Uppercase"]
         }]
 
-        request_method_condition = [{
+        request_method_conditions = [{
           operator         = "Equal"
           negate_condition = false
           match_values     = ["DELETE"]
         }]
 
-        url_filename_condition = [{
+        url_filename_conditions = [{
           operator         = "Equal"
           negate_condition = false
           match_values     = ["media.mp4"]
