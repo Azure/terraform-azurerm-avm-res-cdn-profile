@@ -1,4 +1,4 @@
-resource "azurerm_cdn_frontdoor_origin_group" "example" {
+resource "azurerm_cdn_frontdoor_origin_group" "origin_groups" {
   for_each = var.front_door_origin_groups
 
   cdn_frontdoor_profile_id                                  = azapi_resource.front_door_profile.id

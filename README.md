@@ -49,12 +49,12 @@ The following resources are used by this module:
 - [azurerm_cdn_frontdoor_endpoint.endpoints](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_endpoint) (resource)
 - [azurerm_cdn_frontdoor_firewall_policy.wafs](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_firewall_policy) (resource)
 - [azurerm_cdn_frontdoor_origin.origins](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_origin) (resource)
-- [azurerm_cdn_frontdoor_origin_group.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_origin_group) (resource)
+- [azurerm_cdn_frontdoor_origin_group.origin_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_origin_group) (resource)
 - [azurerm_cdn_frontdoor_route.routes](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_route) (resource)
 - [azurerm_cdn_frontdoor_rule.rules](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule) (resource)
 - [azurerm_cdn_frontdoor_rule_set.rule_set](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule_set) (resource)
 - [azurerm_cdn_frontdoor_secret.frontdoorsecret](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_secret) (resource)
-- [azurerm_cdn_frontdoor_security_policy.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_security_policy) (resource)
+- [azurerm_cdn_frontdoor_security_policy.security_policies](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_security_policy) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_resource_group_template_deployment.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group_template_deployment) (resource)
@@ -66,6 +66,12 @@ The following resources are used by this module:
 ## Required Inputs
 
 The following input variables are required:
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The Azure location where the resources will be deployed.
+
+Type: `string`
 
 ### <a name="input_name"></a> [name](#input\_name)
 
@@ -641,17 +647,16 @@ map(object({
       url_redirect_actions = optional(list(object({
         redirect_type        = string
         destination_hostname = string
-        redirect_protocol    = optional(string, "Https") #Set default as per security best practice. TF default is MatchRequest
+        redirect_protocol    = optional(string, "Https")
         destination_path     = optional(string, "")
         query_string         = optional(string, "")
         destination_fragment = optional(string, "")
       })), [])
       route_configuration_override_actions = optional(list(object({
-        set_origin_groupid = bool
-        cache_duration     = optional(string) #d.HH:MM:SS (365.23:59:59)
-        #cdn_frontdoor_origin_group_id = optional(string) #TODO autocalculated. remove
+        set_origin_groupid            = bool
+        cache_duration                = optional(string) #d.HH:MM:SS (365.23:59:59)
         forwarding_protocol           = optional(string, "HttpsOnly")
-        query_string_caching_behavior = optional(string) #TODO set Default ?
+        query_string_caching_behavior = optional(string)
         query_string_parameters       = optional(list(string))
         compression_enabled           = optional(bool, false)
         cache_behavior                = optional(string)
@@ -830,14 +835,6 @@ map(object({
 
 Default: `{}`
 
-### <a name="input_location"></a> [location](#input\_location)
-
-Description: The Azure location where the resources will be deployed.
-
-Type: `string`
-
-Default: `null`
-
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
 Description:   Controls the Resource Lock configuration for this resource. The following properties can be specified:
@@ -934,17 +931,57 @@ Default: `null`
 
 The following outputs are exported:
 
+### <a name="output_cdn_endpoints"></a> [cdn\_endpoints](#output\_cdn\_endpoints)
+
+Description: CDN endpoint output object
+
+### <a name="output_frontdoor_custom_domains"></a> [frontdoor\_custom\_domains](#output\_frontdoor\_custom\_domains)
+
+Description: Azure front door custom domains output object
+
+### <a name="output_frontdoor_endpoints"></a> [frontdoor\_endpoints](#output\_frontdoor\_endpoints)
+
+Description: Azure front door endpoint output object
+
+### <a name="output_frontdoor_firewall_policies"></a> [frontdoor\_firewall\_policies](#output\_frontdoor\_firewall\_policies)
+
+Description: Azure front door firewall policies output object
+
+### <a name="output_frontdoor_origin_groups"></a> [frontdoor\_origin\_groups](#output\_frontdoor\_origin\_groups)
+
+Description: Azure front door origin groups output object
+
+### <a name="output_frontdoor_origins"></a> [frontdoor\_origins](#output\_frontdoor\_origins)
+
+Description: Azure front door origins output object
+
+### <a name="output_frontdoor_rule_sets"></a> [frontdoor\_rule\_sets](#output\_frontdoor\_rule\_sets)
+
+Description: Azure front door rule sets output object
+
+### <a name="output_frontdoor_rules"></a> [frontdoor\_rules](#output\_frontdoor\_rules)
+
+Description: Azure front door rules output object
+
+### <a name="output_frontdoor_security_policies"></a> [frontdoor\_security\_policies](#output\_frontdoor\_security\_policies)
+
+Description: Azure front door security policies output object
+
+### <a name="output_resource"></a> [resource](#output\_resource)
+
+Description: Full resource output object
+
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
-Description:  The resource id of the Front door profile
+Description: The resource id of the Front door profile
 
 ### <a name="output_resource_name"></a> [resource\_name](#output\_resource\_name)
 
-Description:  The resource name of the Front door profile
+Description: The resource name of the Front door profile
 
 ### <a name="output_system_assigned_mi_principal_id"></a> [system\_assigned\_mi\_principal\_id](#output\_system\_assigned\_mi\_principal\_id)
 
-Description:  The system assigned managed identity of the front door profile
+Description: The system assigned managed identity of the front door profile
 
 ## Modules
 

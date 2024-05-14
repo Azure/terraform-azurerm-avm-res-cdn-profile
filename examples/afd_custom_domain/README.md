@@ -31,7 +31,7 @@ resource "azurerm_resource_group" "this" {
 }
 
 resource "azurerm_dns_zone" "dnszone" {
-  name                = "avm-domain.domain.com"
+  name                = "${module.naming.dns_zone.name_unique}-foo.com"
   resource_group_name = azurerm_resource_group.this.name
 }
 
@@ -123,16 +123,16 @@ module "azurerm_cdn_frontdoor_profile" {
 
   front_door_routes = {
     route1 = {
-      name                    = "route1"
-      endpoint_key            = "ep1_key"
-      origin_group_key        = "og1_key"
-      origin_keys             = ["origin1_key", "origin2_key"]
-      forwarding_protocol     = "HttpsOnly"
-      https_redirect_enabled  = true
-      patterns_to_match       = ["/*"]
-      supported_protocols     = ["Http", "Https"]
-      rule_set_names          = ["ruleset1"]
-      custom_domain_name_keys = ["contoso1_key", "contoso2_key"]
+      name                   = "route1"
+      endpoint_key           = "ep1_key"
+      origin_group_key       = "og1_key"
+      origin_keys            = ["origin1_key", "origin2_key"]
+      forwarding_protocol    = "HttpsOnly"
+      https_redirect_enabled = true
+      patterns_to_match      = ["/*"]
+      supported_protocols    = ["Http", "Https"]
+      rule_set_names         = ["ruleset1"]
+      custom_domain_keys     = ["contoso1_key", "contoso2_key"]
       cache = {
         cache1 = {
           query_string_caching_behavior = "IgnoreSpecifiedQueryStrings"

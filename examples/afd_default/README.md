@@ -263,10 +263,13 @@ module "azurerm_cdn_frontdoor_profile" {
       origin_group_key  = "og1_key"
       actions = {
 
-        url_rewrite_actions = [{
-          source_pattern          = "/"
-          destination             = "/index3.html"
-          preserve_unmatched_path = false
+        url_redirect_action = [{
+          redirect_type        = "PermanentRedirect"
+          redirect_protocol    = "MatchRequest"
+          query_string         = "clientIp={client_ip}"
+          destination_path     = "/exampleredirection"
+          destination_hostname = "contoso.com"
+          destination_fragment = "UrlRedirect"
         }]
         route_configuration_override_actions = [{
           set_origin_groupid            = true
@@ -290,73 +293,74 @@ module "azurerm_cdn_frontdoor_profile" {
       }
 
       conditions = {
-        remote_address_conditions = [{
+        request_method_condition = [{
+          operator         = "Equal"
+          negate_condition = false
+          match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
+        }]
+
+        socket_address_condition = [{
           operator         = "IPMatch"
           negate_condition = false
-          match_values     = ["10.0.0.0/23"]
+          match_values     = ["5.5.5.64/26"]
         }]
 
-        query_string_conditions = [{
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        request_header_conditions = [{
-          header_name      = "headername"
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        request_body_conditions = [{
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        request_scheme_conditions = [{
-          negate_condition = false
+        client_port_condition = [{
           operator         = "Equal"
-          match_values     = ["HTTP"]
+          negate_condition = false
+          match_values     = ["Mobile"]
         }]
 
-        url_path_conditions = [{
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        url_file_extension_conditions = [{
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        url_filename_conditions = [{
-          negate_condition = false
-          operator         = "BeginsWith"
-          match_values     = ["J", "K"]
-          transforms       = ["Uppercase"]
-        }]
-
-        http_version_conditions = [{
-          negate_condition = false
+        server_port_condition = [{
           operator         = "Equal"
-          match_values     = ["2.0"]
+          negate_condition = false
+          match_values     = ["80"]
         }]
 
-        cookies_conditions = [{
-          cookie_name      = "cookie"
+        ssl_protocol_condition = [{
+          operator         = "Equal"
+          negate_condition = false
+          match_values     = ["TLSv1"]
+        }]
+
+        request_uri_condition = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
+        }]
+
+        host_name_condition = [{
+          operator         = "Equal"
+          negate_condition = false
+          match_values     = ["www.contoso1.com", "images.contoso.com", "video.contoso.com"]
+          transforms       = ["Lowercase", "Trim"]
+        }]
+
+        is_device_condition = [{
+          operator         = "Equal"
+          negate_condition = false
+          match_values     = ["Mobile"]
+        }]
+
+        post_args_condition = [{
+          post_args_name = "customerName"
+          operator       = "BeginsWith"
+          match_values   = ["J", "K"]
+          transforms     = ["Uppercase"]
+        }]
+
+        request_method_condition = [{
+          operator         = "Equal"
+          negate_condition = false
+          match_values     = ["DELETE"]
+        }]
+
+        url_filename_condition = [{
+          operator         = "Equal"
+          negate_condition = false
+          match_values     = ["media.mp4"]
+          transforms       = ["Lowercase", "RemoveNulls", "Trim"]
         }]
       }
     }

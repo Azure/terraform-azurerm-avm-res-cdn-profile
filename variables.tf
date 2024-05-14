@@ -1,3 +1,9 @@
+variable "location" {
+  type        = string
+  description = "The Azure location where the resources will be deployed."
+  nullable    = false
+}
+
 variable "name" {
   type        = string
   description = "The name of the Azure Front Door."
@@ -814,16 +820,16 @@ variable "front_door_rules" {
       url_redirect_actions = optional(list(object({
         redirect_type        = string
         destination_hostname = string
-        redirect_protocol    = optional(string, "Https") 
+        redirect_protocol    = optional(string, "Https")
         destination_path     = optional(string, "")
         query_string         = optional(string, "")
         destination_fragment = optional(string, "")
       })), [])
       route_configuration_override_actions = optional(list(object({
-        set_origin_groupid = bool
-        cache_duration     = optional(string) #d.HH:MM:SS (365.23:59:59)
+        set_origin_groupid            = bool
+        cache_duration                = optional(string) #d.HH:MM:SS (365.23:59:59)
         forwarding_protocol           = optional(string, "HttpsOnly")
-        query_string_caching_behavior = optional(string) 
+        query_string_caching_behavior = optional(string)
         query_string_parameters       = optional(list(string))
         compression_enabled           = optional(bool, false)
         cache_behavior                = optional(string)
@@ -1023,12 +1029,6 @@ variable "front_door_security_policies" {
   }
 }
 
-variable "location" {
-  type        = string
-  default     = null
-  description = "The Azure location where the resources will be deployed."
-}
-
 variable "lock" {
   type = object({
     kind = string
@@ -1087,7 +1087,7 @@ variable "role_assignments" {
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
-    #principal_type                         = optional(string, null)
+    principal_type                         = optional(string, null)
   }))
   default     = {}
   description = <<DESCRIPTION
