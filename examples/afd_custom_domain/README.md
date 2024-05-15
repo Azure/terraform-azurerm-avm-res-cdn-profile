@@ -27,11 +27,11 @@ module "naming" {
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = "centralindia"
-  name     = module.naming.resource_group.name_unique
+  name     = "customdomain_${module.naming.resource_group.name_unique}"
 }
 
 resource "azurerm_dns_zone" "dnszone" {
-  name                = "${module.naming.dns_zone.name_unique}-foo.com"
+  name                = "foo-${module.naming.dns_zone.name_unique}.bar"
   resource_group_name = azurerm_resource_group.this.name
 }
 
@@ -115,14 +115,14 @@ module "azurerm_cdn_frontdoor_profile" {
     ep1_key = {
       name = "ep1-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "example"
+        environment = "avm-demo"
       }
     }
   }
   front_door_rule_sets = ["ruleset1"]
 
   front_door_routes = {
-    route1 = {
+    route1_key = {
       name                   = "route1"
       endpoint_key           = "ep1_key"
       origin_group_key       = "og1_key"
@@ -145,13 +145,14 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 
   front_door_rules = {
-    rule1 = {
+    rule1_key = {
       name              = "examplerule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"
       origin_group_key  = "og1_key"
       actions = {
+
         url_rewrite_actions = [{
           source_pattern          = "/"
           destination             = "/index3.html"

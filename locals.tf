@@ -5,7 +5,6 @@ locals {
       if contains(coalesce(route.cdn_frontdoor_custom_domain_ids, []), domain.id)
     ]
   }
-
   filtered_epcds_for_security_policy = { for k, v in var.front_door_security_policies : k =>
     concat([for item in try(v.firewall.association.endpoint_keys, []) : azurerm_cdn_frontdoor_endpoint.endpoints[item].id], [for item in try(v.firewall.association.domain_keys, []) : azurerm_cdn_frontdoor_custom_domain.cds[item].id])
   }

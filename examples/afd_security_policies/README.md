@@ -26,12 +26,12 @@ module "naming" {
 
 resource "azurerm_resource_group" "this" {
   location = "centralindia"
-  name     = module.naming.resource_group.name_unique
+  name     = "secpol-${module.naming.resource_group.name_unique}"
 }
 
 # resource block for DNS zones
 resource "azurerm_dns_zone" "dnszone" {
-  name                = "avm-domain.domain.com"
+  name                = "foo-${module.naming.dns_zone.name_unique}.bar"
   resource_group_name = azurerm_resource_group.this.name
 }
 
@@ -106,19 +106,19 @@ module "azurerm_cdn_frontdoor_profile" {
     ep1_key = {
       name = "ep1-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "prod"
+        environment = "avm-demo"
       }
     }
     ep2_key = {
       name = "ep2-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "prod"
+        environment = "avm-demo"
       }
     }
     ep3_key = {
       name = "ep3-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "prod"
+        environment = "avm-demo"
       }
     }
   }

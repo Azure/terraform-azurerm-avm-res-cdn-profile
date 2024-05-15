@@ -150,7 +150,7 @@ variable "cdn_endpoints" {
         negate_condition = optional(bool, false)
         match_values     = list(string)
       }))
-      request_scheme_condition = optional(object({
+      request_scheme_condition = optional(object({ #request protocol
         operator         = optional(string, "Equal")
         negate_condition = optional(bool, false)
         match_values     = list(string)

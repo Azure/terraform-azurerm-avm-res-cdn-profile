@@ -624,9 +624,7 @@ Default: `[]`
 
 ### <a name="input_front_door_rules"></a> [front\_door\_rules](#input\_front\_door\_rules)
 
-Description:   Manages a Front Door (standard/premium) Rules.
-
-  - `name` - (Required) The name which should be used for this Front Door Secret.
+Description:   Manages a Front Door (standard/premium) Rules. Please review documentation here for usage. https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule
 
 Type:
 
@@ -753,7 +751,7 @@ map(object({
       is_device_conditions = optional(list(object({
         operator         = optional(string)
         negate_condition = optional(bool, false)
-        match_values     = optional(string)
+        match_values     = optional(list(string))
       })), [])
       socket_address_conditions = optional(list(object({
         operator         = optional(string, "IPMatch")
@@ -811,11 +809,11 @@ Description:   Manages a Front Door (standard/premium) Security Policy.
 
   - `name` - (Required) The name which should be used for this Front Door Security Policy. Possible values must not be an empty string.
   - `firewall` - (Required) An firewall block as defined below: -
-    - 'front\_door\_firewall\_policy\_name' - (Required) the name of Front Door Firewall Policy that should be linked to this Front Door Security Policy.
-    - 'association' - (Required) An association block as defined below:-
-      - ' domain\_names ' - (Optional) list of the domain names to associate with the firewall policy. Provide either domain names or endpoint names or both.
-      - ' endpoint\_names' - (Optional) list of the endpoint names to associate with the firewall policy. Provide either domain names or endpoint names or both.
-      - ' patterns\_to\_match' - (Required) The list of paths to match for this firewall policy. Possible value includes /*
+  - 'front\_door\_firewall\_policy\_name' - (Required) the name of Front Door Firewall Policy that should be linked to this Front Door Security Policy.
+  - 'association' - (Required) An association block as defined below:-
+  - 'domain\_names' - (Optional) list of the domain names to associate with the firewall policy. Provide either domain names or endpoint names or both.
+  - 'endpoint\_names' - (Optional) list of the endpoint names to associate with the firewall policy. Provide either domain names or endpoint names or both.
+  - 'patterns\_to\_match' - (Required) The list of paths to match for this firewall policy. Possible value includes /*
 
 Type:
 
@@ -901,7 +899,7 @@ map(object({
     role_definition_id_or_name             = string
     principal_id                           = string
     description                            = optional(string, null)
-    skip_service_principal_aad_check       = optional(bool, false)
+    skip_service_principal_aad_check       = optional(bool, false) #Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)

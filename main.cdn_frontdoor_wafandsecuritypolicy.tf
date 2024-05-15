@@ -91,7 +91,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "wafs" {
 
 resource "azurerm_cdn_frontdoor_security_policy" "security_policies" {
   for_each = try(var.front_door_security_policies != null ? var.front_door_security_policies : {})
-  depends_on = [ azurerm_cdn_frontdoor_custom_domain.cds, azurerm_cdn_frontdoor_endpoint.endpoints]
+
   cdn_frontdoor_profile_id = azapi_resource.front_door_profile.id
   name                     = each.value.name
 
@@ -111,6 +111,8 @@ resource "azurerm_cdn_frontdoor_security_policy" "security_policies" {
       }
     }
   }
+
+  depends_on = [azurerm_cdn_frontdoor_custom_domain.cds, azurerm_cdn_frontdoor_endpoint.endpoints]
 }
 
 

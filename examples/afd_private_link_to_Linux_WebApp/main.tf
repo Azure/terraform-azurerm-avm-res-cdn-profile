@@ -27,7 +27,7 @@ resource "azurerm_resource_group" "this" {
 # Creating App service plan with premium V3 SKU
 resource "azurerm_service_plan" "appservice" {
   location               = azurerm_resource_group.this.location
-  name                   = "asp-${module.naming.azurerm_service_plan.name_unique}"
+  name                   = "asp-${module.naming.app_service_plan.name_unique}"
   os_type                = "Linux"
   resource_group_name    = azurerm_resource_group.this.name
   sku_name               = "P1v3"
@@ -37,7 +37,7 @@ resource "azurerm_service_plan" "appservice" {
 # Creating the linux web app
 resource "azurerm_linux_web_app" "webapp" {
   location                      = azurerm_resource_group.this.location
-  name                          = "app-${module.naming.azurerm_service_plan.name_unique}"
+  name                          = "app-${module.naming.app_service_plan.name_unique}"
   resource_group_name           = azurerm_resource_group.this.name
   service_plan_id               = azurerm_service_plan.appservice.id
   https_only                    = true
@@ -179,7 +179,7 @@ module "azurerm_cdn_frontdoor_profile" {
         query_string_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["Query1", "Query2"]
           transforms       = ["Uppercase"]
         }]
 
@@ -187,18 +187,18 @@ module "azurerm_cdn_frontdoor_profile" {
           header_name      = "headername"
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["Header1", "Header2"]
           transforms       = ["Uppercase"]
         }]
 
         request_body_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["Body1", "Body2"]
           transforms       = ["Uppercase"]
         }]
 
-        request_scheme_conditions = [{
+        request_scheme_conditions = [{ #request protocol
           negate_condition = false
           operator         = "Equal"
           match_values     = ["HTTP"]
@@ -207,21 +207,21 @@ module "azurerm_cdn_frontdoor_profile" {
         url_path_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["UrlPath1", "UrlPath2"]
           transforms       = ["Uppercase"]
         }]
 
         url_file_extension_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["ext1", "ext2"]
           transforms       = ["Uppercase"]
         }]
 
         url_filename_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["filename1", "filename2"]
           transforms       = ["Uppercase"]
         }]
 
@@ -235,7 +235,7 @@ module "azurerm_cdn_frontdoor_profile" {
           cookie_name      = "cookie"
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["cookie1", "cookie2"]
           transforms       = ["Uppercase"]
         }]
       }

@@ -39,24 +39,18 @@ resource "azurerm_cdn_endpoint" "endpoint" {
       relative_path = geo_filter.value.relative_path
     }
   }
-  global_delivery_rule {
-    cache_expiration_action {
-      behavior = each.value.global_delivery_rule.cache_expiration_action.behavior
-      duration = each.value.global_delivery_rule.cache_expiration_action.duration
-    }
-    cache_key_query_string_action {
-      behavior   = each.value.global_delivery_rule.cache_key_query_string_action.behavior
-      parameters = each.value.global_delivery_rule.cache_key_query_string_action.parameters
+  dynamic "global_delivery_rule" {
+    for_each = each.value.global_delivery_rule != null ? [each.value.global_delivery_rule] : []
+    content {
+      cache_expiration_action {
+        behavior = global_delivery_rule.value.cache_expiration_action.behavior
+        duration = global_delivery_rule.value.cache_expiration_action.duration
+      }
+      cache_key_query_string_action {
+        behavior   = global_delivery_rule.value.cache_key_query_string_action.behavior
+        parameters = global_delivery_rule.value.cache_key_query_string_action.parameters
+      }
     }
   }
 }
 
-# resource "azurerm_management_lock" "endpointlock" {
-#   for_each = var.cdn_endpoints
-#   depends_on = [azurerm_cdn_endpoint.endpoint]
-#   count = var.lock != null ? 1 : 0
-#   lock_level = var.lock.kind
-#   name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
-#   scope      = azurerm_cdn_endpoint.endpoint[each.key].id
-#   notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
-# }
