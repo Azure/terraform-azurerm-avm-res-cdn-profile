@@ -26,14 +26,20 @@ module "naming" {
 
 resource "azurerm_resource_group" "this" {
   location = "centralindia"
-  name     = module.naming.resource_group.name_unique
+  name     = "edgio-cdn-${module.naming.resource_group.name_unique}"
 }
 
+resource "azurerm_storage_account" "storage" {
+  account_replication_type      = "ZRS"
+  account_tier                  = "Standard"
+  location                      = azurerm_resource_group.this.location
+  name                          = module.naming.storage_account.name_unique
+  resource_group_name           = azurerm_resource_group.this.name
+  public_network_access_enabled = false
+}
 
 # This is the module call
 module "azurerm_cdn_profile" {
-  #depends_on = [ data.azurerm_resource_group.this ]
-  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source = "../../"
   tags = {
     environment = "avm-demo"
@@ -41,7 +47,7 @@ module "azurerm_cdn_profile" {
   enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
-  sku                 = "Standard_Microsoft"
+  sku                 = "Standard_Verizon"
   resource_group_name = azurerm_resource_group.this.name
   cdn_endpoints = {
     ep1 = {
@@ -51,19 +57,18 @@ module "azurerm_cdn_profile" {
       querystring_caching_behaviour = "BypassCaching"
       is_compression_enabled        = true
       optimization_type             = "GeneralWebDelivery"
-      #geo_filters = {}
-      # geo_filters = { # Only one geo filter allowed for Standard_Microsoft sku
-      #   gf1 = {
-      #     relative_path = "/" # Must be / for Standard_Microsoft sku
-      #     action        = "Block"
-      #     country_codes = ["AF", "GB"]
-      #   }
-      #   # gf2 = {
-      #   #   relative_path = "/foo" 
-      #   #   action        = "Allow"
-      #   #   country_codes = ["AF", "GB"]
-      #   # }
-      # }
+      geo_filters = { # Only one geo filter allowed for Standard_Microsoft sku
+        gf1 = {
+          relative_path = "/" # Must be / for Standard_Microsoft sku
+          action        = "Block"
+          country_codes = ["AF", "GB"]
+        }
+        gf2 = {
+          relative_path = "/foo"
+          action        = "Allow"
+          country_codes = ["AF", "GB"]
+        }
+      }
       content_types_to_compress = [
         "application/eot",
         "application/font",
@@ -107,24 +112,12 @@ module "azurerm_cdn_profile" {
         "text/x-component",
         "text/x-java-source",
       ]
-      global_delivery_rule = {
-
-        cache_expiration_action = {
-          behavior = "Override"
-          duration = "1.10:30:00"
-        }
-        cache_key_query_string_action = {
-          behavior   = "Include"
-          parameters = "*"
-        }
-
-      }
-      origin_host_header = "ddsharedstorage.blob.core.windows.net"
+      origin_host_header = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint, "https://", ""), "/", "")
       origin_path        = "/media"
       probe_path         = "/foo.bar"
       origins = {
         og1 = { name = "origin1"
-          host_name = "ddsharedstorage.blob.core.windows.net"
+          host_name = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint, "https://", ""), "/", "")
         }
       }
     }
@@ -155,6 +148,7 @@ The following providers are used by this module:
 The following resources are used by this module:
 
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_storage_account.storage](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs

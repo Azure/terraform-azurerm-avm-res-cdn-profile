@@ -115,6 +115,7 @@ module "azurerm_cdn_profile" {
         }
 
       }
+
       origin_host_header = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint, "https://", ""), "/", "")
       origin_path        = "/media"
       probe_path         = "/foo.bar"

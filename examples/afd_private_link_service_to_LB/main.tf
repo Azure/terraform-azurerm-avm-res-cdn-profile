@@ -50,11 +50,11 @@ resource "azurerm_lb" "lb" {
 
   frontend_ip_configuration {
     name                          = "afd-lb-ip"
-    private_ip_address_allocation = "Static"
     private_ip_address            = "10.5.1.4"
+    private_ip_address_allocation = "Static"
     private_ip_address_version    = "IPv4"
     subnet_id                     = azurerm_subnet.subnet.id
-    zones                         = ["1", "2"]
+    zones                         = ["1", "2", "3"]
   }
 }
 

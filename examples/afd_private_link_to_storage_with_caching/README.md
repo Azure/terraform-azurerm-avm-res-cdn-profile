@@ -212,7 +212,7 @@ module "azurerm_cdn_frontdoor_profile" {
         query_string_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["Query1", "Query2"]
           transforms       = ["Uppercase"]
         }]
 
@@ -220,18 +220,18 @@ module "azurerm_cdn_frontdoor_profile" {
           header_name      = "headername"
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["Header1", "Header2"]
           transforms       = ["Uppercase"]
         }]
 
         request_body_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["Body1", "Body2"]
           transforms       = ["Uppercase"]
         }]
 
-        request_scheme_conditions = [{
+        request_scheme_conditions = [{ #request protocol
           negate_condition = false
           operator         = "Equal"
           match_values     = ["HTTP"]
@@ -240,21 +240,21 @@ module "azurerm_cdn_frontdoor_profile" {
         url_path_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["UrlPath1", "UrlPath2"]
           transforms       = ["Uppercase"]
         }]
 
         url_file_extension_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["ext1", "ext2"]
           transforms       = ["Uppercase"]
         }]
 
         url_filename_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["filename1", "filename2"]
           transforms       = ["Uppercase"]
         }]
 
@@ -268,7 +268,7 @@ module "azurerm_cdn_frontdoor_profile" {
           cookie_name      = "cookie"
           negate_condition = false
           operator         = "BeginsWith"
-          match_values     = ["J", "K"]
+          match_values     = ["cookie1", "cookie2"]
           transforms       = ["Uppercase"]
         }]
       }
