@@ -21,7 +21,7 @@ module "naming" {
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = "eastus"
-  name     = module.naming.resource_group.name_unique
+  name     = "storagecaching-${module.naming.resource_group.name_unique}"
 }
 
 # storage account origin which will be connected to private link
@@ -38,14 +38,14 @@ resource "azurerm_storage_account" "storage" {
 resource "azurerm_virtual_network" "vnet" {
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this.location
-  name                = "my-vnet"
+  name                = "storage-vnet"
   resource_group_name = azurerm_resource_group.this.name
 }
 
 # Create a subnet within the virtual network
 resource "azurerm_subnet" "subnet" {
   address_prefixes     = ["10.0.0.0/24"]
-  name                 = "my-subnet"
+  name                 = "storage-subnet"
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
@@ -133,7 +133,7 @@ module "azurerm_cdn_frontdoor_profile" {
     ep1_key = {
       name = "ep1-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "example"
+        environment = "avm-demo"
       }
     }
   }
@@ -169,8 +169,8 @@ module "azurerm_cdn_frontdoor_profile" {
       rule_set_name     = "ruleset1"
       origin_group_key  = "og1_key"
       actions = {
+
         url_rewrite_actions = [{
-          actiontype              = "url_rewrite_action"
           source_pattern          = "/"
           destination             = "/index3.html"
           preserve_unmatched_path = false
@@ -195,6 +195,7 @@ module "azurerm_cdn_frontdoor_profile" {
           value         = "/abc"
         }]
       }
+
       conditions = {
         remote_address_conditions = [{
           operator         = "IPMatch"
@@ -208,6 +209,7 @@ module "azurerm_cdn_frontdoor_profile" {
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
         }]
+
         request_header_conditions = [{
           header_name      = "headername"
           negate_condition = false
@@ -215,40 +217,47 @@ module "azurerm_cdn_frontdoor_profile" {
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
         }]
+
         request_body_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
         }]
+
         request_scheme_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["HTTP"]
         }]
+
         url_path_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
         }]
+
         url_file_extension_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
         }]
+
         url_filename_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
         }]
+
         http_version_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["2.0"]
         }]
+
         cookies_conditions = [{
           cookie_name      = "cookie"
           negate_condition = false
@@ -260,6 +269,3 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 }
-
-
-

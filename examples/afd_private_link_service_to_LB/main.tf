@@ -21,21 +21,21 @@ module "naming" {
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = "centralindia"
-  name     = module.naming.resource_group.name_unique
+  name     = "pvtlink-lb-${module.naming.resource_group.name_unique}"
 }
 
 # Create a virtual network
 resource "azurerm_virtual_network" "vnet" {
   address_space       = ["10.5.0.0/16"]
   location            = azurerm_resource_group.this.location
-  name                = "my-vnet"
+  name                = "afd-lb-vnet"
   resource_group_name = azurerm_resource_group.this.name
 }
 
 # Create a subnet within the virtual network
 resource "azurerm_subnet" "subnet" {
   address_prefixes                              = ["10.5.1.0/24"]
-  name                                          = "my-subnet"
+  name                                          = "front-end-subnet"
   resource_group_name                           = azurerm_resource_group.this.name
   virtual_network_name                          = azurerm_virtual_network.vnet.name
   private_link_service_network_policies_enabled = false
@@ -49,7 +49,7 @@ resource "azurerm_lb" "lb" {
   sku                 = "Standard"
 
   frontend_ip_configuration {
-    name                          = "AFD-lb-IP"
+    name                          = "afd-lb-ip"
     private_ip_address_allocation = "Dynamic"
     private_ip_address_version    = "IPv4"
     subnet_id                     = azurerm_subnet.subnet.id
@@ -61,7 +61,7 @@ resource "azurerm_lb" "lb" {
 resource "azurerm_private_link_service" "pls" {
   load_balancer_frontend_ip_configuration_ids = [azurerm_lb.lb.frontend_ip_configuration[0].id]
   location                                    = azurerm_resource_group.this.location
-  name                                        = "pls-example"
+  name                                        = "afd-lb-pls"
   resource_group_name                         = azurerm_resource_group.this.name
 
   nat_ip_configuration {
@@ -103,14 +103,14 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   front_door_origins = {
     origin1_key = {
-      name                           = "example-origin1"
+      name                           = "origin1"
       origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = true
-      host_name                      = "example.com"
+      host_name                      = "foo.bar"
       http_port                      = 80
       https_port                     = 443
-      host_header                    = "example.com"
+      host_header                    = "foo.bar"
       priority                       = 1
       weight                         = 1
       private_link = {
@@ -127,7 +127,7 @@ module "azurerm_cdn_frontdoor_profile" {
     ep1_key = {
       name = "ep1-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "example"
+        environment = "avm-demo"
       }
     }
   }
@@ -156,7 +156,7 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   front_door_rules = {
     rule1_key = {
-      name              = "examplerule1"
+      name              = "rule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"

@@ -21,7 +21,7 @@ module "naming" {
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = "centralindia"
-  name     = module.naming.resource_group.name_unique
+  name     = "interfaces_${module.naming.resource_group.name_unique}"
 }
 
 data "azurerm_client_config" "current" {}
@@ -49,7 +49,7 @@ resource "azurerm_eventhub_namespace" "eventhub_namespace" {
   sku                 = "Standard"
   capacity            = 1
   tags = {
-    environment = "Production"
+    environment = "avm-demo"
   }
   zone_redundant = true
 }
@@ -307,7 +307,7 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 
   tags = {
-    environment = "production"
+    environment = "avm-demo"
     costcenter  = "IT"
   }
 

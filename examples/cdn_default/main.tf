@@ -30,7 +30,7 @@ module "azurerm_cdn_profile" {
   # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source = "../../"
   tags = {
-    environment = "production"
+    environment = "avm-demo"
   }
   enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique

@@ -20,7 +20,7 @@ module "naming" {
 
 resource "azurerm_resource_group" "this" {
   location = "centralindia"
-  name     = module.naming.resource_group.name_unique
+  name     = "afd_default-${module.naming.resource_group.name_unique}"
 }
 
 # This is the module call
@@ -95,13 +95,13 @@ module "azurerm_cdn_frontdoor_profile" {
     ep1_key = {
       name = "ep1-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "prod"
+        environment = "avm-demo"
       }
     }
     ep2_key = {
       name = "ep2-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "prod"
+        environment = "avm-demo"
       }
     }
   }
@@ -141,7 +141,6 @@ module "azurerm_cdn_frontdoor_profile" {
       cdn_frontdoor_origin_path = "/originpath"
     }
   }
-
 
   front_door_rules = {
     rule1_key = {

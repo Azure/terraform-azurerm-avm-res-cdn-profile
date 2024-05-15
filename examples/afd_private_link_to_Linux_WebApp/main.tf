@@ -21,13 +21,13 @@ module "naming" {
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = "centralindia"
-  name     = module.naming.resource_group.name_unique
+  name     = "pvtlink-webapp-${module.naming.resource_group.name_unique}"
 }
 
 # Creating App service plan with premium V3 SKU
 resource "azurerm_service_plan" "appservice" {
   location               = azurerm_resource_group.this.location
-  name                   = "my-appservice"
+  name                   = "asp-${module.naming.azurerm_service_plan.name_unique}"
   os_type                = "Linux"
   resource_group_name    = azurerm_resource_group.this.name
   sku_name               = "P1v3"
@@ -37,7 +37,7 @@ resource "azurerm_service_plan" "appservice" {
 # Creating the linux web app
 resource "azurerm_linux_web_app" "webapp" {
   location                      = azurerm_resource_group.this.location
-  name                          = "my-LinuxWebApp"
+  name                          = "app-${module.naming.azurerm_service_plan.name_unique}"
   resource_group_name           = azurerm_resource_group.this.name
   service_plan_id               = azurerm_service_plan.appservice.id
   https_only                    = true
@@ -66,7 +66,7 @@ module "azurerm_cdn_frontdoor_profile" {
   sku                      = "Premium_AzureFrontDoor"
   resource_group_name      = azurerm_resource_group.this.name
   response_timeout_seconds = 120
-  tags                     = { environment = "example" }
+  tags                     = { environment = "dev" }
   front_door_origin_groups = {
     og1_key = {
       name = "og1"
@@ -89,7 +89,7 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   front_door_origins = {
     origin1_key = {
-      name                           = "example-origin1"
+      name                           = "origin1"
       origin_group_key               = "og1_key"
       enabled                        = true
       certificate_name_check_enabled = true
@@ -114,14 +114,14 @@ module "azurerm_cdn_frontdoor_profile" {
     ep1_key = {
       name = "ep1-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        ENV = "example"
+        environment = "avm-demo"
       }
     }
   }
   front_door_rule_sets = ["ruleset1"]
 
   front_door_routes = {
-    route1 = {
+    route1_key = {
       name                   = "route1"
       endpoint_key           = "ep1_key"
       origin_group_key       = "og1_key"
@@ -135,20 +135,20 @@ module "azurerm_cdn_frontdoor_profile" {
   }
 
   front_door_rules = {
-    rule1 = {
+    rule1_key = {
       name              = "examplerule1"
       order             = 1
       behavior_on_match = "Continue"
       rule_set_name     = "ruleset1"
       origin_group_key  = "og1_key"
       actions = {
-        url_rewrite_action = {
-          actiontype              = "url_rewrite_action"
+
+        url_rewrite_actions = [{
           source_pattern          = "/"
           destination             = "/index3.html"
           preserve_unmatched_path = false
-        }
-        route_configuration_override_action = {
+        }]
+        route_configuration_override_actions = [{
           set_origin_groupid            = true
           forwarding_protocol           = "HttpsOnly"
           query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
@@ -156,87 +156,88 @@ module "azurerm_cdn_frontdoor_profile" {
           compression_enabled           = true
           cache_behavior                = "OverrideIfOriginMissing"
           cache_duration                = "365.23:59:59"
-        }
-        response_header_action = {
+        }]
+        response_header_actions = [{
           header_action = "Append"
           header_name   = "headername"
           value         = "/abc"
-        }
-        request_header_action = {
+        }]
+        request_header_actions = [{
           header_action = "Append"
           header_name   = "headername"
           value         = "/abc"
-        }
+        }]
       }
+
       conditions = {
-        remote_address_condition = {
+        remote_address_conditions = [{
           operator         = "IPMatch"
           negate_condition = false
           match_values     = ["10.0.0.0/23"]
-        }
+        }]
 
-        query_string_condition = {
+        query_string_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_header_condition = {
+        request_header_conditions = [{
           header_name      = "headername"
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_body_condition = {
+        request_body_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        request_scheme_condition = {
+        request_scheme_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["HTTP"]
-        }
+        }]
 
-        url_path_condition = {
+        url_path_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        url_file_extension_condition = {
+        url_file_extension_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        url_filename_condition = {
+        url_filename_conditions = [{
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
 
-        http_version_condition = {
+        http_version_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["2.0"]
-        }
+        }]
 
-        cookies_condition = {
+        cookies_conditions = [{
           cookie_name      = "cookie"
           negate_condition = false
           operator         = "BeginsWith"
           match_values     = ["J", "K"]
           transforms       = ["Uppercase"]
-        }
+        }]
       }
     }
   }

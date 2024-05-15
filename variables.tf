@@ -958,9 +958,7 @@ variable "front_door_rules" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Rules.
-  
-  - `name` - (Required) The name which should be used for this Front Door Secret. 
+  Manages a Front Door (standard/premium) Rules. Please review documentation here for usage. https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule
   DESCRIPTION
   nullable    = false
 }
@@ -1002,17 +1000,17 @@ variable "front_door_security_policies" {
   
   - `name` - (Required) The name which should be used for this Front Door Security Policy. Possible values must not be an empty string.
   - `firewall` - (Required) An firewall block as defined below: -
-    - 'front_door_firewall_policy_name' - (Required) the name of Front Door Firewall Policy that should be linked to this Front Door Security Policy.
-    - 'association' - (Required) An association block as defined below:-
-      - ' domain_names ' - (Optional) list of the domain names to associate with the firewall policy. Provide either domain names or endpoint names or both.
-      - ' endpoint_names' - (Optional) list of the endpoint names to associate with the firewall policy. Provide either domain names or endpoint names or both.
-      - ' patterns_to_match' - (Required) The list of paths to match for this firewall policy. Possible value includes /*
+  - 'front_door_firewall_policy_name' - (Required) the name of Front Door Firewall Policy that should be linked to this Front Door Security Policy.
+  - 'association' - (Required) An association block as defined below:-
+  - 'domain_names' - (Optional) list of the domain names to associate with the firewall policy. Provide either domain names or endpoint names or both.
+  - 'endpoint_names' - (Optional) list of the endpoint names to associate with the firewall policy. Provide either domain names or endpoint names or both.
+  - 'patterns_to_match' - (Required) The list of paths to match for this firewall policy. Possible value includes /*
   DESCRIPTION
   nullable    = false
 
   validation {
     condition     = length(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_keys, policy.firewall.association.endpoint_keys)])) == length(distinct(flatten([for name, policy in var.front_door_security_policies : concat(policy.firewall.association.domain_keys, policy.firewall.association.endpoint_keys)])))
-    error_message = "Endpoint/Custom domain is already being used, please provide unique association."
+    error_message = "Endpoint and custom domains can only be associated with a single security policy at a time. Please review endpoint_keys and domain_keys and ensure that the endpoint or custom domain keys is not provided in multiple security policies."
   }
   validation {
     condition     = alltrue([for _, v in var.front_door_security_policies : v.name != ""])
@@ -1083,7 +1081,7 @@ variable "role_assignments" {
     role_definition_id_or_name             = string
     principal_id                           = string
     description                            = optional(string, null)
-    skip_service_principal_aad_check       = optional(bool, false)
+    skip_service_principal_aad_check       = optional(bool, false) #Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
@@ -1114,7 +1112,7 @@ variable "sku" {
 
   validation {
     condition     = contains(["Standard_AzureFrontDoor", "Premium_AzureFrontDoor", "Standard_Akamai", "Standard_ChinaCdn", "Standard_Microsoft", "Standard_Verizon", "Premium_Verizon"], var.sku)
-    error_message = "The SKU must be either 'Standard' or 'Premium' for Front Door. For CDN use correct SKU name"
+    error_message = "The SKU must be either 'Standard_AzureFrontDoor' or 'Premium_AzureFrontDoor' for Front Door. For CDN use correct SKU name"
   }
 }
 

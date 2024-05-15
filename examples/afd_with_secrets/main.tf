@@ -21,7 +21,7 @@ module "naming" {
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = "centralindia"
-  name     = module.naming.resource_group.name_unique
+  name     = "afd-secret-${module.naming.resource_group.name_unique}"
 }
 
 data "azurerm_client_config" "current" {}
@@ -192,7 +192,7 @@ module "azurerm_cdn_frontdoor_profile" {
     ep1_key = {
       name = "ep1-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        env = "prod"
+       environment = "avm-demo"
       }
     }
   }
