@@ -103,18 +103,6 @@ module "azurerm_cdn_profile" {
         "text/x-component",
         "text/x-java-source",
       ]
-      global_delivery_rule = { # global_delivery_rule and delivery_rule are only allowed when Standard_Microsoft sku is used
-
-        cache_expiration_action = {
-          behavior = "Override"
-          duration = "1.10:30:00"
-        }
-        cache_key_query_string_action = {
-          behavior   = "Include"
-          parameters = "*"
-        }
-
-      }
 
       origin_host_header = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint, "https://", ""), "/", "")
       origin_path        = "/media"
@@ -124,8 +112,29 @@ module "azurerm_cdn_profile" {
           host_name = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint, "https://", ""), "/", "")
         }
       }
+      diagnostic_setting = {
+        name                        = "storage_diag"
+        log_groups                  = ["allLogs"] # you can set either log_categories or log_groups.
+        storage_account_resource_id = azurerm_storage_account.storage.id
+        #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
+      }
     }
+
   }
+
+  diagnostic_settings = {
+    workspaceandstorage_diag = {
+      name                           = "workspaceandstorage_diag"
+      metric_categories              = ["AllMetrics"]
+      #log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
+      log_groups                  = ["allLogs"] #must explicitly set since log_groups defaults to ["allLogs"]
+      log_analytics_destination_type = "Dedicated"
+      storage_account_resource_id    = azurerm_storage_account.storage.id
+      #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
+    }
+
+  }
+
   managed_identities = {
     system_assigned = true
   }

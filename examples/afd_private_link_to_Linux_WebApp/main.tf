@@ -26,12 +26,12 @@ resource "azurerm_resource_group" "this" {
 
 # Creating App service plan with premium V3 SKU
 resource "azurerm_service_plan" "appservice" {
-  location               = azurerm_resource_group.this.location
-  name                   = "asp-${module.naming.app_service_plan.name_unique}"
-  os_type                = "Linux"
-  resource_group_name    = azurerm_resource_group.this.name
-  sku_name               = "P1v3"
-  zone_balancing_enabled = true
+  location            = azurerm_resource_group.this.location
+  name                = "asp-${module.naming.app_service_plan.name_unique}"
+  os_type             = "Linux"
+  resource_group_name = azurerm_resource_group.this.name
+  sku_name            = "S1"
+  #zone_balancing_enabled = true
 }
 
 # Creating the linux web app
