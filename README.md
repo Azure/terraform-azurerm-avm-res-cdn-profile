@@ -56,7 +56,8 @@ The following resources are used by this module:
 - [azurerm_cdn_frontdoor_secret.frontdoorsecret](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_secret) (resource)
 - [azurerm_cdn_frontdoor_security_policy.security_policies](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_security_policy) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
+- [azurerm_monitor_diagnostic_setting.cdn_endpoint_diag](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
+- [azurerm_monitor_diagnostic_setting.front_door_diag](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_resource_group_template_deployment.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group_template_deployment) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [random_id.telem](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
@@ -122,42 +123,44 @@ map(object({
     }))
 
     origin_host_header = optional(string)
-    origin_path        = optional(string)    # must start with / e.g. "/media"
-    probe_path         = optional(string)    # must start with / e.g. "/foo.bar"
+    origin_path        = optional(string) # must start with / e.g. "/media"
+    probe_path         = optional(string) # must start with / e.g. "/foo.bar"
+
     global_delivery_rule = optional(object({ #verify structure later
-      cache_expiration_action = optional(object({
+      cache_expiration_action = optional(list(object({
         behavior = string           # Allowed Values: BypassCache, Override and SetIfMissing
         duration = optional(string) # Only allowed when behavior is Override or SetIfMissing. Format: [d.]hh:mm:ss e.g "1.10:30:00"
-      }))
-      cache_key_query_string_action = optional(object({
+      })), [])
+      cache_key_query_string_action = optional(list(object({
         behavior   = string           # Allowed Values: Exclude, ExcludeAll, Include and IncludeAll
         parameters = optional(string) # Documentation says it is a list but string e.g "*"
-      }))
-      modify_request_header_action = optional(object({
+      })), [])
+      modify_request_header_action = optional(list(object({
         action = string # Allowed Values: Append, Delete and Overwrite
         name   = string
         value  = optional(string) # Only needed if action = Append or Overwrite
-      }))
-      modify_response_header_action = optional(object({
+      })), [])
+      modify_response_header_action = optional(list(object({
         action = string # Allowed Values: Append, Delete and Overwrite
         name   = string
         value  = optional(string) # Only needed if action = Append or Overwrite
-      }))
-      url_redirect_action = optional(object({
+      })), [])
+      url_redirect_action = optional(list(object({
         redirect_type = string                    # Allowed Values: Found, Moved, PermanentRedirect and TemporaryRedirect
         protocol      = optional(string, "Https") # Allowed Values: MatchRequest, Http and Https
         hostname      = optional(string)
         path          = optional(string) # Should begin with /
         fragment      = optional(string) #Specifies the fragment part of the URL. This value must not start with a #
         query_string  = optional(string) # Specifies the query string part of the URL. This value must not start with a ? or & and must be in <key>=<value> format separated by &.
-      }))
-      url_rewrite_action = optional(object({
+      })), [])
+      url_rewrite_action = optional(list(object({
         source_pattern          = string #(Required) This value must start with a / and can't be longer than 260 characters.
         destination             = string # This value must start with a / and can't be longer than 260 characters.
         preserve_unmatched_path = optional(bool, true)
-      }))
-    }))
-    delivery_rules = optional(map(object({ #verify structure later
+      })), [])
+    }), {})
+
+    delivery_rules = optional(list(object({ #verify structure later
       name  = string
       order = number
       cache_expiration_action = optional(object({
@@ -213,6 +216,7 @@ map(object({
         negate_condition = optional(bool, false)
         match_values     = optional(list(string))
       }))
+
       request_body_condition = optional(object({
         operator         = string
         negate_condition = optional(bool, false)
@@ -274,6 +278,18 @@ map(object({
         preserve_unmatched_path = optional(bool, true)
       }))
     })))
+    diagnostic_setting = optional(object({
+      name                                     = optional(string, null)
+      log_categories                           = optional(set(string), [])
+      log_groups                               = optional(set(string), [])
+      metric_categories                        = optional(set(string), [])
+      log_analytics_destination_type           = optional(string, "Dedicated")
+      workspace_resource_id                    = optional(string, null)
+      storage_account_resource_id              = optional(string, null)
+      event_hub_authorization_rule_resource_id = optional(string, null)
+      event_hub_name                           = optional(string, null)
+      marketplace_partner_resource_id          = optional(string, null)
+    }), {})
   }))
 ```
 

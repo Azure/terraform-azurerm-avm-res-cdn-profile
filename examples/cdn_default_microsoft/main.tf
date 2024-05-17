@@ -124,10 +124,10 @@ module "azurerm_cdn_profile" {
 
   diagnostic_settings = {
     workspaceandstorage_diag = {
-      name                           = "workspaceandstorage_diag"
-      metric_categories              = ["AllMetrics"]
+      name              = "workspaceandstorage_diag"
+      metric_categories = ["AllMetrics"]
       #log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      log_groups                  = ["allLogs"] #must explicitly set since log_groups defaults to ["allLogs"]
+      log_groups                     = ["allLogs"] #must explicitly set since log_groups defaults to ["allLogs"]
       log_analytics_destination_type = "Dedicated"
       storage_account_resource_id    = azurerm_storage_account.storage.id
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"

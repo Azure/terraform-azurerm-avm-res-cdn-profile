@@ -31,7 +31,6 @@ resource "azurerm_service_plan" "appservice" {
   os_type             = "Linux"
   resource_group_name = azurerm_resource_group.this.name
   sku_name            = "S1"
-  #zone_balancing_enabled = true
 }
 
 # Creating the linux web app

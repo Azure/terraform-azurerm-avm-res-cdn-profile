@@ -24,6 +24,8 @@ module "naming" {
   version = ">=0.3.0"
 }
 
+data "azurerm_client_config" "current" {}
+
 resource "azurerm_resource_group" "this" {
   location = "centralindia"
   name     = "edgio-cdn-${module.naming.resource_group.name_unique}"
@@ -120,11 +122,49 @@ module "azurerm_cdn_profile" {
           host_name = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint, "https://", ""), "/", "")
         }
       }
+      diagnostic_setting = {
+        name                        = "storage_diag"
+        log_groups                  = ["allLogs"] # you can set either log_categories or log_groups.
+        storage_account_resource_id = azurerm_storage_account.storage.id
+        #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
+      }
     }
   }
   managed_identities = {
     system_assigned = true
   }
+
+
+  diagnostic_settings = {
+    workspaceandstorage_diag1 = {
+      name                           = "workspaceandstorage_diag"
+      log_groups                     = ["allLogs"] #must explicitly set since log_groups defaults to ["allLogs"]
+      log_analytics_destination_type = "Dedicated"
+      #workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
+      storage_account_resource_id = azurerm_storage_account.storage.id
+      #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
+    }
+
+  }
+
+  role_assignments = {
+    self_contributor = {
+      role_definition_id_or_name       = "Contributor"
+      principal_id                     = data.azurerm_client_config.current.object_id
+      skip_service_principal_aad_check = true
+      principal_type                   = "ServicePrincipal"
+    },
+    role_assignment_2 = {
+      role_definition_id_or_name       = "Reader"
+      principal_id                     = data.azurerm_client_config.current.object_id #"125****-c***-4f**-**0d-******53b5**" # replace the principal id with appropriate one
+      description                      = "Example role assignment 2 of reader role"
+      skip_service_principal_aad_check = false
+      principal_type                   = "ServicePrincipal"
+      #condition                        = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
+      #condition_version                = "2.0"
+    }
+  }
+
 }
 ```
 
@@ -149,6 +189,7 @@ The following resources are used by this module:
 
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_storage_account.storage](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
+- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs

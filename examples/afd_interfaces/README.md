@@ -298,16 +298,16 @@ module "azurerm_cdn_frontdoor_profile" {
       role_definition_id_or_name       = "Contributor"
       principal_id                     = data.azurerm_client_config.current.object_id
       skip_service_principal_aad_check = true
-      principal_type                   = "User"
+      principal_type                   = "ServicePrincipal"
     },
     role_assignment_2 = {
       role_definition_id_or_name       = "Reader"
       principal_id                     = data.azurerm_client_config.current.object_id #"125****-c***-4f**-**0d-******53b5**" # replace the principal id with appropriate one
       description                      = "Example role assignment 2 of reader role"
       skip_service_principal_aad_check = false
-      # condition                        = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
-      # condition_version                = "2.0"
-      principal_type = "User"
+      principal_type                   = "ServicePrincipal"
+      #condition                        = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
+      #condition_version                = "2.0"
     }
   }
 
