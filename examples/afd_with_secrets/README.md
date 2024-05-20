@@ -26,7 +26,7 @@ module "naming" {
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  location = "centralindia"
+  location = "eastus"
   name     = "afd-secret-${module.naming.resource_group.name_unique}"
 }
 

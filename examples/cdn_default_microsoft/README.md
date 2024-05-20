@@ -25,7 +25,7 @@ module "naming" {
 }
 
 resource "azurerm_resource_group" "this" {
-  location = "centralindia"
+  location = "eastus"
   name     = "ms-cdn-${module.naming.resource_group.name_unique}"
 }
 

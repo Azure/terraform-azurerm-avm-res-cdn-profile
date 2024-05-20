@@ -27,7 +27,7 @@ module "naming" {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_resource_group" "this" {
-  location = "centralindia"
+  location = "eastus"
   name     = "edgio-cdn-${module.naming.resource_group.name_unique}"
 }
 

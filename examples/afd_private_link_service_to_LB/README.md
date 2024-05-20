@@ -26,7 +26,7 @@ module "naming" {
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  location = "centralindia"
+  location = "eastus"
   name     = "pvtlink-lb-${module.naming.resource_group.name_unique}"
 }
 
@@ -77,6 +77,8 @@ resource "azurerm_private_link_service" "pls" {
     subnet_id                  = azurerm_subnet.subnet.id
     private_ip_address_version = "IPv4"
   }
+
+  depends_on = [azurerm_lb.lb, azurerm_subnet.subnet]
 }
 
 # This is the module call

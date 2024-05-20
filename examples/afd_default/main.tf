@@ -19,7 +19,7 @@ module "naming" {
 }
 
 resource "azurerm_resource_group" "this" {
-  location = "centralindia"
+  location = "eastus"
   name     = "afd_default-${module.naming.resource_group.name_unique}"
 }
 

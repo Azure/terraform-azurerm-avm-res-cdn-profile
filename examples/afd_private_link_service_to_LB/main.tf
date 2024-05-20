@@ -20,7 +20,7 @@ module "naming" {
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  location = "centralindia"
+  location = "eastus"
   name     = "pvtlink-lb-${module.naming.resource_group.name_unique}"
 }
 
@@ -60,7 +60,6 @@ resource "azurerm_lb" "lb" {
 
 # Create Private link service
 resource "azurerm_private_link_service" "pls" {
-  depends_on = [ azurerm_lb.lb,azurerm_subnet.subnet ]
   load_balancer_frontend_ip_configuration_ids = [azurerm_lb.lb.frontend_ip_configuration[0].id]
   location                                    = azurerm_resource_group.this.location
   name                                        = "afd-lb-pls"
@@ -72,6 +71,8 @@ resource "azurerm_private_link_service" "pls" {
     subnet_id                  = azurerm_subnet.subnet.id
     private_ip_address_version = "IPv4"
   }
+
+  depends_on = [azurerm_lb.lb, azurerm_subnet.subnet]
 }
 
 # This is the module call
