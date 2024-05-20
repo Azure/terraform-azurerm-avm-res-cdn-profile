@@ -26,14 +26,13 @@ resource "azurerm_resource_group" "this" {
 
 data "azurerm_client_config" "current" {}
 
-module "avm_storage_account" {
-  source                    = "Azure/avm-res-storage-storageaccount/azurerm"
-  version                   = "0.1.1"
-  name                      = module.naming.storage_account.name_unique
-  resource_group_name       = azurerm_resource_group.this.name
-  shared_access_key_enabled = true
-  enable_telemetry          = true
-  account_replication_type  = "ZRS"
+resource "azurerm_storage_account" "storage" {
+  account_replication_type      = "ZRS"
+  account_tier                  = "Standard"
+  location                      = azurerm_resource_group.this.location
+  name                          = module.naming.storage_account.name_unique
+  resource_group_name           = azurerm_resource_group.this.name
+  public_network_access_enabled = false
 }
 
 resource "azurerm_log_analytics_workspace" "workspace" {
@@ -275,7 +274,7 @@ module "azurerm_cdn_frontdoor_profile" {
       log_groups                     = [] #must explicitly set since log_groups defaults to ["allLogs"]
       log_analytics_destination_type = "Dedicated"
       workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
-      storage_account_resource_id    = module.avm_storage_account.id
+      storage_account_resource_id    = azurerm_storage_account.storage.id
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
     }
     eventhub_diag = {
