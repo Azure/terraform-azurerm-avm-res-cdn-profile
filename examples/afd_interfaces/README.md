@@ -32,14 +32,13 @@ resource "azurerm_resource_group" "this" {
 
 data "azurerm_client_config" "current" {}
 
-module "avm_storage_account" {
-  source                    = "Azure/avm-res-storage-storageaccount/azurerm"
-  version                   = "0.1.1"
-  name                      = module.naming.storage_account.name_unique
-  resource_group_name       = azurerm_resource_group.this.name
-  shared_access_key_enabled = true
-  enable_telemetry          = true
-  account_replication_type  = "ZRS"
+resource "azurerm_storage_account" "storage" {
+  account_replication_type      = "ZRS"
+  account_tier                  = "Standard"
+  location                      = azurerm_resource_group.this.location
+  name                          = module.naming.storage_account.name_unique
+  resource_group_name           = azurerm_resource_group.this.name
+  public_network_access_enabled = false
 }
 
 resource "azurerm_log_analytics_workspace" "workspace" {
@@ -281,7 +280,7 @@ module "azurerm_cdn_frontdoor_profile" {
       log_groups                     = [] #must explicitly set since log_groups defaults to ["allLogs"]
       log_analytics_destination_type = "Dedicated"
       workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
-      storage_account_resource_id    = module.avm_storage_account.id
+      storage_account_resource_id    = azurerm_storage_account.storage.id
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
     }
     eventhub_diag = {
@@ -355,6 +354,7 @@ The following resources are used by this module:
 - [azurerm_eventhub_namespace_authorization_rule.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/eventhub_namespace_authorization_rule) (resource)
 - [azurerm_log_analytics_workspace.workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_storage_account.storage](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
 - [azurerm_user_assigned_identity.identity_for_keyvault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
@@ -384,12 +384,6 @@ No outputs.
 ## Modules
 
 The following Modules are called:
-
-### <a name="module_avm_storage_account"></a> [avm\_storage\_account](#module\_avm\_storage\_account)
-
-Source: Azure/avm-res-storage-storageaccount/azurerm
-
-Version: 0.1.1
 
 ### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
 
