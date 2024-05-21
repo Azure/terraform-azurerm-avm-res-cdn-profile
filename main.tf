@@ -33,7 +33,14 @@ resource "azurerm_monitor_diagnostic_setting" "front_door_diag" {
       category = metric.value
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      log_analytics_destination_type
+    ]
+  }
 }
+
 
 # cdn profile endpoints are seperate child resources that have their own diagnostic settings.
 resource "azurerm_monitor_diagnostic_setting" "cdn_endpoint_diag" {
@@ -65,6 +72,12 @@ resource "azurerm_monitor_diagnostic_setting" "cdn_endpoint_diag" {
     content {
       category = metric.value
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      log_analytics_destination_type
+    ]
   }
 }
 
