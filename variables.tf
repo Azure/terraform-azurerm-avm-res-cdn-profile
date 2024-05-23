@@ -415,6 +415,7 @@ variable "front_door_custom_domains" {
         tls = {
           certificate_type    = "ManagedCertificate"
           minimum_tls_version = "TLS12" 
+          cdn_frontdoor_secret_key = "Secret1_key"
         }
       }
     }
@@ -1425,9 +1426,9 @@ variable "front_door_secret" {
 
   ```terraform
   front_door_secrets = {
-    secrt1 = {
+    secret1_key = {
       name                     = "Front-door-certificate"
-      key_vault_certificate_key = "key_vault_key1"
+      key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
     }
   }
   ```
