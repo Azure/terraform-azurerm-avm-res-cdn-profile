@@ -40,8 +40,6 @@ resource "azurerm_storage_account" "storage" {
 
 # This is the module call
 module "azurerm_cdn_profile" {
-  #depends_on = [ data.azurerm_resource_group.this ]
-  # source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source = "../../"
   tags = {
     environment = "avm-demo"

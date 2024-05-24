@@ -1,3 +1,9 @@
+<!-- BEGIN_TF_DOCS -->
+# Default example
+
+This deploys the module in its simplest form.
+
+```hcl
 terraform {
   required_version = "~> 1.5"
   required_providers {
@@ -29,6 +35,11 @@ data "azurerm_client_config" "current" {}
 resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
   location            = azurerm_resource_group.this.location
   name                = module.naming.user_assigned_identity.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+}
+
+resource "azurerm_dns_zone" "dnszone" {
+  name                = "foo-${module.naming.dns_zone.name_unique}.bar"
   resource_group_name = azurerm_resource_group.this.name
 }
 
@@ -200,10 +211,11 @@ module "azurerm_cdn_frontdoor_profile" {
   front_door_rule_sets = ["ruleset1", "ruleset2"]
   front_door_routes = {
     route1_key = {
-      name                   = "route1"
-      endpoint_key           = "ep1_key"
-      origin_group_key       = "og1_key"
-      origin_keys            = ["example-origin", "origin3"]
+      name             = "route1"
+      endpoint_key     = "ep1_key"
+      origin_group_key = "og1_key"
+      origin_keys      = ["example-origin", "origin3"]
+      #custom_domain_keys     = ["contoso1_key"]  #Uncomment this line if you want to link custom domain with this route.
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
@@ -328,13 +340,30 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  # Certificate must be signed by intermediate CA. Self Signed Certificates do not work.
+  # Certificate must be signed by intermediate CA. Self Signed Certificates do not work. 
+  # Uncomment front_door_secrets adn front_door_custom_domains if you have intermediate CA signed certificate in your keyvault.
 
-  # front_door_secret = {
-  #   name                     = "Front-door-certificate"
-  #   key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
+  # front_door_secrets = {
+  #   secret1_key = {
+  #     name                     = "contoso1fabrikamcom"
+  #     key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
+
+  #   }
   # }
 
+  # front_door_custom_domains = {
+  #   contoso1_key = {
+  #     name        = "contoso1"
+  #     dns_zone_id = azurerm_dns_zone.dnszone.id
+  #     host_name   = "contoso1.fabrikam.com"
+
+  #     tls = {
+  #       certificate_type         = "CustomerCertificate "
+  #       minimum_tls_version      = "TLS12" # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
+  #       cdn_frontdoor_secret_key = "secret1_key"
+  #     }
+  #   }
+  # }
 
   managed_identities = {
     system_assigned = true
@@ -346,3 +375,80 @@ module "azurerm_cdn_frontdoor_profile" {
 
 
 
+```
+
+<!-- markdownlint-disable MD033 -->
+## Requirements
+
+The following requirements are needed by this module:
+
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
+
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.74)
+
+## Providers
+
+The following providers are used by this module:
+
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.74)
+
+## Resources
+
+The following resources are used by this module:
+
+- [azurerm_dns_zone.dnszone](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dns_zone) (resource)
+- [azurerm_key_vault_certificate.keyvaultcert](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
+- [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_user_assigned_identity.identity_for_keyvault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
+- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
+
+<!-- markdownlint-disable MD013 -->
+## Required Inputs
+
+No required inputs.
+
+## Optional Inputs
+
+The following input variables are optional (have default values):
+
+### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
+
+Description: This variable controls whether or not telemetry is enabled for the module.  
+For more information see https://aka.ms/avm/telemetryinfo.  
+If it is set to false, then no telemetry will be collected.
+
+Type: `bool`
+
+Default: `true`
+
+## Outputs
+
+No outputs.
+
+## Modules
+
+The following Modules are called:
+
+### <a name="module_avm_res_keyvault_vault"></a> [avm\_res\_keyvault\_vault](#module\_avm\_res\_keyvault\_vault)
+
+Source: Azure/avm-res-keyvault-vault/azurerm
+
+Version: 0.5.3
+
+### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
+
+Source: ../../
+
+Version:
+
+### <a name="module_naming"></a> [naming](#module\_naming)
+
+Source: Azure/naming/azurerm
+
+Version: 0.3.0
+
+<!-- markdownlint-disable-next-line MD041 -->
+## Data Collection
+
+The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the repository. There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
+<!-- END_TF_DOCS -->
