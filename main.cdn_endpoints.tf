@@ -222,7 +222,7 @@ resource "azurerm_cdn_endpoint_custom_domain" "cds" {
   name            = each.value.name
 
   dynamic "cdn_managed_https" {
-    for_each = each.value.cdn_managed_https == null ? [] : [each.value.cdn_managed_https]
+    for_each = coalesce([each.value.cdn_managed_https], [])
     content {
       certificate_type = cdn_managed_https.value.certificate_type
       protocol_type    = cdn_managed_https.value.protocol_type
@@ -230,7 +230,7 @@ resource "azurerm_cdn_endpoint_custom_domain" "cds" {
     }
   }
   dynamic "user_managed_https" {
-    for_each = each.value.user_managed_https == null ? [] : [each.value.user_managed_https]
+    for_each = coalesce([each.value.user_managed_https], [])
     content {
       key_vault_secret_id = user_managed_https.value.key_vault_secret_id
       tls_version         = user_managed_https.value.tls_version
