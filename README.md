@@ -44,6 +44,7 @@ The following resources are used by this module:
 
 - [azapi_resource.front_door_profile](https://registry.terraform.io/providers/Azure/azapi/1.9.0/docs/resources/resource) (resource)
 - [azurerm_cdn_endpoint.endpoint](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint) (resource)
+- [azurerm_cdn_endpoint_custom_domain.cds](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint_custom_domain) (resource)
 - [azurerm_cdn_frontdoor_custom_domain.cds](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_custom_domain) (resource)
 - [azurerm_cdn_frontdoor_custom_domain_association.association](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_custom_domain_association) (resource)
 - [azurerm_cdn_frontdoor_endpoint.endpoints](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_endpoint) (resource)
@@ -90,10 +91,127 @@ Type: `string`
 
 The following input variables are optional (have default values):
 
+### <a name="input_cdn_endpoint_custom_domains"></a> [cdn\_endpoint\_custom\_domains](#input\_cdn\_endpoint\_custom\_domains)
+
+Description: - `cdn_endpoint_key` - (Required) key of the endpoint defined in variable cdn\_endpoints.
+- `host_name` - (Required) The host name of the custom domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
+- `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
+
+---
+`cdn_managed_https` block supports the following:
+- `certificate_type` - (Required) The type of HTTPS certificate. Possible values are `Shared` and `Dedicated`.
+- `protocol_type` - (Required) The type of protocol. Possible values are `ServerNameIndication` and `IPBased`.
+- `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
+
+`user_managed_https` block supports the following:
+- `key_vault_certificate_id` - (Optional) The ID of the Key Vault Certificate that contains the HTTPS certificate. This is deprecated in favor of `key_vault_secret_id`.
+- `key_vault_secret_id` - (Optional) The ID of the Key Vault Secret that contains the HTTPS certificate.
+- `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
+
+Type:
+
+```hcl
+map(object({
+    cdn_endpoint_key = string
+    host_name        = string
+    name             = string
+    cdn_managed_https = optional(object({
+      certificate_type = string
+      protocol_type    = string
+      tls_version      = optional(string, "TLS12")
+    }))
+    user_managed_https = optional(object({
+      key_vault_certificate_id = optional(string)
+      key_vault_secret_id      = optional(string)
+      tls_version              = optional(string)
+    }))
+  }))
+```
+
+Default: `{}`
+
 ### <a name="input_cdn_endpoints"></a> [cdn\_endpoints](#input\_cdn\_endpoints)
 
 Description:   Manages a CDN Endpoint. A CDN Endpoint is the entity within a CDN Profile containing configuration information regarding caching behaviours and origins.   
-  Refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint#arguments-reference for details and description on the CDN endpoint arguments reference.
+  Refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint#arguments-reference for details and description on the CDN endpoint arguments reference.  
+  Example Input:
+
+  ```terraform
+    cdn_endpoints = {
+      ep1 = {
+        name                          = "endpoint-ex"
+        is_http_allowed               = true
+        is_https_allowed              = true
+        querystring_caching_behaviour = "BypassCaching"
+        is_compression_enabled        = true
+        optimization_type             = "GeneralWebDelivery"
+        geo_filters = { # Only one geo filter allowed for Standard_Microsoft sku
+          gf1 = {
+            relative_path = "/"
+            action        = "Block"
+            country_codes = ["AF", "GB"]
+          }
+        }
+        content_types_to_compress = [
+          "application/eot",
+          "application/font",
+          "application/font-sfnt",
+          "application/javascript",
+          "application/json",
+          "application/opentype",
+          "application/otf",
+          "application/pkcs7-mime",
+          "application/truetype",
+          "application/ttf",
+          "application/vnd.ms-fontobject",
+          "application/xhtml+xml",
+          "application/xml",
+          "application/xml+rss",
+          "application/x-font-opentype",
+          "application/x-font-truetype",
+          "application/x-font-ttf",
+          "application/x-httpd-cgi",
+          "application/x-javascript",
+          "application/x-mpegurl",
+          "application/x-opentype",
+          "application/x-otf",
+          "application/x-perl",
+          "application/x-ttf",
+          "font/eot",
+          "font/ttf",
+          "font/otf",
+          "font/opentype",
+          "image/svg+xml",
+          "text/css",
+          "text/csv",
+          "text/html",
+          "text/javascript",
+          "text/js",
+          "text/plain",
+          "text/richtext",
+          "text/tab-separated-values",
+          "text/xml",
+          "text/x-script",
+          "text/x-component",
+          "text/x-java-source",
+        ]
+        origin_host_header = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint, "https://", ""), "/", "")
+        origin_path        = "/media"
+        probe_path         = "/foo.bar"
+        origins = {
+          og1 = { name = "origin1"
+            host_name = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint, "https://", ""), "/", "")
+          }
+        }
+        diagnostic_setting = {
+          name                        = "storage_diag"
+          log_groups                  = ["allLogs"]
+          storage_account_resource_id = azurerm_storage_account.storage.id
+          marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
+        }
+      }
+    }
+```
 
 Type:
 
@@ -308,7 +426,30 @@ Description:   A map of diagnostic settings to create on the Key Vault. The map 
   - `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
   - `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
   - `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
-  - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
+  - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.  
+  Example Input:
+
+  ```terraform
+    diagnostic_settings = {
+      workspaceandstorage_diag = {
+        name                           = "workspaceandstorage_diag"
+        metric_categories              = ["AllMetrics"]
+        log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
+        log_groups                     = [] #must explicitly set since log_groups defaults to ["allLogs"]
+        log_analytics_destination_type = "Dedicated"
+        workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
+        storage_account_resource_id    = azurerm_storage_account.storage.id
+        #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
+      }
+      eventhub_diag = {
+        name                                     = "eventhubforwarding"
+        log_groups                               = ["allLogs", "Audit"] # you can set either log_categories or log_groups.
+        metric_categories                        = ["AllMetrics"]
+        event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
+        event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
+      }
+    }
+```
 
 Type:
 
@@ -349,7 +490,23 @@ Description:   Manages a Front Door (standard/premium) Custom Domain.
   - `tls` - (Required) A tls block as defined below : -
     - 'certificate\_type' - (Optional) Defines the source of the SSL certificate. Possible values include 'CustomerCertificate' and 'ManagedCertificate'. Defaults to 'ManagedCertificate'.
     - 'minimum\_tls\_version' - (Optional) TLS protocol version that will be used for Https. Possible values include 'TLS10' and 'TLS12'. Defaults to 'TLS12'.
-    - 'cdn\_frontdoor\_secret\_id' - (Optional) Resource ID of the Front Door Secret.
+    - 'cdn\_frontdoor\_secret\_key' - (Optional) Key of the Front Door Secret object. This is required when certificate\_type is 'CustomerCertificate'.  
+  Example Input:
+
+  ```terraform
+  front_door_custom_domains = {
+    contoso1_key = {
+        name        = "contoso1"
+        dns_zone_id = azurerm_dns_zone.dnszone.id
+        host_name   = "contoso1.fabrikam.com"
+        tls = {
+          certificate_type    = "ManagedCertificate"
+          minimum_tls_version = "TLS12"
+          cdn_frontdoor_secret_key = "Secret1_key"
+        }
+      }
+    }
+```
 
 Type:
 
@@ -359,9 +516,9 @@ map(object({
     dns_zone_id = optional(string, null)
     host_name   = string
     tls = object({
-      certificate_type        = optional(string, "ManagedCertificate")
-      minimum_tls_version     = optional(string, "TLS12") # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
-      cdn_frontdoor_secret_id = optional(string, null)
+      certificate_type         = optional(string, "ManagedCertificate")
+      minimum_tls_version      = optional(string, "TLS12") # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
+      cdn_frontdoor_secret_key = optional(string, null)
     })
   }))
 ```
@@ -374,7 +531,20 @@ Description:   Manages a Front Door (standard/premium) Endpoint.
 
   - `name` - (Required) The name which should be used for this Front Door Endpoint.  
   - `enabled` - (Optional) Specifies if this Front Door Endpoint is enabled? Defaults to true.
-  - 'tags' - (Optional) Specifies a mapping of tags which should be assigned to the Front Door Endpoint.
+  - 'tags' - (Optional) Specifies a mapping of tags which should be assigned to the Front Door Endpoint.  
+  Example Input:
+
+  ```terraform
+  front_door_endpoints = {
+    ep1_key = {
+        name = "ep1-ex"
+        enabled = true
+        tags = {
+          environment = "avm-demo"
+        }
+      }
+    }
+```
 
 Type:
 
@@ -436,7 +606,125 @@ Description:   Manages a Front Door (standard/premium) Firewall Policy instance.
           - 'operator' - (Required) Comparison operator to apply to the selector when specifying which elements in the collection this exclusion applies to. Possible values are: Equals, Contains, StartsWith, EndsWith, EqualsAny.
           - 'selector' - (Required) Selector for the value in the match\_variable attribute this exclusion applies to.
   - 'tags' - (Optional) A mapping of tags to assign to the Front Door Firewall Policy.
-  /*
+  /*  
+  Example Input:
+
+  ```terraform
+  front_door_firewall_policies = {
+      fd_waf1_key = {
+      name                              = "examplecdnfdwafpolicy1"
+      resource_group_name               = azurerm_resource_group.this.name
+      sku_name                          = "Premium_AzureFrontDoor" # Ensure SKU_name for WAF is similar to SKU_name for front door profile.
+      enabled                           = true
+      mode                              = "Prevention"
+      redirect_url                      = "https://www.contoso.com"
+      custom_block_response_status_code = 405
+      custom_block_response_body        = "PGh0bWw+CjxoZWFkZXI+PHRpdGxlPkhlbGxvPC90aXRsZT48L2hlYWRlcj4KPGJvZHk+CkhlbGxvIHdvcmxkCjwvYm9keT4KPC9odG1sPg=="
+
+      custom_rules = {
+        cr1 = {
+          name                           = "Rule1"
+          enabled                        = true
+          priority                       = 1
+          rate_limit_duration_in_minutes = 1
+          rate_limit_threshold           = 10
+          type                           = "MatchRule"
+          action                         = "Block"
+          match_conditions = {
+            m1 = {
+              match_variable     = "RemoteAddr"
+              operator           = "IPMatch"
+              negation_condition = false
+              match_values       = ["10.0.1.0/24", "10.0.0.0/24"]
+            }
+          }
+        }
+
+        cr2 = {
+          name                           = "Rule2"
+          enabled                        = true
+          priority                       = 2
+          rate_limit_duration_in_minutes = 1
+          rate_limit_threshold           = 10
+          type                           = "MatchRule"
+          action                         = "Block"
+          match_conditions = {
+            match_condition1 = {
+              match_variable     = "RemoteAddr"
+              operator           = "IPMatch"
+              negation_condition = false
+              match_values       = ["192.168.1.0/24"]
+            }
+
+            match_condition2 = {
+              match_variable     = "RequestHeader"
+              selector           = "UserAgent"
+              operator           = "Contains"
+              negation_condition = false
+              match_values       = ["windows"]
+              transforms         = ["Lowercase", "Trim"]
+            }
+          }
+        }
+      }
+      managed_rules = {
+        mr1 = {
+          type    = "Microsoft_DefaultRuleSet"
+          version = "2.1"
+          action  = "Log"
+          exclusions = {
+            exclusion1 = {
+              match_variable = "QueryStringArgNames"
+              operator       = "Equals"
+              selector       = "not_suspicious"
+            }
+          }
+          overrides = {
+            override1 = {
+              rule_group_name = "PHP"
+              rule = {
+                rule1 = {
+                  rule_id = "933100"
+                  enabled = false
+                  action  = "Log"
+                }
+              }
+            }
+            override2 = {
+              rule_group_name = "SQLI"
+              exclusions = {
+                exclusion1 = {
+                  match_variable = "QueryStringArgNames"
+                  operator       = "Equals"
+                  selector       = "really_not_suspicious"
+                }
+              }
+              rules = {
+                rule1 = {
+                  rule_id = "942200"
+                  action  = "Log"
+                  exclusions = {
+                    exclusion1 = {
+                      match_variable = "QueryStringArgNames"
+                      operator       = "Equals"
+                      selector       = "innocent"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        mr2 = {
+          type    = "Microsoft_BotManagerRuleSet"
+          version = "1.0"
+          action  = "Log"
+        }
+      }
+    }
+  }
+```
 
 Type:
 
@@ -515,7 +803,31 @@ Description:   Manages a Front Door (standard/premium) Origin group.
       - 'protocol' - (Required) Specifies the protocol to use for health probe. Possible values are Http and Https.
       - 'interval\_in\_seconds' - (Required) Specifies the number of seconds between health probes. Possible values are between 5 and 31536000 seconds (inclusive).
       - 'request\_type' - (Optional) Specifies the type of health probe request that is made. Possible values are GET and HEAD. Defaults to HEAD.
-      - 'path' - (Optional) Specifies the path relative to the origin that is used to determine the health of the origin. Defaults to /.
+      - 'path' - (Optional) Specifies the path relative to the origin that is used to determine the health of the origin. Defaults to /.  
+  Example Input:
+
+  ```terraform
+  front_door_origin_groups = {
+    og1_key = {
+      name = "og1"
+      health_probe = {
+        hp1 = {
+          interval_in_seconds = 240
+          path                = "/healthProbe"
+          protocol            = "Https"
+          request_type        = "HEAD"
+        }
+      }
+      load_balancing = {
+        lb1 = {
+          additional_latency_in_milliseconds = 0
+          sample_size                        = 16
+          successful_samples_required        = 3
+        }
+      }
+    }
+  }
+```
 
 Type:
 
@@ -555,7 +867,33 @@ Description:   Manages a Front Door (standard/premium) Origin.
       - 'request\_message' - (Optional) Specifies the request message that will be submitted to the private\_link\_target\_id when requesting the private link endpoint connection. Values must be between 1 and 140 characters in length. Defaults to Access request for CDN FrontDoor Private Link Origin.
       - 'target\_type' - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are blob, blob\_secondary, web and sites.
       - 'location' - (Required) Specifies the location where the Private Link resource should exist. Changing this forces a new resource to be created.
-  - 'weight' - (Optional) The weight of the origin in a given origin group for load balancing. Must be between 1 and 1000. Defaults to 500.
+  - 'weight' - (Optional) The weight of the origin in a given origin group for load balancing. Must be between 1 and 1000. Defaults to 500.  
+  Example Input:
+
+  ```terraform
+  front_door_origins = {
+      origin1_key = {
+        name                           = "origin1"
+        origin_group_key               = "og1_key"
+        enabled                        = true
+        certificate_name_check_enabled = true
+        host_name                      = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint, "https://", ""), "/", "")
+        http_port                      = 80
+        https_port                     = 443
+        host_header                    = replace(replace(azurerm_storage_account.storage.primary_blob_endpoint, "https://", ""), "/", "")
+        priority                       = 1
+        weight                         = 1
+        private_link = {
+          pl = {
+            request_message        = "Please approve this private link connection"
+            target_type            = "blob"
+            location               = azurerm_storage_account.storage.location
+            private_link_target_id = azurerm_storage_account.storage.id
+          }
+        }
+      }
+    }
+```
 
 Type:
 
@@ -599,7 +937,31 @@ Description:   Manages a Front Door (standard/premium) Route.
       - 'query\_string\_caching\_behavior' - (Optional) Defines how the Front Door Route will cache requests that include query strings. Possible values include 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'. Defaults to 'IgnoreQueryString'.
       - 'query\_strings' - (Optional) Query strings to include or ignore.
       - 'compression\_enabled' - (Optional) Is content compression enabled? Possible values are true or false. Defaults to false.
-      - 'content\_types\_to\_compress' - (Optional) A list of one or more Content types (formerly known as MIME types) to compress. Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'.
+      - 'content\_types\_to\_compress' - (Optional) A list of one or more Content types (formerly known as MIME types) to compress. Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'.  
+  Example Input:
+
+  ```terraform
+  front_door_routes = {
+    route1_key = {
+      name                   = "route1"
+      endpoint_key           = "ep1_key"
+      origin_group_key       = "og1_key"
+      origin_keys            = ["origin1_key"]
+      https_redirect_enabled = true
+      patterns_to_match      = ["/*"]
+      supported_protocols    = ["Http", "Https"]
+      rule_set_names         = ["ruleset1"]
+      cache = {
+        cache1 = {
+          query_string_caching_behavior = "IgnoreSpecifiedQueryStrings"
+          query_strings                 = ["account", "settings"]
+          compression_enabled           = true
+          content_types_to_compress     = ["text/html", "text/javascript", "text/xml"]
+        }
+      }
+    }
+  }
+```
 
 Type:
 
@@ -640,7 +1002,119 @@ Default: `[]`
 
 ### <a name="input_front_door_rules"></a> [front\_door\_rules](#input\_front\_door\_rules)
 
-Description:   Manages a Front Door (standard/premium) Rules. Please review documentation here for usage. https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule
+Description:   Manages a Front Door (standard/premium) Rules. Please review documentation here for usage. https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule  
+
+  Example Input:
+
+  ```terraform
+  front_door_rules = {
+    rule1_key = {
+      name              = "examplerule1"
+      order             = 1
+      behavior_on_match = "Continue"
+      rule_set_name     = "ruleset1"
+      origin_group_key  = "og1_key"
+      actions = {
+
+        url_rewrite_actions = [{
+          source_pattern          = "/"
+          destination             = "/index3.html"
+          preserve_unmatched_path = false
+        }]
+        route_configuration_override_actions = [{
+          set_origin_groupid            = true
+          forwarding_protocol           = "HttpsOnly"
+          query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
+          query_string_parameters       = ["foo", "clientIp={client_ip}"]
+          compression_enabled           = true
+          cache_behavior                = "OverrideIfOriginMissing"
+          cache_duration                = "365.23:59:59"
+        }]
+        response_header_actions = [{
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }]
+        request_header_actions = [{
+          header_action = "Append"
+          header_name   = "headername"
+          value         = "/abc"
+        }]
+      }
+
+      conditions = {
+        remote_address_conditions = [{
+          operator         = "IPMatch"
+          negate_condition = false
+          match_values     = ["10.0.0.0/23"]
+        }]
+
+        query_string_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["Query1", "Query2"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_header_conditions = [{
+          header_name      = "headername"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["Header1", "Header2"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_body_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["Body1", "Body2"]
+          transforms       = ["Uppercase"]
+        }]
+
+        request_scheme_conditions = [{ #request protocol
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["HTTP"]
+        }]
+
+        url_path_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["UrlPath1", "UrlPath2"]
+          transforms       = ["Uppercase"]
+        }]
+
+        url_file_extension_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["ext1", "ext2"]
+          transforms       = ["Uppercase"]
+        }]
+
+        url_filename_conditions = [{
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["filename1", "filename2"]
+          transforms       = ["Uppercase"]
+        }]
+
+        http_version_conditions = [{
+          negate_condition = false
+          operator         = "Equal"
+          match_values     = ["2.0"]
+        }]
+
+        cookies_conditions = [{
+          cookie_name      = "cookie"
+          negate_condition = false
+          operator         = "BeginsWith"
+          match_values     = ["cookie1", "cookie2"]
+          transforms       = ["Uppercase"]
+        }]
+      }
+    }
+  }
+```
 
 Type:
 
@@ -801,23 +1275,33 @@ map(object({
 
 Default: `{}`
 
-### <a name="input_front_door_secret"></a> [front\_door\_secret](#input\_front\_door\_secret)
+### <a name="input_front_door_secrets"></a> [front\_door\_secrets](#input\_front\_door\_secrets)
 
 Description:   Manages a Front Door (standard/premium) Secret.
 
   - `name` - (Required) The name which should be used for this Front Door Secret.
-  - `key_vault_certificate_id` - (Required) The ID of the Key Vault certificate resource to use.
+  - `key_vault_certificate_id` - (Required) The ID of the Key Vault certificate resource to use.  
+  Example Input:
+
+  ```terraform
+  front_door_secrets = {
+    secret1_key = {
+      name                     = "Front-door-certificate"
+      key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
+    }
+  }
+```
 
 Type:
 
 ```hcl
-object({
+map(object({
     name                     = string
     key_vault_certificate_id = string
-  })
+  }))
 ```
 
-Default: `null`
+Default: `{}`
 
 ### <a name="input_front_door_security_policies"></a> [front\_door\_security\_policies](#input\_front\_door\_security\_policies)
 
@@ -829,7 +1313,24 @@ Description:   Manages a Front Door (standard/premium) Security Policy.
   - 'association' - (Required) An association block as defined below:-
   - 'domain\_names' - (Optional) list of the domain names to associate with the firewall policy. Provide either domain names or endpoint names or both.
   - 'endpoint\_names' - (Optional) list of the endpoint names to associate with the firewall policy. Provide either domain names or endpoint names or both.
-  - 'patterns\_to\_match' - (Required) The list of paths to match for this firewall policy. Possible value includes /*
+  - 'patterns\_to\_match' - (Required) The list of paths to match for this firewall policy. Possible value includes /*  
+  Example Input:
+
+  ```terraform
+  front_door_security_policies = {
+    secpol1_key = {
+      name = "firewallpolicyforep1cd1"
+      firewall = {
+        front_door_firewall_policy_key = "fd_waf1_key"
+        association = {
+          endpoint_keys     = ["ep1_key"]
+          domain_keys       = ["cd1_key"]
+          patterns_to_match = ["/*"]
+        }
+      }
+    }
+  }
+```
 
 Type:
 
@@ -854,7 +1355,15 @@ Default: `{}`
 Description:   Controls the Resource Lock configuration for this resource. The following properties can be specified:
 
   - `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
-  - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
+  - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.  
+  Example Input:
+
+  ```terraform
+  lock = {
+      name = "lock-cdnprofile"
+      kind = "CanNotDelete"
+  }
+```
 
 Type:
 
@@ -872,7 +1381,17 @@ Default: `null`
 Description:   Controls the Managed Identity configuration on this resource. The following properties can be specified:
 
   - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
-  - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
+  - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.  
+  Example Input:
+
+  ```terraform
+  managed_identities = {
+    system_assigned = true
+    user_assigned_resource_ids = [
+      azurerm_user_assigned_identity.identity_for_keyvault.id
+    ]
+  }
+```
 
 Type:
 
@@ -906,7 +1425,22 @@ Description:   A map of role assignments to create on the <RESOURCE>. The map ke
   - `delegated_managed_identity_resource_id` - (Optional) The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created. This field is only used in cross-tenant scenario.
   - `principal_type` - (Optional) The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
 
-  > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
+  > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.  
+  Example Input:
+
+  ```terraform
+  role_assignments = {
+    role_assignment_2 = {
+      role_definition_id_or_name       = "Reader"
+      principal_id                     = data.azurerm_client_config.current.object_id #"125****-c***-4f**-**0d-******53b5**"
+      description                      = "Example role assignment 2 of reader role"
+      skip_service_principal_aad_check = false
+      principal_type                   = "ServicePrincipal"
+      condition                        = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
+      condition_version                = "2.0"
+    }
+  }
+```
 
 Type:
 

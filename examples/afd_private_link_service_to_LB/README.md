@@ -77,14 +77,11 @@ resource "azurerm_private_link_service" "pls" {
     subnet_id                  = azurerm_subnet.subnet.id
     private_ip_address_version = "IPv4"
   }
-
-  depends_on = [azurerm_lb.lb, azurerm_subnet.subnet]
 }
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
   source              = "../../"
-  depends_on          = [azurerm_private_link_service.pls]
   enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
@@ -270,7 +267,7 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
+  depends_on = [azurerm_private_link_service.pls]
 }
 ```
 

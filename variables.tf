@@ -15,6 +15,42 @@ variable "resource_group_name" {
   description = "The resource group where the resources will be deployed."
 }
 
+variable "cdn_endpoint_custom_domains" {
+  type = map(object({
+    cdn_endpoint_key = string
+    host_name        = string
+    name             = string
+    cdn_managed_https = optional(object({
+      certificate_type = string
+      protocol_type    = string
+      tls_version      = optional(string, "TLS12")
+    }))
+    user_managed_https = optional(object({
+      key_vault_certificate_id = optional(string)
+      key_vault_secret_id      = optional(string)
+      tls_version              = optional(string)
+    }))
+  }))
+  default     = {}
+  description = <<-EOT
+ - `cdn_endpoint_key` - (Required) key of the endpoint defined in variable cdn_endpoints.
+ - `host_name` - (Required) The host name of the custom domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
+ - `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
+
+ ---
+ `cdn_managed_https` block supports the following:
+ - `certificate_type` - (Required) The type of HTTPS certificate. Possible values are `Shared` and `Dedicated`.
+ - `protocol_type` - (Required) The type of protocol. Possible values are `ServerNameIndication` and `IPBased`.
+ - `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
+
+ `user_managed_https` block supports the following:
+ - `key_vault_certificate_id` - (Optional) The ID of the Key Vault Certificate that contains the HTTPS certificate. This is deprecated in favor of `key_vault_secret_id`.
+ - `key_vault_secret_id` - (Optional) The ID of the Key Vault Secret that contains the HTTPS certificate.
+ - `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
+EOT
+  nullable    = false
+}
+
 variable "cdn_endpoints" {
   type = map(object({
     name                      = string
@@ -295,43 +331,6 @@ variable "cdn_endpoints" {
   nullable    = false
 }
 
-variable "cdn_endpoint_custom_domains" {
-  type = map(object({
-    cdn_endpoint_key = string
-    host_name        = string
-    name             = string
-    cdn_managed_https = optional(object({
-      certificate_type = string
-      protocol_type    = string
-      tls_version      = optional(string, "TLS12")
-    }))
-    user_managed_https = optional(object({
-      key_vault_certificate_id = optional(string)
-      key_vault_secret_id      = optional(string)
-      tls_version              = optional(string)
-    }))
-  }))
-  description = <<-EOT
- - `cdn_endpoint_key` - (Required) key of the endpoint defined in variable cdn_endpoints.
- - `host_name` - (Required) The host name of the custom domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
- - `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
-
- ---
- `cdn_managed_https` block supports the following:
- - `certificate_type` - (Required) The type of HTTPS certificate. Possible values are `Shared` and `Dedicated`.
- - `protocol_type` - (Required) The type of protocol. Possible values are `ServerNameIndication` and `IPBased`.
- - `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
-
- `user_managed_https` block supports the following:
- - `key_vault_certificate_id` - (Optional) The ID of the Key Vault Certificate that contains the HTTPS certificate. This is deprecated in favor of `key_vault_secret_id`.
- - `key_vault_secret_id` - (Optional) The ID of the Key Vault Secret that contains the HTTPS certificate.
- - `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
-EOT
-  nullable    = false
-  default     = {}
-}
-
-
 variable "diagnostic_settings" {
   type = map(object({
     name                                     = optional(string, null)
@@ -490,8 +489,6 @@ variable "front_door_endpoints" {
   DESCRIPTION
   nullable    = false
 }
-
-
 
 variable "front_door_firewall_policies" {
   type = map(object({
@@ -1457,7 +1454,6 @@ variable "front_door_secrets" {
     key_vault_certificate_id = string
   }))
   default     = {}
-  nullable    = false
   description = <<DESCRIPTION
   Manages a Front Door (standard/premium) Secret.
   
@@ -1474,6 +1470,8 @@ variable "front_door_secrets" {
   }
   ```
   DESCRIPTION
+  nullable    = false
+
   validation {
     condition     = alltrue([for _, v in var.front_door_secrets : _ == null ? true : can(regex("^[a-zA-Z0-9][-a-zA-Z0-9]{0,258}[a-zA-Z0-9]$", v.name))])
     error_message = "The secret name must start with a letter or a number, only contain letters, numbers and hyphens, and have a length of between 2 and 260 characters."
@@ -1652,15 +1650,18 @@ variable "role_assignments" {
   DESCRIPTION
   nullable    = false
 }
+
 variable "sku" {
   type        = string
   default     = "Standard_AzureFrontDoor"
   description = "The SKU name of the Azure Front Door. Default is `Standard`. Possible values are `standard` and `premium`.SKU name for CDN can be 'Standard_Akamai', 'Standard_ChinaCdn, 'Standard_Microsoft','Standard_Verizon' or 'Premium_Verizon'"
+
   validation {
     condition     = contains(["Standard_AzureFrontDoor", "Premium_AzureFrontDoor", "Standard_Akamai", "Standard_ChinaCdn", "Standard_Microsoft", "Standard_Verizon", "Premium_Verizon"], var.sku)
     error_message = "The SKU must be either 'Standard_AzureFrontDoor' or 'Premium_AzureFrontDoor' for Front Door. For CDN use correct SKU name"
   }
 }
+
 variable "tags" {
   type        = map(string)
   default     = null

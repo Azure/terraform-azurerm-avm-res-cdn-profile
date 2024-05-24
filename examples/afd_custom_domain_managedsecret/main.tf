@@ -29,7 +29,6 @@ resource "azurerm_dns_zone" "dnszone" {
   resource_group_name = azurerm_resource_group.this.name
 }
 
-
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
   source              = "../../"
@@ -246,4 +245,3 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 }
-
