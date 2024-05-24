@@ -7,7 +7,7 @@ resource "azurerm_cdn_frontdoor_custom_domain" "cds" {
   dns_zone_id              = each.value.dns_zone_id
 
   tls {
-    cdn_frontdoor_secret_id = each.value.tls.cdn_frontdoor_secret_id
+    cdn_frontdoor_secret_id = azurerm_cdn_frontdoor_secret.frontdoorsecret[each.value.tls.cdn_frontdoor_secret_key].id
     certificate_type        = each.value.tls.certificate_type
     minimum_tls_version     = each.value.tls.minimum_tls_version
   }

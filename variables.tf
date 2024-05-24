@@ -388,9 +388,9 @@ variable "front_door_custom_domains" {
     dns_zone_id = optional(string, null)
     host_name   = string
     tls = object({
-      certificate_type        = optional(string, "ManagedCertificate")
-      minimum_tls_version     = optional(string, "TLS12") # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
-      cdn_frontdoor_secret_id = optional(string, null)
+      certificate_type         = optional(string, "ManagedCertificate")
+      minimum_tls_version      = optional(string, "TLS12") # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
+      cdn_frontdoor_secret_key = optional(string, null)
     })
   }))
   default     = {}
@@ -403,7 +403,7 @@ variable "front_door_custom_domains" {
   - `tls` - (Required) A tls block as defined below : -
     - 'certificate_type' - (Optional) Defines the source of the SSL certificate. Possible values include 'CustomerCertificate' and 'ManagedCertificate'. Defaults to 'ManagedCertificate'.
     - 'minimum_tls_version' - (Optional) TLS protocol version that will be used for Https. Possible values include 'TLS10' and 'TLS12'. Defaults to 'TLS12'.
-    - 'cdn_frontdoor_secret_id' - (Optional) Resource ID of the Front Door Secret.
+    - 'cdn_frontdoor_secret_key' - (Optional) Key of the Front Door Secret object. This is required when certificate_type is 'CustomerCertificate'.
   Example Input:
 
   ```terraform
@@ -1411,12 +1411,13 @@ variable "front_door_rules" {
   nullable    = false
 }
 
-variable "front_door_secret" {
-  type = object({
+variable "front_door_secrets" {
+  type = map(object({
     name                     = string
     key_vault_certificate_id = string
-  })
-  default     = null
+  }))
+  default     = {}
+  nullable    = false
   description = <<DESCRIPTION
   Manages a Front Door (standard/premium) Secret.
   
@@ -1434,7 +1435,7 @@ variable "front_door_secret" {
   ```
   DESCRIPTION
   validation {
-    condition     = var.front_door_secret == null ? true : can(regex("^[a-zA-Z0-9][-a-zA-Z0-9]{0,258}[a-zA-Z0-9]$", var.front_door_secret.name))
+    condition     = alltrue([for _, v in var.front_door_secrets : _ == null ? true : can(regex("^[a-zA-Z0-9][-a-zA-Z0-9]{0,258}[a-zA-Z0-9]$", v.name))])
     error_message = "The secret name must start with a letter or a number, only contain letters, numbers and hyphens, and have a length of between 2 and 260 characters."
   }
 }
@@ -1611,18 +1612,15 @@ variable "role_assignments" {
   DESCRIPTION
   nullable    = false
 }
-
 variable "sku" {
   type        = string
   default     = "Standard_AzureFrontDoor"
   description = "The SKU name of the Azure Front Door. Default is `Standard`. Possible values are `standard` and `premium`.SKU name for CDN can be 'Standard_Akamai', 'Standard_ChinaCdn, 'Standard_Microsoft','Standard_Verizon' or 'Premium_Verizon'"
-
   validation {
     condition     = contains(["Standard_AzureFrontDoor", "Premium_AzureFrontDoor", "Standard_Akamai", "Standard_ChinaCdn", "Standard_Microsoft", "Standard_Verizon", "Premium_Verizon"], var.sku)
     error_message = "The SKU must be either 'Standard_AzureFrontDoor' or 'Premium_AzureFrontDoor' for Front Door. For CDN use correct SKU name"
   }
 }
-
 variable "tags" {
   type        = map(string)
   default     = null

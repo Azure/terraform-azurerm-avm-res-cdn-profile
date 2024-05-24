@@ -32,6 +32,11 @@ resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
   resource_group_name = azurerm_resource_group.this.name
 }
 
+resource "azurerm_dns_zone" "dnszone" {
+  name                = "foo-${module.naming.dns_zone.name_unique}.bar"
+  resource_group_name = azurerm_resource_group.this.name
+}
+
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source              = "Azure/avm-res-keyvault-vault/azurerm"
@@ -200,10 +205,11 @@ module "azurerm_cdn_frontdoor_profile" {
   front_door_rule_sets = ["ruleset1", "ruleset2"]
   front_door_routes = {
     route1_key = {
-      name                   = "route1"
-      endpoint_key           = "ep1_key"
-      origin_group_key       = "og1_key"
-      origin_keys            = ["example-origin", "origin3"]
+      name             = "route1"
+      endpoint_key     = "ep1_key"
+      origin_group_key = "og1_key"
+      origin_keys      = ["example-origin", "origin3"]
+      #custom_domain_keys     = ["contoso1_key"]  #Uncomment this line if you want to link custom domain with this route.
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
       patterns_to_match      = ["/*"]
@@ -328,13 +334,30 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-  # Certificate must be signed by intermediate CA. Self Signed Certificates do not work.
+  # Certificate must be signed by intermediate CA. Self Signed Certificates do not work. 
+  # Uncomment front_door_secrets adn front_door_custom_domains if you have intermediate CA signed certificate in your keyvault.
 
-  # front_door_secret = {
-  #   name                     = "Front-door-certificate"
-  #   key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
+  # front_door_secrets = {
+  #   secret1_key = {
+  #     name                     = "contoso1fabrikamcom"
+  #     key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
+
+  #   }
   # }
 
+  # front_door_custom_domains = {
+  #   contoso1_key = {
+  #     name        = "contoso1"
+  #     dns_zone_id = azurerm_dns_zone.dnszone.id
+  #     host_name   = "contoso1.fabrikam.com"
+
+  #     tls = {
+  #       certificate_type         = "CustomerCertificate "
+  #       minimum_tls_version      = "TLS12" # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
+  #       cdn_frontdoor_secret_key = "secret1_key"
+  #     }
+  #   }
+  # }
 
   managed_identities = {
     system_assigned = true
