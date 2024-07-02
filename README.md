@@ -72,7 +72,7 @@ Type: `string`
 
 ### <a name="input_name"></a> [name](#input\_name)
 
-Description: The name of the Azure Front Door.
+Description: The name of the CDN profile.
 
 Type: `string`
 
@@ -88,20 +88,35 @@ The following input variables are optional (have default values):
 
 ### <a name="input_cdn_endpoint_custom_domains"></a> [cdn\_endpoint\_custom\_domains](#input\_cdn\_endpoint\_custom\_domains)
 
-Description: - `cdn_endpoint_key` - (Required) key of the endpoint defined in variable cdn\_endpoints.
-- `host_name` - (Required) The host name of the custom domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
-- `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
+Description:   Manages a map of CDN Endpoint Custom Domains. A CDN Endpoint Custom Domain is a custom domain that is associated with a CDN Endpoint.
 
----
-`cdn_managed_https` block supports the following:
-- `certificate_type` - (Required) The type of HTTPS certificate. Possible values are `Shared` and `Dedicated`.
-- `protocol_type` - (Required) The type of protocol. Possible values are `ServerNameIndication` and `IPBased`.
-- `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
+ - `cdn_endpoint_key` - (Required) key of the endpoint defined in variable cdn\_endpoints.
+ - `host_name` - (Required) The host name of the custom domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
+ - `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
+ - `cdn_managed_https` block supports the following:
+  - `certificate_type` - (Required) The type of HTTPS certificate. Possible values are `Shared` and `Dedicated`.
+  - `protocol_type` - (Required) The type of protocol. Possible values are `ServerNameIndication` and `IPBased`.
+  - `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
+ - `user_managed_https` block supports the following:
+  - `key_vault_certificate_id` - (Optional) The ID of the Key Vault Certificate that contains the HTTPS certificate. This is deprecated in favor of `key_vault_secret_id`.
+  - `key_vault_secret_id` - (Optional) The ID of the Key Vault Secret that contains the HTTPS certificate.
+  - `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.  
+ Example Input:
 
-`user_managed_https` block supports the following:
-- `key_vault_certificate_id` - (Optional) The ID of the Key Vault Certificate that contains the HTTPS certificate. This is deprecated in favor of `key_vault_secret_id`.
-- `key_vault_secret_id` - (Optional) The ID of the Key Vault Secret that contains the HTTPS certificate.
-- `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
+  ```terraform
+    cdn_endpoint_custom_domains = {
+      cdn1 = {
+        cdn_endpoint_key = "cdn_ep_key1"
+        host_name        = "www.example.com"
+        name             = "example"
+        cdn_managed_https = {
+          certificate_type = "Shared"
+          protocol_type    = "ServerNameIndication"
+          tls_version      = "TLS12"
+        }
+      }
+    }
+```
 
 Type:
 
@@ -127,7 +142,7 @@ Default: `{}`
 
 ### <a name="input_cdn_endpoints"></a> [cdn\_endpoints](#input\_cdn\_endpoints)
 
-Description:   Manages a CDN Endpoint. A CDN Endpoint is the entity within a CDN Profile containing configuration information regarding caching behaviours and origins.
+Description:   Manages a map of CDN Endpoints. A CDN Endpoint is the entity within a CDN Profile containing configuration information regarding caching behaviours and origins.
 
   - `name` - (Required) The name of the CDN Endpoint. Changing this forces a new CDN Endpoint to be created.
   - `tags` - (Optional) A mapping of tags to assign to the CDN Endpoint.
@@ -564,7 +579,7 @@ Default: `{}`
 
 ### <a name="input_diagnostic_settings"></a> [diagnostic\_settings](#input\_diagnostic\_settings)
 
-Description:   A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description:   Manages a map of diagnostic settings on the CDN/front door profile. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
   - `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
   - `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
@@ -631,7 +646,7 @@ Default: `true`
 
 ### <a name="input_front_door_custom_domains"></a> [front\_door\_custom\_domains](#input\_front\_door\_custom\_domains)
 
-Description:   Manages a Front Door (standard/premium) Custom Domain.
+Description:   Manages a map of Front Door (standard/premium) Custom Domains.
 
   - `name` - (Required) The name which should be used for this Front Door Custom Domain.
   - `dns_zone_id` - (Optional) The ID of the Azure DNS Zone which should be used for this Front Door Custom Domain.
@@ -676,7 +691,7 @@ Default: `{}`
 
 ### <a name="input_front_door_endpoints"></a> [front\_door\_endpoints](#input\_front\_door\_endpoints)
 
-Description:   Manages a Front Door (standard/premium) Endpoint.
+Description:   Manages a map of Front Door (standard/premium) Endpoints.
 
   - `name` - (Required) The name which should be used for this Front Door Endpoint.  
   - `enabled` - (Optional) Specifies if this Front Door Endpoint is enabled? Defaults to true.
@@ -709,7 +724,7 @@ Default: `{}`
 
 ### <a name="input_front_door_firewall_policies"></a> [front\_door\_firewall\_policies](#input\_front\_door\_firewall\_policies)
 
-Description:   Manages a Front Door (standard/premium) Firewall Policy instance.
+Description:   Manages a map of Front Door (standard/premium) Firewall Policies.
 
   - `name` - (Required) The name which should be used for this Front Door Security Policy. Possible values must not be an empty string.
   - `resource_group_name` - (Required) The name of the resource group. Changing this forces a new resource to be created.
@@ -944,7 +959,7 @@ Default: `{}`
 
 ### <a name="input_front_door_origin_groups"></a> [front\_door\_origin\_groups](#input\_front\_door\_origin\_groups)
 
-Description:   Manages a Front Door (standard/premium) Origin group.
+Description:   Manages a map of Front Door (standard/premium) Origin groups.
 
   - `name` - (Required) The name which should be used for this Front Door Origin Group.
   - `load_balancing` - (Required) A load\_balancing block as defined below:-
@@ -1004,7 +1019,7 @@ Default: `{}`
 
 ### <a name="input_front_door_origins"></a> [front\_door\_origins](#input\_front\_door\_origins)
 
-Description:   Manages a Front Door (standard/premium) Origin.
+Description:   Manages a map of Front Door (standard/premium) Origins.
 
   - `name` - (Required) The name which should be used for this Front Door Origin.
   - `origin_group_key` - (Required) The key of the origin group to which this origin belongs.
@@ -1076,7 +1091,7 @@ Default: `{}`
 
 ### <a name="input_front_door_routes"></a> [front\_door\_routes](#input\_front\_door\_routes)
 
-Description:   Manages a Front Door (standard/premium) Route.
+Description:   Manages a map of Front Door (standard/premium) Routes.
 
   - `name` - (Required) The name which should be used for this Front Door Route. Valid values must begin with a letter or number, end with a letter or number and may only contain letters, numbers and hyphens with a maximum length of 90 characters.
   - `origin_group_key` - (Required) The key of the origin group to associate the route with.
@@ -1152,7 +1167,7 @@ Default: `{}`
 
 ### <a name="input_front_door_rule_sets"></a> [front\_door\_rule\_sets](#input\_front\_door\_rule\_sets)
 
-Description:   Manages a Front Door (standard/premium) Rule Sets.. The following properties can be specified:
+Description:   Manages Front Door (standard/premium) Rule Sets.. The following properties can be specified:
   - `name` - (Required) The name which should be used for this Front Door Rule Set.
 
 Type: `set(string)`
@@ -1161,7 +1176,7 @@ Default: `[]`
 
 ### <a name="input_front_door_rules"></a> [front\_door\_rules](#input\_front\_door\_rules)
 
-Description:   Manages a Front Door (standard/premium) Rules. The following properties can be specified:
+Description:   Manages a map of Front Door (standard/premium) Rules. The following properties can be specified:
 
   - `name` - (Required) The name which should be used for this Front Door Rule.
   - `order` - (Required) The order in which the rule should be applied. The order value should be sequential and begin at 1(e.g. 1, 2, 3…). A Front Door Rule with a lesser order value will be applied before a rule with a greater order value.
@@ -1560,7 +1575,7 @@ Default: `{}`
 
 ### <a name="input_front_door_secrets"></a> [front\_door\_secrets](#input\_front\_door\_secrets)
 
-Description:   Manages a Front Door (standard/premium) Secret.
+Description:   Manages a map of Front Door (standard/premium) Secrets.
 
   - `name` - (Required) The name which should be used for this Front Door Secret.
   - `key_vault_certificate_id` - (Required) The ID of the Key Vault certificate resource to use.  
@@ -1588,7 +1603,7 @@ Default: `{}`
 
 ### <a name="input_front_door_security_policies"></a> [front\_door\_security\_policies](#input\_front\_door\_security\_policies)
 
-Description:   Manages a Front Door (standard/premium) Security Policy.
+Description:   Manages a map of Front Door (standard/premium) Security Policies.
 
   - `name` - (Required) The name which should be used for this Front Door Security Policy. Possible values must not be an empty string.
   - `firewall` - (Required) An firewall block as defined below: -
@@ -1661,7 +1676,7 @@ Default: `null`
 
 ### <a name="input_managed_identities"></a> [managed\_identities](#input\_managed\_identities)
 
-Description:   Controls the Managed Identity configuration on this resource. The following properties can be specified:
+Description:   Controls the Managed Identities configuration on this resource. The following properties can be specified:
 
   - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
   - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.  
@@ -1697,7 +1712,7 @@ Default: `120`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
-Description:   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description:   A map of role assignments to create on the cdn/Front door profile. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
   - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
   - `principal_id` - The ID of the principal to assign the role to.
@@ -1752,7 +1767,7 @@ Default: `"Standard_AzureFrontDoor"`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
-Description: Map of tags to assign to the Azure Front Door resource.
+Description: Map of tags to assign to the CDN profile resource.
 
 Type: `map(string)`
 
