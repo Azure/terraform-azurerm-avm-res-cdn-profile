@@ -6,7 +6,7 @@ variable "location" {
 
 variable "name" {
   type        = string
-  description = "The name of the Azure Front Door."
+  description = "The name of the CDN profile."
 }
 
 # This is required for most resource modules
@@ -32,22 +32,37 @@ variable "cdn_endpoint_custom_domains" {
     }))
   }))
   default     = {}
-  description = <<-EOT
+  description = <<Description
+  Manages a map of CDN Endpoint Custom Domains. A CDN Endpoint Custom Domain is a custom domain that is associated with a CDN Endpoint.
+  
  - `cdn_endpoint_key` - (Required) key of the endpoint defined in variable cdn_endpoints.
  - `host_name` - (Required) The host name of the custom domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
  - `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
+ - `cdn_managed_https` block supports the following:
+  - `certificate_type` - (Required) The type of HTTPS certificate. Possible values are `Shared` and `Dedicated`.
+  - `protocol_type` - (Required) The type of protocol. Possible values are `ServerNameIndication` and `IPBased`.
+  - `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
+ - `user_managed_https` block supports the following:
+  - `key_vault_certificate_id` - (Optional) The ID of the Key Vault Certificate that contains the HTTPS certificate. This is deprecated in favor of `key_vault_secret_id`.
+  - `key_vault_secret_id` - (Optional) The ID of the Key Vault Secret that contains the HTTPS certificate.
+  - `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
+ Example Input:
 
- ---
- `cdn_managed_https` block supports the following:
- - `certificate_type` - (Required) The type of HTTPS certificate. Possible values are `Shared` and `Dedicated`.
- - `protocol_type` - (Required) The type of protocol. Possible values are `ServerNameIndication` and `IPBased`.
- - `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
-
- `user_managed_https` block supports the following:
- - `key_vault_certificate_id` - (Optional) The ID of the Key Vault Certificate that contains the HTTPS certificate. This is deprecated in favor of `key_vault_secret_id`.
- - `key_vault_secret_id` - (Optional) The ID of the Key Vault Secret that contains the HTTPS certificate.
- - `tls_version` - (Optional) The minimum TLS protocol version that is used for HTTPS. Possible values are `TLS10` (representing TLS 1.0/1.1), `TLS12` (representing TLS 1.2) and `None` (representing no minimums). Defaults to `TLS12`.
-EOT
+  ```terraform
+    cdn_endpoint_custom_domains = {
+      cdn1 = {
+        cdn_endpoint_key = "cdn_ep_key1"
+        host_name        = "www.example.com"
+        name             = "example"
+        cdn_managed_https = {
+          certificate_type = "Shared"
+          protocol_type    = "ServerNameIndication"
+          tls_version      = "TLS12"
+        }
+      }
+    }
+  ```
+  Description
   nullable    = false
 }
 
@@ -247,8 +262,162 @@ variable "cdn_endpoints" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  Manages a CDN Endpoint. A CDN Endpoint is the entity within a CDN Profile containing configuration information regarding caching behaviours and origins. 
-  Refer https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint#arguments-reference for details and description on the CDN endpoint arguments reference.
+  Manages a map of CDN Endpoints. A CDN Endpoint is the entity within a CDN Profile containing configuration information regarding caching behaviours and origins. 
+
+  - `name` - (Required) The name of the CDN Endpoint. Changing this forces a new CDN Endpoint to be created.
+  - `tags` - (Optional) A mapping of tags to assign to the CDN Endpoint.
+  - `is_http_allowed` - (Optional) Is HTTP allowed for the CDN Endpoint? Defaults to false.
+  - `is_https_allowed` - (Optional) Is HTTPS allowed for the CDN Endpoint? Defaults to true.
+  - `content_types_to_compress` - (Optional) A list of content types to compress.The value for the elements should be MIME types.Defaults to `[]`.
+  - `geo_filters` - (Optional) A map of geo filters to apply to the CDN Endpoint. Each geo_filter block supports fields documented below: -
+    - `relative_path` - (Required) The relative path for the geo filter. Must be "/" for Standard_Microsoft. Must be unique across all filters. Only one allowed for Standard_Microsoft.
+    - `action` - (Required) The action to take when the filter is matched. Allowed values are `Allow` or `Block`.
+    - `country_codes` - (Required) A list of two-letter country codes to match. E.g. `["US", "CA"]`.
+  - `is_compression_enabled` - (Optional) Is compression enabled for the CDN Endpoint? Defaults to false.
+  - `querystring_caching_behaviour` - (Optional) The query string caching behaviour for the CDN Endpoint. Allowed values are `IgnoreQueryString`, `BypassCaching`, `UseQueryString`. `NotSet` value can be used for premium verizon. Defaults to `IgnoreQueryString`.
+  - `optimization_type` - (Optional) The optimization type for the CDN Endpoint. Allowed values are `DynamicSiteAcceleration`, `GeneralMediaStreaming`, `GeneralWebDelivery`, `LargeFileDownload`, `VideoOnDemandMediaStreaming`.
+  - `origins` - (Required) A map of origins to associate with the CDN Endpoint. Each origins block supports fields documented below: -
+    - `name` - (Required) The name of the origin.
+    - `host_name` - (Required) The host name of the origin.
+    - `http_port` - (Optional) The HTTP port of the origin. Defaults to 80.
+    - `https_port` - (Optional) The HTTPS port of the origin. Defaults to 443.
+  - `origin_host_header` - (Optional) The host header to send to the origin. Changing this forces a new CDN Endpoint to be created.
+  - `origin_path` - (Optional) The path to the origin. Must start with `/` e.g. `"/media"`.
+  - `probe_path` - (Optional) The path to the probe. Must start with `/` e.g. `"/foo.bar"`.
+  - `global_delivery_rule` - (Optional) A global delivery rule block as defined below: -
+    - `cache_expiration_action` - (Optional) A list of cache expiration action blocks as defined below: -
+      - `behavior` - (Required) The behavior of the cache expiration action. Allowed values are `BypassCache`, `Override`, `SetIfMissing`.
+      - `duration` - (Optional) The duration of the cache expiration action. Only allowed when behavior is `Override` or `SetIfMissing`. Format: `[d.]hh:mm:ss` e.g. `"1.10:30:00"`.
+    - `cache_key_query_string_action` - (Optional) A list of cache key query string action blocks as defined below: -
+      - `behavior` - (Required) The behavior of the cache key query string action. Allowed values are `Exclude`, `ExcludeAll`, `Include`, `IncludeAll`.
+      - `parameters` - (Optional) The parameters of the cache key query string action. E.g. `"*"`.
+    - `modify_request_header_action` - (Optional) A list of modify request header action blocks as defined below: -
+      - `action` - (Required) The action of the modify request header action. Allowed values are `Append`, `Delete`, `Overwrite`.
+      - `name` - (Required) The name of the modify request header action.
+      - `value` - (Optional) The value of the modify request header action. Only needed if action is `Append` or `Overwrite`.
+    - `modify_response_header_action` - (Optional) A list of modify response header action blocks as defined below: -
+      - `action` - (Required) The action of the modify response header action. Allowed values are `Append`, `Delete`, `Overwrite`.
+      - `name` - (Required) The name of the modify response header action.
+      - `value` - (Optional) The value of the modify response header action. Only needed if action is `Append` or `Overwrite`.
+    - `url_redirect_action` - (Optional) A list of URL redirect action blocks as defined below: -
+      - `redirect_type` - (Required) The redirect type of the URL redirect action. Allowed values are `Found`, `Moved`, `PermanentRedirect`, `TemporaryRedirect`.
+      - `protocol` - (Optional) The protocol of the URL redirect action. Allowed values are `MatchRequest`, `Http`, `Https`. Defaults to `Https`.
+      - `hostname` - (Optional) The hostname of the URL redirect action.
+      - `path` - (Optional) The path of the URL redirect action. Should begin with `/`.
+      - `fragment` - (Optional) The fragment of the URL redirect action. Specifies the fragment part of the URL. This value must not start with a `#`.
+      - `query_string` - (Optional) The query string of the URL redirect action. Specifies the query string part of the URL. This value must not start with a `?` or `&` and must be in `<key>=<value>` format separated by `&`.
+    - `url_rewrite_action` - (Optional) A list of URL rewrite action blocks as defined below: -
+      - `source_pattern` - (Required) The source pattern of the URL rewrite action. This value must start with a `/` and can't be longer than 260 characters.
+      - `destination` - (Required) The destination of the URL rewrite action. This value must start with a `/` and can't be longer than 260 characters.
+      - `preserve_unmatched_path` - (Optional) Specifies whether to preserve the unmatched path. Defaults to `true`.
+  - `delivery_rules` - (Optional) A list of delivery rules blocks as defined below: -
+    - `name` - (Required) The name of the delivery rule.
+    - `order` - (Required) The order of the delivery rule.
+    - `cache_expiration_action` - (Optional) A cache expiration action block as defined below: -
+      - `behavior` - (Required) The behavior of the cache expiration action.
+      - `duration` - (Optional) The duration of the cache expiration action.
+    - `cache_key_query_string_action` - (Optional) A cache key query string action block as defined below: -
+      - `behavior` - (Required) The behavior of the cache key query string action.
+      - `parameters` - (Optional) The parameters of the cache key query string action.
+    - `cookies_condition` - (Optional) A cookies condition block as defined below: -
+      - `selector` - (Required) The selector of the cookies condition.
+      - `operator` - (Required) The operator of the cookies condition.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Optional) The match values of the cookies condition.
+      - `transforms` - (Optional) The transforms of the cookies condition.
+    - `device_condition` - (Optional) A device condition block as defined below: -
+      - `operator` - (Optional) The operator of the device condition. Defaults to `Equal`.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Required) The match values of the device condition.
+    - `http_version_condition` - (Optional) An HTTP version condition block as defined below: -
+      - `operator` - (Optional) The operator of the HTTP version condition. Defaults to `Equal`.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Required) The match values of the HTTP version condition.
+    - `modify_request_header_action` - (Optional) A modify request header action block as defined below: -
+      - `action` - (Required) The action of the modify request header action.
+      - `name` - (Required) The name of the modify request header action.
+      - `value` - (Optional) The value of the modify request
+    - `modify_response_header_action` - (Optional) A modify response header action block as defined below: -
+      - `action` - (Required) The action of the modify response header action.
+      - `name` - (Required) The name of the modify response header action.
+      - `value` - (Optional) The value of the modify response header action.
+    - `post_arg_condition` - (Optional) A post argument condition block as defined below: -
+      - `selector` - (Required) The selector of the post argument condition.
+      - `operator` - (Required) The operator of the post argument condition.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Optional) The match values of the post argument condition.
+      - `transforms` - (Optional) The transforms of the post argument condition.
+    - `query_string_condition` - (Optional) A query string condition block as defined below: -
+      - `operator` - (Required) The operator of the query string condition.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Optional) The match values of the query string condition.
+      - `transforms` - (Optional) The transforms of the query string condition.
+    - `remote_address_condition` - (Optional) A remote address condition block as defined below: -
+      - `operator` - (Required) The operator of the remote address condition.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Optional) The match values of the remote address condition.
+    - `request_body_condition` - (Optional) A request body condition block as defined below: -
+      - `operator` - (Required) The operator of the request body condition.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Optional) The match values of the request body condition.
+      - `transforms` - (Optional) The transforms of the request body condition.
+    - `request_header_condition` - (Optional) A request header condition block as defined below: -
+      - `selector` - (Required) The selector of the request header condition.
+      - `operator` - (Required) The operator of the request header condition.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Optional) The match values of the request header condition.
+      - `transforms` - (Optional) The transforms of the request header condition.
+    - `request_method_condition` - (Optional) A request method condition block as defined below: -
+      - `operator` - (Optional) The operator of the request method condition. Defaults to `Equal`.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Required) The match values of the request method condition.
+    - `request_scheme_condition` - (Optional) A request scheme condition block as defined below: -
+      - `operator` - (Optional) The operator of the request scheme condition. Defaults to `Equal`.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Required) The match values of the request scheme condition.
+    - `request_uri_condition` - (Optional) A request URI condition block as defined below: -
+      - `operator` - (Required) The operator of the request URI condition.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Optional) The match values of the request URI condition.
+      - `transforms` - (Optional) The transforms of the request URI condition.
+    - `url_file_extension_condition` - (Optional) A URL file extension condition block as defined below: -
+      - `operator` - (Required) The operator of the URL file extension condition.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Optional) The match values of the URL file extension condition.
+      - `transforms` - (Optional) The transforms of the URL file extension condition.
+    - `url_file_name_condition` - (Optional) A URL file name condition block as defined below: -
+      - `operator` - (Required) The operator of the URL file name condition.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Optional) The match values of the URL file name condition.
+      - `transforms` - (Optional) The transforms of the URL file name condition.
+    - `url_path_condition` - (Optional) A URL path condition block as defined below: -
+      - `operator` - (Required) The operator of the URL path condition.
+      - `negate_condition` - (Optional) Should the condition be negated? Defaults to `false`.
+      - `match_values` - (Optional) The match values of the URL path condition.
+      - `transforms` - (Optional) The transforms of the URL path condition.
+    - `url_redirect_action` - (Optional) A URL redirect action block as defined below: -
+      - `redirect_type` - (Required) The redirect type of the URL redirect action.
+      - `protocol` - (Optional) The protocol of the URL redirect action. Defaults to `MatchRequest`.
+      - `hostname` - (Optional) The hostname of the URL redirect action.
+      - `path` - (Optional) The path of the URL redirect action. Should begin with `/`.
+      - `fragment` - (Optional) The fragment of the URL redirect action. Specifies the fragment part of the URL. This value must not start with a `#`.
+      - `query_string` - (Optional) The query string of the URL redirect action. Specifies the query string part of the URL. This value must not start with a `?` or `&` and must be in `<key>=<value>` format separated by `&`.
+    - `url_rewrite_action` - (Optional) A URL rewrite action block as defined below: -
+      - `source_pattern` - (Required) The source pattern of the URL rewrite action. This value must start with a `/` and can't be longer than 260 characters.
+      - `destination` - (Required) The destination of the URL rewrite action. This value must start with a `/` and can't be longer than 260 characters.
+      - `preserve_unmatched_path` - (Optional) Specifies whether to preserve the unmatched path. Defaults to `true`.
+  - `diagnostic_setting` - (Optional) A diagnostic setting block as defined below: -
+    - `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
+    - `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
+    - `log_groups` - (Optional) A set of log groups to send to the log analytics workspace. Defaults to `["allLogs"]`.
+    - `metric_categories` - (Optional) A set of metric categories to send to the log analytics workspace. Defaults to `["AllMetrics"]`.
+    - `log_analytics_destination_type` - (Optional) The destination type for the diagnostic setting. Possible values are `Dedicated` and `AzureDiagnostics`. Defaults to `Dedicated`.
+    - `workspace_resource_id` - (Optional) The resource ID of the log analytics workspace to send logs and metrics to.
+    - `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
+    - `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
+    - `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
+    - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
+    
   Example Input:
 
   ```terraform
@@ -346,7 +515,7 @@ variable "diagnostic_settings" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+  Manages a map of diagnostic settings on the CDN/front door profile. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
   - `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
   - `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
@@ -431,15 +600,15 @@ variable "front_door_custom_domains" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Custom Domain.
+  Manages a map of Front Door (standard/premium) Custom Domains.
   
   - `name` - (Required) The name which should be used for this Front Door Custom Domain. 
   - `dns_zone_id` - (Optional) The ID of the Azure DNS Zone which should be used for this Front Door Custom Domain.
   - `host_name` - (Required) The host name of the domain. The host_name field must be the FQDN of your domain.
   - `tls` - (Required) A tls block as defined below : -
-    - 'certificate_type' - (Optional) Defines the source of the SSL certificate. Possible values include 'CustomerCertificate' and 'ManagedCertificate'. Defaults to 'ManagedCertificate'.
-    - 'minimum_tls_version' - (Optional) TLS protocol version that will be used for Https. Possible values include 'TLS10' and 'TLS12'. Defaults to 'TLS12'.
-    - 'cdn_frontdoor_secret_key' - (Optional) Key of the Front Door Secret object. This is required when certificate_type is 'CustomerCertificate'.
+    - `certificate_type` - (Optional) Defines the source of the SSL certificate. Possible values include 'CustomerCertificate' and 'ManagedCertificate'. Defaults to 'ManagedCertificate'.
+    - `minimum_tls_version` - (Optional) TLS protocol version that will be used for Https. Possible values include 'TLS10' and 'TLS12'. Defaults to 'TLS12'.
+    - `cdn_frontdoor_secret_key` - (Optional) Key of the Front Door Secret object. This is required when certificate_type is 'CustomerCertificate'.
   Example Input:
 
   ```terraform
@@ -468,11 +637,11 @@ variable "front_door_endpoints" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Endpoint.
+  Manages a map of Front Door (standard/premium) Endpoints.
   
   - `name` - (Required) The name which should be used for this Front Door Endpoint.  
   - `enabled` - (Optional) Specifies if this Front Door Endpoint is enabled? Defaults to true.
-  - 'tags' - (Optional) Specifies a mapping of tags which should be assigned to the Front Door Endpoint.
+  - `tags` - (Optional) Specifies a mapping of tags which should be assigned to the Front Door Endpoint.
   Example Input:
 
   ```terraform
@@ -550,52 +719,55 @@ variable "front_door_firewall_policies" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Firewall Policy instance.
+  Manages a map of Front Door (standard/premium) Firewall Policies.
   
   - `name` - (Required) The name which should be used for this Front Door Security Policy. Possible values must not be an empty string.
   - `resource_group_name` - (Required) The name of the resource group. Changing this forces a new resource to be created.
-  - 'sku_name' - (Required) The sku's pricing tier for this Front Door Firewall Policy. Possible values include 'Standard_AzureFrontDoor' or 'Premium_AzureFrontDoor'.
-  - 'enabled' - (Optional) Is the Front Door Firewall Policy enabled? Defaults to true.
-  - 'mode' - (Required) The Front Door Firewall Policy mode. Possible values are 'Detection', 'Prevention'.
-  - 'request_body_check_enabled' - (Optional) Should policy managed rules inspect the request body content? Defaults to true.
-  - 'redirect_url' - (Optional) If action type is redirect, this field represents redirect URL for the client.
-  - 'custom_block_response_status_code' - (Optional) If a custom_rule block's action type is block, this is the response status code. Possible values are 200, 403, 405, 406, or 429.
-  - 'custom_block_response_body' - (Optional) If a custom_rule block's action type is block, this is the response body. The body must be specified in base64 encoding.
-  - 'custom_rule' - (Optional) One or more custom_rule blocks as defined below.
-    - 'name' - (Required) Gets name of the resource that is unique within a policy. This name can be used to access the resource.
-    - 'action' - (Required) The action to perform when the rule is matched. Possible values are 'Allow', 'Block', 'Log', or 'Redirect'.
-    - 'enabled' - (Optional) Is the rule is enabled or disabled? Defaults to true.
-    - 'priority' - (Optional) The priority of the rule. Rules with a lower value will be evaluated before rules with a higher value. Defaults to 1.
-    - 'type' - (Required) The type of rule. Possible values are MatchRule or RateLimitRule.
-    - 'rate_limit_duration_in_minutes' - (Optional) The rate limit duration in minutes. Defaults to 1.
-    - 'rate_limit_threshold' - (Optional) The rate limit threshold. Defaults to 10.
-    - 'match_condition' - (Optional) One or more match_condition block defined below. Can support up to 10 match_condition blocks.
-      - 'match_variable' - (Required) The request variable to compare with. Possible values are Cookies, PostArgs, QueryString, RemoteAddr, RequestBody, RequestHeader, RequestMethod, RequestUri, or SocketAddr.
-      - 'match_values' - (Required) Up to 600 possible values to match. Limit is in total across all match_condition blocks and match_values arguments. String value itself can be up to 256 characters in length.
-      - 'operator' - (Required) Comparison type to use for matching with the variable value. Possible values are Any, BeginsWith, Contains, EndsWith, Equal, GeoMatch, GreaterThan, GreaterThanOrEqual, IPMatch, LessThan, LessThanOrEqual or RegEx.
-      - 'selector' - (Optional) Match against a specific key if the match_variable is QueryString, PostArgs, RequestHeader or Cookies
-      - 'negation_condition' - (Optional) Should the result of the condition be negated.
-      - 'transforms' - (Optional) Up to 5 transforms to apply. Possible values are Lowercase, RemoveNulls, Trim, Uppercase, URLDecode or URLEncode.
-  - 'managed_rule' -  (Optional) One or more managed_rule blocks as defined below.
-    - 'type' - (Required) The name of the managed rule to use with this resource. Possible values include DefaultRuleSet, Microsoft_DefaultRuleSet, BotProtection or Microsoft_BotManagerRuleSet.
-    - 'version' - (Required) The version of the managed rule to use with this resource. Possible values depends on which DRS type you are using, for the DefaultRuleSet type the possible values include 1.0 or preview-0.1. For Microsoft_DefaultRuleSet the possible values include 1.1, 2.0 or 2.1. For BotProtection the value must be preview-0.1 and for Microsoft_BotManagerRuleSet the value must be 1.0.
-    - 'action' - (Required) The action to perform for all DRS rules when the managed rule is matched or when the anomaly score is 5 or greater depending on which version of the DRS you are using. Possible values include Allow, Log, Block, and Redirect.
-    - 'exclusion' - (Optional) One or more exclusion blocks as defined below: -
-      - 'match_variable' - (Required) The variable type to be excluded. Possible values are QueryStringArgNames, RequestBodyPostArgNames, RequestCookieNames, RequestHeaderNames, RequestBodyJsonArgNames.
-      - 'operator' - (Required) Comparison operator to apply to the selector when specifying which elements in the collection this exclusion applies to. Possible values are: Equals, Contains, StartsWith, EndsWith, EqualsAny.
-      - 'selector' - (Required) Selector for the value in the match_variable attribute this exclusion applies to.
-    - 'override' - (Optional) One or more override blocks as defined below: -
-      - 'rule_group_name' - (Required) The managed rule group to override.
-      - 'exclusion' - (Optional) One or more exclusion blocks as defined below: -
-      - 'rule' - (Optional) One or more rule blocks as defined below. If none are specified, all of the rules in the group will be disabled: -
-        - 'rule_id' - (Required) Identifier for the managed rule.
-        - 'action' - (Required) The action to be applied when the managed rule matches or when the anomaly score is 5 or greater. Possible values for DRS 1.1 and below are Allow, Log, Block, and Redirect. For DRS 2.0 and above the possible values are Log or AnomalyScoring.
-        - 'enabled' - (Optional) Is the managed rule override enabled or disabled. Defaults to false.
-        - 'exclusion' - (Optional) One or more exclusion blocks as defined below: -
-          - 'match_variable' - (Required) The variable type to be excluded. Possible values are QueryStringArgNames, RequestBodyPostArgNames, RequestCookieNames, RequestHeaderNames, RequestBodyJsonArgNames.
-          - 'operator' - (Required) Comparison operator to apply to the selector when specifying which elements in the collection this exclusion applies to. Possible values are: Equals, Contains, StartsWith, EndsWith, EqualsAny.
-          - 'selector' - (Required) Selector for the value in the match_variable attribute this exclusion applies to.
-  - 'tags' - (Optional) A mapping of tags to assign to the Front Door Firewall Policy.
+  - `sku_name` - (Required) The sku's pricing tier for this Front Door Firewall Policy. Possible values include 'Standard_AzureFrontDoor' or 'Premium_AzureFrontDoor'.
+  - `enabled` - (Optional) Is the Front Door Firewall Policy enabled? Defaults to true.
+  - `mode` - (Required) The Front Door Firewall Policy mode. Possible values are 'Detection', 'Prevention'.
+  - `request_body_check_enabled` - (Optional) Should policy managed rules inspect the request body content? Defaults to true.
+  - `redirect_url` - (Optional) If action type is redirect, this field represents redirect URL for the client.
+  - `custom_block_response_status_code` - (Optional) If a custom_rule block's action type is block, this is the response status code. Possible values are 200, 403, 405, 406, or 429.
+  - `custom_block_response_body` - (Optional) If a custom_rule block's action type is block, this is the response body. The body must be specified in base64 encoding.
+  - `custom_rules` - (Optional) One or more custom_rule blocks as defined below.
+    - `name` - (Required) Gets name of the resource that is unique within a policy. This name can be used to access the resource.
+    - `action` - (Required) The action to perform when the rule is matched. Possible values are 'Allow', 'Block', 'Log', or 'Redirect'.
+    - `enabled` - (Optional) Is the rule is enabled or disabled? Defaults to true.
+    - `priority` - (Optional) The priority of the rule. Rules with a lower value will be evaluated before rules with a higher value. Defaults to 1.
+    - `type` - (Required) The type of rule. Possible values are MatchRule or RateLimitRule.
+    - `rate_limit_duration_in_minutes` - (Optional) The rate limit duration in minutes. Defaults to 1.
+    - `rate_limit_threshold` - (Optional) The rate limit threshold. Defaults to 10.
+    - `match_conditions` - (Optional) One or more match_condition block defined below. Can support up to 10 match_condition blocks.
+      - `match_variable` - (Required) The request variable to compare with. Possible values are Cookies, PostArgs, QueryString, RemoteAddr, RequestBody, RequestHeader, RequestMethod, RequestUri, or SocketAddr.
+      - `match_values` - (Required) Up to 600 possible values to match. Limit is in total across all match_condition blocks and match_values arguments. String value itself can be up to 256 characters in length.
+      - `operator` - (Required) Comparison type to use for matching with the variable value. Possible values are Any, BeginsWith, Contains, EndsWith, Equal, GeoMatch, GreaterThan, GreaterThanOrEqual, IPMatch, LessThan, LessThanOrEqual or RegEx.
+      - `selector` - (Optional) Match against a specific key if the match_variable is QueryString, PostArgs, RequestHeader or Cookies
+      - `negation_condition` - (Optional) Should the result of the condition be negated.
+      - `transforms` - (Optional) Up to 5 transforms to apply. Possible values are Lowercase, RemoveNulls, Trim, Uppercase, URLDecode or URLEncode.
+  - `managed_rules` -  (Optional) One or more managed_rule blocks as defined below.
+    - `type` - (Required) The name of the managed rule to use with this resource. Possible values include DefaultRuleSet, Microsoft_DefaultRuleSet, BotProtection or Microsoft_BotManagerRuleSet.
+    - `version` - (Required) The version of the managed rule to use with this resource. Possible values depends on which DRS type you are using, for the DefaultRuleSet type the possible values include 1.0 or preview-0.1. For Microsoft_DefaultRuleSet the possible values include 1.1, 2.0 or 2.1. For BotProtection the value must be preview-0.1 and for Microsoft_BotManagerRuleSet the value must be 1.0.
+    - `action` - (Required) The action to perform for all DRS rules when the managed rule is matched or when the anomaly score is 5 or greater depending on which version of the DRS you are using. Possible values include Allow, Log, Block, and Redirect.
+    - `exclusion` - (Optional) One or more exclusion blocks as defined below: -
+      - `match_variable` - (Required) The variable type to be excluded. Possible values are QueryStringArgNames, RequestBodyPostArgNames, RequestCookieNames, RequestHeaderNames, RequestBodyJsonArgNames.
+      - `operator` - (Required) Comparison operator to apply to the selector when specifying which elements in the collection this exclusion applies to. Possible values are: Equals, Contains, StartsWith, EndsWith, EqualsAny.
+      - `selector` - (Required) Selector for the value in the match_variable attribute this exclusion applies to.
+    - `overrides` - (Optional) One or more override blocks as defined below: -
+      - `rule_group_name` - (Required) The managed rule group to override.
+      - `exclusions` - (Optional) One or more exclusion blocks as defined below: -
+        - `match_variable` - (Required) The variable type to be excluded. Possible values are QueryStringArgNames, RequestBodyPostArgNames, RequestCookieNames, RequestHeaderNames, RequestBodyJsonArgNames.
+        - `operator` - (Required) Comparison operator to apply to the selector when specifying which elements in the collection this exclusion applies to. Possible values are: Equals, Contains, StartsWith, EndsWith, EqualsAny.
+        - `selector` - (Required) Selector for the value in the match_variable attribute this exclusion applies to.
+      - `rules` - (Optional) One or more rule blocks as defined below. If none are specified, all of the rules in the group will be disabled: -
+        - `rule_id` - (Required) Identifier for the managed rule.
+        - `action` - (Required) The action to be applied when the managed rule matches or when the anomaly score is 5 or greater. Possible values for DRS 1.1 and below are Allow, Log, Block, and Redirect. For DRS 2.0 and above the possible values are Log or AnomalyScoring.
+        - `enabled` - (Optional) Is the managed rule override enabled or disabled. Defaults to false.
+        - `exclusions` - (Optional) One or more exclusion blocks as defined below: -
+          - `match_variable` - (Required) The variable type to be excluded. Possible values are QueryStringArgNames, RequestBodyPostArgNames, RequestCookieNames, RequestHeaderNames, RequestBodyJsonArgNames.
+          - `operator` - (Required) Comparison operator to apply to the selector when specifying which elements in the collection this exclusion applies to. Possible values are: Equals, Contains, StartsWith, EndsWith, EqualsAny.
+          - `selector` - (Required) Selector for the value in the match_variable attribute this exclusion applies to.
+  - `tags` - (Optional) A mapping of tags to assign to the Front Door Firewall Policy.
   /*
   Example Input:
 
@@ -792,18 +964,18 @@ variable "front_door_origin_groups" {
   # session_affinity_enabled = optional(bool, true)
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Origin group.
+  Manages a map of Front Door (standard/premium) Origin groups.
   
   - `name` - (Required) The name which should be used for this Front Door Origin Group. 
   - `load_balancing` - (Required) A load_balancing block as defined below:-
-      - 'additional_latency_in_milliseconds' - (Optional) Specifies the additional latency in milliseconds for probes to fall into the lowest latency bucket. Possible values are between 0 and 1000 milliseconds (inclusive). Defaults to 50
-      - 'sample_size' - (Optional) Specifies the number of samples to consider for load balancing decisions. Possible values are between 0 and 255 (inclusive). Defaults to 4.
-      - 'successful_samples_required' - (Optional) Specifies the number of samples within the sample period that must succeed. Possible values are between 0 and 255 (inclusive). Defaults to 3.
-  - 'health_probe' - (Optional) A health_probe block as defined below:-
-      - 'protocol' - (Required) Specifies the protocol to use for health probe. Possible values are Http and Https.
-      - 'interval_in_seconds' - (Required) Specifies the number of seconds between health probes. Possible values are between 5 and 31536000 seconds (inclusive).
-      - 'request_type' - (Optional) Specifies the type of health probe request that is made. Possible values are GET and HEAD. Defaults to HEAD.
-      - 'path' - (Optional) Specifies the path relative to the origin that is used to determine the health of the origin. Defaults to /.
+      - `additional_latency_in_milliseconds` - (Optional) Specifies the additional latency in milliseconds for probes to fall into the lowest latency bucket. Possible values are between 0 and 1000 milliseconds (inclusive). Defaults to 50
+      - `sample_size` - (Optional) Specifies the number of samples to consider for load balancing decisions. Possible values are between 0 and 255 (inclusive). Defaults to 4.
+      - `successful_samples_required` - (Optional) Specifies the number of samples within the sample period that must succeed. Possible values are between 0 and 255 (inclusive). Defaults to 3.
+  - `health_probe` - (Optional) A health_probe block as defined below:-
+      - `protocol` - (Required) Specifies the protocol to use for health probe. Possible values are Http and Https.
+      - `interval_in_seconds` - (Required) Specifies the number of seconds between health probes. Possible values are between 5 and 31536000 seconds (inclusive).
+      - `request_type` - (Optional) Specifies the type of health probe request that is made. Possible values are GET and HEAD. Defaults to HEAD.
+      - `path` - (Optional) Specifies the path relative to the origin that is used to determine the health of the origin. Defaults to /.
   Example Input:
 
   ```terraform
@@ -941,22 +1113,24 @@ variable "front_door_origins" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Origin.
+  Manages a map of Front Door (standard/premium) Origins.
   
   - `name` - (Required) The name which should be used for this Front Door Origin.
-  - 'origin_group_name' - (Required) The name of the origin group to associate the origin with.
+  - `origin_group_key` - (Required) The key of the origin group to which this origin belongs.
   - `host_name` - (Required) The IPv4 address, IPv6 address or Domain name of the Origin.
-  - 'certificate_name_check_enabled' - (Required) Specifies whether certificate name checks are enabled for this origin.
-  - 'enabled' - (Optional) Should the origin be enabled? Possible values are true or false. Defaults to true.
-  - 'http_port' - (Optional) The value of the HTTP port. Must be between 1 and 65535. Defaults to 80
-  - 'https_port' - (Optional) The value of the HTTPS port. Must be between 1 and 65535. Defaults to 443.
-  - 'origin_host_header' - (Optional) The host header value (an IPv4 address, IPv6 address or Domain name) which is sent to the origin with each request. If unspecified the hostname from the request will be used.
-  - 'priority' - (Optional) Priority of origin in given origin group for load balancing. Higher priorities will not be used for load balancing if any lower priority origin is healthy. Must be between 1 and 5 (inclusive). Defaults to 1
-  - 'private_link' - (Optional) A private_link block as defined below:-
-      - 'request_message' - (Optional) Specifies the request message that will be submitted to the private_link_target_id when requesting the private link endpoint connection. Values must be between 1 and 140 characters in length. Defaults to Access request for CDN FrontDoor Private Link Origin.
-      - 'target_type' - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are blob, blob_secondary, web and sites.
-      - 'location' - (Required) Specifies the location where the Private Link resource should exist. Changing this forces a new resource to be created.
-  - 'weight' - (Optional) The weight of the origin in a given origin group for load balancing. Must be between 1 and 1000. Defaults to 500.
+  - `certificate_name_check_enabled` - (Required) Specifies whether certificate name checks are enabled for this origin.
+  - `enabled` - (Optional) Should the origin be enabled? Possible values are true or false. Defaults to true.
+  - `http_port` - (Optional) The value of the HTTP port. Must be between 1 and 65535. Defaults to 80
+  - `https_port` - (Optional) The value of the HTTPS port. Must be between 1 and 65535. Defaults to 443.
+  - `origin_host_header` - (Optional) The host header value (an IPv4 address, IPv6 address or Domain name) which is sent to the origin with each request. If unspecified the hostname from the request will be used.
+  - `priority` - (Optional) Priority of origin in given origin group for load balancing. Higher priorities will not be used for load balancing if any lower priority origin is healthy. Must be between 1 and 5 (inclusive). Defaults to 1.
+  - `weight` - (Optional) The weight of the origin in a given origin group for load balancing. Must be between 1 and 1000. Defaults to 500.
+  - `private_link` - (Optional) A private_link block as defined below:-
+      - `request_message` - (Optional) Specifies the request message that will be submitted to the private_link_target_id when requesting the private link endpoint connection. Values must be between 1 and 140 characters in length. Defaults to Access request for CDN FrontDoor Private Link Origin.
+      - `target_type` - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are blob, blob_secondary, web and sites.
+      - `location` - (Required) Specifies the location where the Private Link resource should exist. Changing this forces a new resource to be created.
+      - `private_link_target_id` - (Required) Specifies the ID of the Private Link resource to connect to.
+  
   Example Input:
 
   ```terraform
@@ -1069,22 +1243,26 @@ variable "front_door_routes" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Route.
+  Manages a map of Front Door (standard/premium) Routes.
   
   - `name` - (Required) The name which should be used for this Front Door Route. Valid values must begin with a letter or number, end with a letter or number and may only contain letters, numbers and hyphens with a maximum length of 90 characters.
-  - 'origin_group_name' - (Required) The name of the origin group to associate the route with.
-  - `origin_names` - (Required) The name of the origins to associate the route with.
-  - 'endpoint_name' - (Required) The name of the origins to associate the route with.
-  - 'forwarding_protocol' - (Optional) The Protocol that will be use when forwarding traffic to backends. Possible values are 'HttpOnly', 'HttpsOnly' or 'MatchRequest'. Defaults to 'MatchRequest'.
-  - 'patterns_to_match' - (Required) The route patterns of the rule.
-  - 'supported_protocols' - (Required) One or more Protocols supported by this Front Door Route. Possible values are 'Http' or 'Https'.
-  - 'https_redirect_enabled' - (Optional) Automatically redirect HTTP traffic to HTTPS traffic? Possible values are true or false. Defaults to true.
-  - 'link_to_default_domain' - (Optional) Should this Front Door Route be linked to the default endpoint? Possible values include true or false. Defaults to true.
-  - 'cache' - (Optional) A cache block as defined below:-
-      - 'query_string_caching_behavior' - (Optional) Defines how the Front Door Route will cache requests that include query strings. Possible values include 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'. Defaults to 'IgnoreQueryString'.
-      - 'query_strings' - (Optional) Query strings to include or ignore.
-      - 'compression_enabled' - (Optional) Is content compression enabled? Possible values are true or false. Defaults to false.
-      - 'content_types_to_compress' - (Optional) A list of one or more Content types (formerly known as MIME types) to compress. Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'.
+  - `origin_group_key` - (Required) The key of the origin group to associate the route with.
+  - `origin_keys` - (Required) The list of the keys of the origins to associate the route with.
+  - `endpoint_key` - (Required) The key of the endpoint to associate the route with.
+  - `forwarding_protocol` - (Optional) The Protocol that will be use when forwarding traffic to backends. Possible values are 'HttpOnly', 'HttpsOnly' or 'MatchRequest'. Defaults to 'MatchRequest'.
+  - `patterns_to_match` - (Required) The route patterns of the rule.
+  - `supported_protocols` - (Required) One or more Protocols supported by this Front Door Route. Possible values are 'Http' or 'Https'.
+  - `https_redirect_enabled` - (Optional) Automatically redirect HTTP traffic to HTTPS traffic? Possible values are true or false. Defaults to true.
+  - `link_to_default_domain` - (Optional) Should this Front Door Route be linked to the default endpoint? Possible values include true or false. Defaults to true.
+  - `custom_domain_keys` - (Optional) The list of the keys of the custom domains to associate the route with.
+  - `enabled` - (Optional) Should the route be enabled? Possible values are true or false. Defaults to true.
+  - `rule_set_names` - (Optional) The list of the names of the rule sets to associate the route with.
+  - `cdn_frontdoor_origin_path` - (Optional) The path to the origin. Defaults to null.
+  - `cache` - (Optional) A cache block as defined below:-
+      - `query_string_caching_behavior` - (Optional) Defines how the Front Door Route will cache requests that include query strings. Possible values include 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'. Defaults to 'IgnoreQueryString'.
+      - `query_strings` - (Optional) Query strings to include or ignore.
+      - `compression_enabled` - (Optional) Is content compression enabled? Possible values are true or false. Defaults to false.
+      - `content_types_to_compress` - (Optional) A list of one or more Content types (formerly known as MIME types) to compress. Possible values include 'application/eot', 'application/font', 'application/font-sfnt', 'application/javascript', 'application/json', 'application/opentype', 'application/otf', 'application/pkcs7-mime', 'application/truetype', 'application/ttf', 'application/vnd.ms-fontobject', 'application/xhtml+xml', 'application/xml', 'application/xml+rss', 'application/x-font-opentype', 'application/x-font-truetype', 'application/x-font-ttf', 'application/x-httpd-cgi', 'application/x-mpegurl', 'application/x-opentype', 'application/x-otf', 'application/x-perl', 'application/x-ttf', 'application/x-javascript', 'font/eot', 'font/ttf', 'font/otf', 'font/opentype', 'image/svg+xml', 'text/css', 'text/csv', 'text/html', 'text/javascript', 'text/js', 'text/plain', 'text/richtext', 'text/tab-separated-values', 'text/xml', 'text/x-script', 'text/x-component' or 'text/x-java-source'.
   Example Input:
 
   ```terraform
@@ -1095,6 +1273,7 @@ variable "front_door_routes" {
       origin_group_key       = "og1_key"
       origin_keys            = ["origin1_key"]
       https_redirect_enabled = true
+      custom_domain_keys     = ["cd1_key"]
       patterns_to_match      = ["/*"]
       supported_protocols    = ["Http", "Https"]
       rule_set_names         = ["ruleset1"]
@@ -1171,7 +1350,7 @@ variable "front_door_rule_sets" {
   type        = set(string)
   default     = []
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Rule Sets.. The following properties can be specified:
+  Manages Front Door (standard/premium) Rule Sets.. The following properties can be specified:
   - `name` - (Required) The name which should be used for this Front Door Rule Set.
   DESCRIPTION
 }
@@ -1331,8 +1510,132 @@ variable "front_door_rules" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Rules. Please review documentation here for usage. https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule
-  
+  Manages a map of Front Door (standard/premium) Rules. The following properties can be specified:
+
+  - `name` - (Required) The name which should be used for this Front Door Rule.
+  - `order` - (Required) The order in which the rule should be applied. The order value should be sequential and begin at 1(e.g. 1, 2, 3…). A Front Door Rule with a lesser order value will be applied before a rule with a greater order value.
+  - `origin_group_key` - (Required) The origin group key to associate the rule with.
+  - `rule_set_name` - (Required) The name of the rule set to associate the rule with.
+  - `behavior_on_match` - (Optional) The behavior when a rule is matched. Possible values are 'Continue' or 'Stop'. Defaults to 'Continue'.
+  - `actions` - (Required) An actions block as defined below:-
+    - `url_rewrite_actions` - (Optional) A url_rewrite_actions block as defined below:-
+      - `source_pattern` - (Required) The source pattern to match. For example, to match all URL paths use a forward slash "/" as the source pattern value.
+      - `destination` - (Required) The destination to rewrite to. The destination path overwrites the source pattern.
+      - `preserve_unmatched_path` - (Optional) Should the unmatched path be preserved? Possible values are true or false. Defaults to false.
+    - `url_redirect_actions` - (Optional) A url_redirect_actions block as defined below:-
+      - `redirect_type` - (Required) The type of redirect. Possible values are 'Moved', 'Found', 'TemporaryRedirect', 'PermanentRedirect' or 'SeeOther'.
+      - `destination_hostname` - (Required) The destination hostname to redirect to.The value must be a string between 0 and 2048 characters in length, leave blank to preserve the incoming host.
+      - `redirect_protocol` - (Optional) The protocol to use for the redirect. Possible values are 'Http' ,'Https' or 'MatchRequest'. Defaults to 'Https'.
+      - `destination_path` - (Optional) The destination path to redirect to. Defaults to "". The value must be a string and include the leading /, leave blank to preserve the incoming path.
+      - `query_string` - (Optional) The query string to use for the redirect. The value must be in the <key>=<value> or <key>={action_server_variable} format and must not include the leading ?, leave blank to preserve the incoming query string. Maximum allowed length for this field is 2048 characters. Defaults to "".
+      - `destination_fragment` - (Optional) The destination fragment to use for the redirect. The value must be a string between 0 and 1024 characters in length, leave blank to preserve the incoming fragment. Defaults to "".
+    - `route_configuration_override_actions` - (Optional) A route_configuration_override_actions block as defined below:-
+      - `set_origin_groupid` - (Required) Should the origin group ID be set? Possible values are true or false.
+      - `cache_duration` - (Optional) The cache duration. Must be in the format d.HH:MM:SS (365.23:59:59).  If the desired maximum cache duration is less than 1 day then the maximum cache duration should be specified in the HH:MM:SS format(e.g. 23:59:59).
+      - `forwarding_protocol` - (Optional) The forwarding protocol. Possible values are 'HttpOnly', 'HttpsOnly' or 'MatchRequest'. Defaults to 'HttpsOnly'.
+      - `query_string_caching_behavior` - (Optional) The query string caching behavior. Possible values are 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'.
+      - `query_string_parameters` - (Optional) The query string parameters to use.
+      - `compression_enabled` - (Optional) Is compression enabled? Possible values are true or false. Defaults to false.
+      - `cache_behavior` - (Optional) The cache behavior. Possible values include 'HonorOrigin', 'OverrideAlways', 'OverrideIfOriginMissing' or 'Disabled'.
+    - `response_header_actions` - (Optional) A response_header_actions block as defined below:-
+      - `header_action` - (Required) The header action to perform on the specified 'header_name'. Possible values are 'Append', 'Delete' or 'Overwrite'.
+      - `header_name` - (Required) The name of the header to modify.
+      - `value` - (Optional) The value to set the header to. The value is required if the header_action is set to 'Append' or 'Overwrite'.
+    - `request_header_actions` - (Optional) A request_header_actions block as defined below:-
+      - `header_action` - (Required) The header action to perform on the specified 'header_name'. Possible values are 'Append', 'Delete' or 'Overwrite'.
+      - `header_name` - (Required) The name of the header to modify.
+      - `value` - (Optional) The value to set the header to. The value is required if the header_action is set to 'Append' or 'Overwrite'.
+  - `conditions` - (Optional) A conditions block as defined below:-
+    - `remote_address_conditions` - (Optional) A remote_address_conditions block as defined below:-
+      - `operator` - (Optional) The operator to use when matching the remote address. Possible values are 'Any', 'IPMatch' or 'GeoMatch'. Use the 'negate_condition' to specify Not 'GeoMatch' or Not 'IPMatch'. Defaults to 'IPMatch'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) The values to match against. For the IP Match or IP Not Match operators: specify one or more IP address ranges. If multiple IP address ranges are specified, they're evaluated using OR logic. For the Geo Match or Geo Not Match operators: specify one or more locations using their country code.
+    - `request_method_conditions` - (Optional) A request_method_conditions block as defined below:-
+      - `match_values` - (Required) The values to match against. Possible values include 'GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS' or 'TRACE'. If multiple values are specified, they're evaluated using OR logic.
+      - `operator` - (Optional) The operator to use when matching the request method. Defaults to 'Equal'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+    - `query_string_conditions` - (Optional) A query_string_conditions block as defined below:-
+      - `operator` - (Required) The operator to use when matching the query string. Possible values are 'BeginsWith', 'Contains', 'EndsWith', 'Equal' or 'LessThan'. Defaults to 'Equal'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. If multiple values are specified, they're evaluated using OR logic.
+      - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
+    - `post_args_conditions` - (Optional) A post_args_conditions block as defined below:-
+      - `post_args_name` - (Required) The name of the post args to match against.
+      - `operator` - (Required) The operator to use when matching the post args. Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. If multiple values are specified, they're evaluated using OR logic.
+      - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
+    - `request_uri_conditions` - (Optional) A request_uri_conditions block: -
+      - `operator` - (Required) The operator to use when matching the request URI. Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. If multiple values are specified, they're evaluated using OR logic.
+      - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
+    - `request_header_conditions` - (Optional) A request_header_conditions block as defined below:-
+      - `header_name` - (Required) The name of the header to match against.
+      - `operator` - (Required) The operator to use when matching the request header. Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. If multiple values are specified, they're evaluated using OR logic.
+      - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
+    - `request_body_conditions` - (Optional) A request_body_conditions block as defined below:-
+      - `operator` - (Required) The operator to use when matching the request body. Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'.
+      - `match_values` - (Required) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. If multiple values are specified, they're evaluated using OR logic.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
+    - `request_scheme_conditions` - (Optional) A request_scheme_conditions block as defined below:-
+      - `operator` - (Required) The operator to use when matching the request scheme. Defaults to 'Equal'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) The requests protocol to match. Possible values include 'HTTP' or 'HTTPS'.
+    - `url_path_conditions` - (Optional) A url_path_conditions block as defined below:-
+      - `operator` - (Required) The operator to use when matching the URL path. Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. If multiple values are specified, they're evaluated using OR logic.
+      - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
+    - `url_file_extension_conditions` - (Optional) A url_file_extension_conditions block as defined below:-
+      - `operator` - (Required) The operator to use when matching the URL file extension. Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Required) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. If multiple values are specified, they're evaluated using OR logic.
+      - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
+    - `url_filename_conditions` - (Optional) A url_filename_conditions block as defined below:-
+      - `operator` - (Required) The operator to use when matching the URL filename. Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. If multiple values are specified, they're evaluated using OR logic.
+      - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
+    - `http_version_conditions` - (Optional) A http_version_conditions block as defined below:- 
+      - `operator` - (Optional) The operator to use when matching the HTTP version. Defaults to 'Equal'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Required) What HTTP version should this condition match? Possible values 2.0, 1.1, 1.0 or 0.9.
+    - `cookies_conditions` - (Optional) A cookies_conditions block as defined below:-
+      - `cookie_name` - (Required) The name of the cookie to match against.
+      - `operator` - (Required) The operator to use when matching the cookie. Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. If multiple values are specified, they're evaluated using OR logic.
+      - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
+    - `is_device_conditions` - (Optional) A is_device_conditions block as defined below:-
+      - `operator` - (Optional) The operator to use when matching the device. Defaults to 'Equal'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) Which device should this rule match on? Possible values 'Mobile' or 'Desktop'.
+    - `socket_address_conditions` - (Optional) A socket_address_conditions block as defined below:-
+      - `operator` - (Optional) The operator to use when matching the socket address. Possible values are 'Any' or 'IPMatch' . Use the 'negate_condition' to specify Not 'IPMatch'. Defaults to 'IPMatch'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) Specify one or more IP address ranges. If multiple IP address ranges are specified, they're evaluated using OR logic.
+    - `client_port_conditions` - (Optional) A client_port_conditions block as defined below:-
+      - `operator` - (Required) The operator to use when matching the client port. Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. If multiple values are specified, they're evaluated using OR logic.
+    - `server_port_conditions` - (Optional) A server_port_conditions block as defined below:-
+      - `operator` - (Required) The operator to use when matching the server port. Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+      - `match_values` - (Optional) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. Possible values include '80' or '443'. If multiple values are specified, they're evaluated using OR logic.
+    - `host_name_conditions` - (Optional) A host_name_conditions block as defined below:-
+      - `operator` - (Required) The operator to use when matching the host name. Possible values are 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'.
+      - `match_values` - (Optional) A list of one or more string values representing the value of the request hostname to match. If multiple values are specified, they're evaluated using OR logic.
+      - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+    - `ssl_protocol_conditions` - (Optional) A ssl_protocol_conditions block as defined below:-
+      - `match_values` - (Required) The values to match against. Possible values include 'TLSv1', 'TLSv1.1' and 'TLSv1.2'.  'TLSv1.3' support yet to be included in terraform. 
+      - `operator` - (Optional) The operator to use when matching the SSL protocol. Defaults to 'Equal'.
+      - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
+
   Example Input:
 
   ```terraform
@@ -1455,7 +1758,7 @@ variable "front_door_secrets" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Secret.
+  Manages a map of Front Door (standard/premium) Secrets.
   
   - `name` - (Required) The name which should be used for this Front Door Secret. 
   - `key_vault_certificate_id` - (Required) The ID of the Key Vault certificate resource to use.
@@ -1492,15 +1795,15 @@ variable "front_door_security_policies" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  Manages a Front Door (standard/premium) Security Policy.
+  Manages a map of Front Door (standard/premium) Security Policies.
   
   - `name` - (Required) The name which should be used for this Front Door Security Policy. Possible values must not be an empty string.
   - `firewall` - (Required) An firewall block as defined below: -
-  - 'front_door_firewall_policy_name' - (Required) the name of Front Door Firewall Policy that should be linked to this Front Door Security Policy.
-  - 'association' - (Required) An association block as defined below:-
-  - 'domain_names' - (Optional) list of the domain names to associate with the firewall policy. Provide either domain names or endpoint names or both.
-  - 'endpoint_names' - (Optional) list of the endpoint names to associate with the firewall policy. Provide either domain names or endpoint names or both.
-  - 'patterns_to_match' - (Required) The list of paths to match for this firewall policy. Possible value includes /*
+  - `front_door_firewall_policy_key` - (Required) the key of Front Door Firewall Policy that should be linked to this Front Door Security Policy.
+  - `association` - (Required) An association block as defined below:-
+  - `domain_keys` - (Optional) list of the domain keys to associate with the firewall policy. Provide either domain keys or endpoint keys or both.
+  - `endpoint_keys` - (Optional) list of the endpoint keys to associate with the firewall policy. Provide either domain keys or endpoint keys or both.
+  - `patterns_to_match` - (Required) The list of paths to match for this firewall policy. Possible value includes /*
   Example Input:
 
   ```terraform
@@ -1574,7 +1877,7 @@ variable "managed_identities" {
   })
   default     = {}
   description = <<DESCRIPTION
-  Controls the Managed Identity configuration on this resource. The following properties can be specified:
+  Controls the Managed Identities configuration on this resource. The following properties can be specified:
   
   - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
   - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
@@ -1620,7 +1923,7 @@ variable "role_assignments" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+  A map of role assignments to create on the cdn/Front door profile. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
   - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
   - `principal_id` - The ID of the principal to assign the role to.
@@ -1665,5 +1968,5 @@ variable "sku" {
 variable "tags" {
   type        = map(string)
   default     = null
-  description = "Map of tags to assign to the Azure Front Door resource."
+  description = "Map of tags to assign to the CDN profile resource."
 }
