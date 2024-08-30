@@ -128,6 +128,18 @@ module "azurerm_cdn_profile" {
     system_assigned = true
   }
 
+# cdn_endpoint_custom_domains = {
+#       cdn1 = {
+#         cdn_endpoint_key = "ep1"
+#         host_name        = "www.example.com"
+#         name             = "example"
+#         cdn_managed_https = {
+#           certificate_type = "Shared"
+#           protocol_type    = "ServerNameIndication"
+#           tls_version      = "TLS12"
+#         }
+#       }
+#     }
 
   diagnostic_settings = {
     workspaceandstorage_diag1 = {
@@ -146,14 +158,14 @@ module "azurerm_cdn_profile" {
       role_definition_id_or_name       = "Contributor"
       principal_id                     = data.azurerm_client_config.current.object_id
       skip_service_principal_aad_check = true
-      principal_type                   = "ServicePrincipal"
+      principal_type                   = "User"
     },
     role_assignment_2 = {
       role_definition_id_or_name       = "Reader"
       principal_id                     = data.azurerm_client_config.current.object_id #"125****-c***-4f**-**0d-******53b5**" # replace the principal id with appropriate one
       description                      = "Example role assignment 2 of reader role"
       skip_service_principal_aad_check = false
-      principal_type                   = "ServicePrincipal"
+      principal_type                   = "User"
       #condition                        = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
       #condition_version                = "2.0"
     }
