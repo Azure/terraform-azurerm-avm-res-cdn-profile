@@ -18,6 +18,8 @@ variable "resource_group_name" {
 variable "cdn_endpoint_custom_domains" {
   type = map(object({
     cdn_endpoint_key = string
+    dns_zone_name   = string
+    dns_cname_record_name = string
     host_name        = string
     name             = string
     cdn_managed_https = optional(object({

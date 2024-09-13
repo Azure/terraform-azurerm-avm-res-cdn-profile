@@ -32,18 +32,11 @@ resource "azurerm_storage_account" "storage" {
   public_network_access_enabled = false
 }
 
-# resource "azurerm_dns_zone" "dns" {
-#   name                = "example.com"
-#   resource_group_name = azurerm_resource_group.this.name
-# }
+resource "azurerm_dns_zone" "dns" {
+  name                = "theinnerjoy.net"
+  resource_group_name = azurerm_resource_group.this.name
+}
 
-# resource "azurerm_dns_cname_record" "cdn" {
-#   name                = "example-cdn"
-#   zone_name           = azurerm_dns_zone.dns.name
-#   resource_group_name = azurerm_resource_group.this.name
-#   ttl                 = 300
-#   target_resource_id = module.azurerm_cdn_endpoint.endpoint[ep1].id
-# }
 
 # This is the module call
 module "azurerm_cdn_profile" {
@@ -136,7 +129,9 @@ module "azurerm_cdn_profile" {
   cdn_endpoint_custom_domains = {
         cdn1 = {
           cdn_endpoint_key = "ep1"
-          host_name        = "example.com"
+          dns_zone_name    =  azurerm_dns_zone.dns.name
+          dns_cname_record_name = azurerm_dns_zone.dns.name
+          host_name        = "theinnerjoy.net"
           name             = "example"
           cdn_managed_https = {
             certificate_type = "Shared"
@@ -145,7 +140,7 @@ module "azurerm_cdn_profile" {
           }
         }
       }
-
+  
   diagnostic_settings = {
     workspaceandstorage_diag = {
       name              = "workspaceandstorage_diag"
