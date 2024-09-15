@@ -26,6 +26,7 @@ resource "azurerm_cdn_frontdoor_route" "routes" {
 
   dynamic "cache" {
     for_each = each.value.cache
+
     content {
       compression_enabled           = cache.value["compression_enabled"]
       content_types_to_compress     = cache.value["content_types_to_compress"]
