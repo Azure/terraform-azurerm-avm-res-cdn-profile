@@ -32,9 +32,9 @@ resource "azurerm_storage_account" "storage" {
   public_network_access_enabled = false
 }
 
-resource "azurerm_dns_zone" "dns" {
-  name                = "theinnerjoy.net"
-  resource_group_name = azurerm_resource_group.this.name
+data "azurerm_dns_zone" "dns" {
+  name                = "theinnerjoy.in"
+  resource_group_name = "DNS"
 }
 
 
@@ -45,13 +45,13 @@ module "azurerm_cdn_profile" {
     environment = "avm-demo"
   }
   enable_telemetry    = var.enable_telemetry
-  name                = module.naming.cdn_profile.name_unique
+  name                = "cdn-rxf5" #module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
   sku                 = "Standard_Microsoft"
   resource_group_name = azurerm_resource_group.this.name
   cdn_endpoints = {
     ep1 = {
-      name                          = "endpoint-${module.naming.cdn_endpoint.name_unique}"
+      name                          = "endpoint-cdn-rxf5"  #"endpoint-${module.naming.cdn_endpoint.name_unique}"
       is_http_allowed               = true
       is_https_allowed              = true
       querystring_caching_behaviour = "BypassCaching"
@@ -129,12 +129,14 @@ module "azurerm_cdn_profile" {
   cdn_endpoint_custom_domains = {
         cdn1 = {
           cdn_endpoint_key = "ep1"
-          dns_zone_name    =  azurerm_dns_zone.dns.name
-          dns_cname_record_name = azurerm_dns_zone.dns.name
-          host_name        = "theinnerjoy.net"
-          name             = "example"
+          is_Azure_dns_zone = false
+          dns_zone_name    =  data.azurerm_dns_zone.dns.name
+          dns_resource_group_name = data.azurerm_dns_zone.dns.resource_group_name
+          dns_cname_record_name = "www"
+          #host_name        = "theinnerjoy.in"
+          name             = "theinnerjoy"
           cdn_managed_https = {
-            certificate_type = "Shared"
+            certificate_type = "Dedicated"
             protocol_type    = "ServerNameIndication"
             tls_version      = "TLS12"
           }

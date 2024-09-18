@@ -18,9 +18,11 @@ variable "resource_group_name" {
 variable "cdn_endpoint_custom_domains" {
   type = map(object({
     cdn_endpoint_key = string
+    is_Azure_dns_zone = bool
     dns_zone_name   = string
+    dns_resource_group_name = string
     dns_cname_record_name = string
-    host_name        = string
+    #host_name        = string
     name             = string
     cdn_managed_https = optional(object({
       certificate_type = string
@@ -38,7 +40,10 @@ variable "cdn_endpoint_custom_domains" {
   Manages a map of CDN Endpoint Custom Domains. A CDN Endpoint Custom Domain is a custom domain that is associated with a CDN Endpoint.
   
  - `cdn_endpoint_key` - (Required) key of the endpoint defined in variable cdn_endpoints.
- - `host_name` - (Required) The host name of the custom domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
+ - `is_Azure_dns_zone` - (Required) Is the custom domain hosted on Azure DNS Zone? 
+ - `dns_zone_name` - (Required) The name of the DNS Zone for the custom domain.
+ - `dns_resource_group_name` - (Required) The name of the resource group where the DNS Zone is located.
+ - `dns_cname_record_name` - (Required) The name of the CNAME record to create in the DNS Zone.
  - `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
  - `cdn_managed_https` block supports the following:
   - `certificate_type` - (Required) The type of HTTPS certificate. Possible values are `Shared` and `Dedicated`.

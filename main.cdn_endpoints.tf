@@ -216,10 +216,10 @@ resource "azurerm_cdn_endpoint" "endpoint" {
 
 resource "azurerm_cdn_endpoint_custom_domain" "cds" {
   depends_on = [ azurerm_dns_cname_record.cdn ]
-  for_each = var.cdn_endpoint_custom_domains
+  for_each = { for key, value in var.cdn_endpoint_custom_domains : key => value if value.is_Azure_dns_zone == true }
 
   cdn_endpoint_id = azurerm_cdn_endpoint.endpoint[each.value.cdn_endpoint_key].id
-  host_name       = "${azurerm_dns_cname_record.cdn[each.value.dns_cname_record_name].name}.${each.value.dns_zone_name}" # each.value.host_name
+  host_name       = "${azurerm_dns_cname_record.cdn[each.key].name}.${each.value.dns_zone_name}" # each.value.host_name
   name            = each.value.name
 
   dynamic "cdn_managed_https" {
@@ -240,10 +240,10 @@ resource "azurerm_cdn_endpoint_custom_domain" "cds" {
 }
 
 resource "azurerm_dns_cname_record" "cdn" {
-  for_each = var.cdn_endpoint_custom_domains
-  name                = each.value.name
-  zone_name           = each.value.dns_cname_record_name
-  resource_group_name = var.resource_group_name
+  for_each = { for key, value in var.cdn_endpoint_custom_domains : key => value if value.is_Azure_dns_zone == true }
+  name                = each.value.dns_cname_record_name  
+  zone_name           = each.value.dns_zone_name
+  resource_group_name = each.value.dns_resource_group_name
   ttl                 = 300
   target_resource_id = azurerm_cdn_endpoint.endpoint[each.value.cdn_endpoint_key].id
 }
