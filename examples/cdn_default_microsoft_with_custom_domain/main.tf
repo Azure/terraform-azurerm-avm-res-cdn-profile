@@ -32,8 +32,9 @@ resource "azurerm_storage_account" "storage" {
   public_network_access_enabled = false
 }
 
+# Uncheck below block if your custom domain is hosted in Azure DNS as per https://learn.microsoft.com/en-us/azure/dns/dns-delegate-domain-azure-dns and a DNS zone is already pre-created
 data "azurerm_dns_zone" "dns" {
-  name                = "theinnerjoy.in"
+  name                = "azure.example.in"
   resource_group_name = "DNS"
 }
 
@@ -45,13 +46,13 @@ module "azurerm_cdn_profile" {
     environment = "avm-demo"
   }
   enable_telemetry    = var.enable_telemetry
-  name                = "cdn-rxf5" #module.naming.cdn_profile.name_unique
+  name                = module.naming.cdn_profile.name_unique
   location            = azurerm_resource_group.this.location
   sku                 = "Standard_Microsoft"
   resource_group_name = azurerm_resource_group.this.name
   cdn_endpoints = {
     ep1 = {
-      name                          = "endpoint-cdn-rxf5"  #"endpoint-${module.naming.cdn_endpoint.name_unique}"
+      name                          = "endpoint-${module.naming.cdn_endpoint.name_unique}"
       is_http_allowed               = true
       is_https_allowed              = true
       querystring_caching_behaviour = "BypassCaching"
@@ -129,12 +130,11 @@ module "azurerm_cdn_profile" {
   cdn_endpoint_custom_domains = {
         cdn1 = {
           cdn_endpoint_key = "ep1"
-          is_Azure_dns_zone = false
-          dns_zone_name    =  data.azurerm_dns_zone.dns.name
+          is_Azure_dns_zone = true # set it to false if your domain is hosted outside Azure DNS
+          dns_zone_name    =  data.azurerm_dns_zone.dns.name # Provide the DNS zone name if your domain is hosted outside Azure DNS
           dns_resource_group_name = data.azurerm_dns_zone.dns.resource_group_name
           dns_cname_record_name = "www"
-          #host_name        = "theinnerjoy.in"
-          name             = "theinnerjoy"
+          name             = "example"
           cdn_managed_https = {
             certificate_type = "Dedicated"
             protocol_type    = "ServerNameIndication"

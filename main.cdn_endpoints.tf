@@ -219,7 +219,7 @@ resource "azurerm_cdn_endpoint_custom_domain" "cds" {
   for_each = { for key, value in var.cdn_endpoint_custom_domains : key => value if value.is_Azure_dns_zone == true }
 
   cdn_endpoint_id = azurerm_cdn_endpoint.endpoint[each.value.cdn_endpoint_key].id
-  host_name       = "${azurerm_dns_cname_record.cdn[each.key].name}.${each.value.dns_zone_name}" # each.value.host_name
+  host_name       = "${azurerm_dns_cname_record.cdn[each.key].name}.${each.value.dns_zone_name}" 
   name            = each.value.name
 
   dynamic "cdn_managed_https" {

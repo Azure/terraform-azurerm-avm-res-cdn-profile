@@ -22,7 +22,6 @@ variable "cdn_endpoint_custom_domains" {
     dns_zone_name   = string
     dns_resource_group_name = string
     dns_cname_record_name = string
-    #host_name        = string
     name             = string
     cdn_managed_https = optional(object({
       certificate_type = string
@@ -69,6 +68,19 @@ variable "cdn_endpoint_custom_domains" {
       }
     }
   ```
+  `Note:` You may face issue in destroying the CDN custom domain when running "terraform destroy" because it requires the Cname record in the DNS zone to be deleted first. In such case run the below commands (only once per subscription) before running the "terraform destroy" command :-
+
+  ```cli
+  \\run below command to register feature to bypass cname check for custom domain deletion
+  az feature register --namespace Microsoft.Cdn --name BypassCnameCheckForCustomDomainDeletion
+
+  \\run below command to check status of the registeration of the feature
+  az feature list -o table --query "[?contains(name, 'Microsoft.Cdn/BypassCnameCheckForCustomDomainDeletion')].{Name:name,State:properties.state}"
+
+  \\run below command once registeration is completed
+  az provider register --namespace Microsoft.Cdn
+  ```
+
   Description
   nullable    = false
 }
