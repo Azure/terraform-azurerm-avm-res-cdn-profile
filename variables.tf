@@ -20,7 +20,7 @@ variable "cdn_endpoint_custom_domains" {
     cdn_endpoint_key = string
     is_Azure_dns_zone = bool
     dns_zone_name   = string
-    dns_resource_group_name = string
+    dns_resource_group_name = optional(string, null)
     dns_cname_record_name = string
     name             = string
     cdn_managed_https = optional(object({
@@ -41,7 +41,7 @@ variable "cdn_endpoint_custom_domains" {
  - `cdn_endpoint_key` - (Required) key of the endpoint defined in variable cdn_endpoints.
  - `is_Azure_dns_zone` - (Required) Is the custom domain hosted on Azure DNS Zone? 
  - `dns_zone_name` - (Required) The name of the DNS Zone for the custom domain.
- - `dns_resource_group_name` - (Required) The name of the resource group where the DNS Zone is located.
+ - `dns_resource_group_name` - (Optional) The name of the Azure resource group where the DNS Zone is located. This is required if the DNS Zone is in azure.
  - `dns_cname_record_name` - (Required) The name of the CNAME record to create in the DNS Zone.
  - `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
  - `cdn_managed_https` block supports the following:
