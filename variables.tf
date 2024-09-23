@@ -18,11 +18,13 @@ variable "resource_group_name" {
 variable "cdn_endpoint_custom_domains" {
   type = map(object({
     cdn_endpoint_key = string
-    is_Azure_dns_zone = bool
-    dns_zone_name   = string
-    dns_resource_group_name = optional(string, null)
-    dns_cname_record_name = string
-    name             = string
+    dns_zone = optional(object({
+      is_azure_dns_zone                  = bool
+      name                               = string
+      cname_record_name                  = string
+      azure_dns_zone_resource_group_name = optional(string, null)
+    }))
+    name = string
     cdn_managed_https = optional(object({
       certificate_type = string
       protocol_type    = string
@@ -39,10 +41,11 @@ variable "cdn_endpoint_custom_domains" {
   Manages a map of CDN Endpoint Custom Domains. A CDN Endpoint Custom Domain is a custom domain that is associated with a CDN Endpoint.
   
  - `cdn_endpoint_key` - (Required) key of the endpoint defined in variable cdn_endpoints.
- - `is_Azure_dns_zone` - (Required) Is the custom domain hosted on Azure DNS Zone? 
- - `dns_zone_name` - (Required) The name of the DNS Zone for the custom domain.
- - `dns_resource_group_name` - (Optional) The name of the Azure resource group where the DNS Zone is located. This is required if the DNS Zone is in azure.
- - `dns_cname_record_name` - (Required) The name of the CNAME record to create in the DNS Zone.
+ - `dns_zone` - (Required) A map of DNS Zone details for the custom domain. Each dns_zone block supports the following: -
+  - `is_azure_dns_zone` - (Required) Is the custom domain hosted on Azure DNS Zone? 
+  - `name` - (Required) The name of the DNS Zone for the custom domain.
+  - `cname_record_name` - (Required) The name of the CNAME record to create in the DNS Zone.
+  - `azure_dns_zone_resource_group_name_name` - (Optional) The name of the Azure resource group where the DNS Zone is located. This is required if the DNS Zone is in azure.
  - `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
  - `cdn_managed_https` block supports the following:
   - `certificate_type` - (Required) The type of HTTPS certificate. Possible values are `Shared` and `Dedicated`.
@@ -55,18 +58,23 @@ variable "cdn_endpoint_custom_domains" {
  Example Input:
 
   ```terraform
-    cdn_endpoint_custom_domains = {
-      cdn1 = {
-        cdn_endpoint_key = "cdn_ep_key1"
-        host_name        = "www.example.com"
-        name             = "example"
-        cdn_managed_https = {
-          certificate_type = "Shared"
-          protocol_type    = "ServerNameIndication"
-          tls_version      = "TLS12"
-        }
+  cdn_endpoint_custom_domains = {
+    cdn1 = {
+      cdn_endpoint_key = "ep1"
+      dns_zone = {
+        is_azure_dns_zone                  = true                           
+        name                               = data.azurerm_dns_zone.dns.name 
+        cname_record_name                  = "www"
+        azure_dns_zone_resource_group_name = data.azurerm_dns_zone.dns.resource_group_name 
+      }
+      name = "example-domain"
+      cdn_managed_https = {
+        certificate_type = "Dedicated"
+        protocol_type    = "ServerNameIndication"
+        tls_version      = "TLS12"
       }
     }
+  }
   ```
   `Note:` You may face issue in destroying the CDN custom domain when running "terraform destroy" because it requires the Cname record in the DNS zone to be deleted first. In such case run the below commands (only once per subscription) before running the "terraform destroy" command :-
 

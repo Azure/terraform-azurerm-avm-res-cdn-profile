@@ -17,7 +17,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (1.15.0)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (1.9.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71.0)
 
@@ -29,7 +29,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azapi_resource.front_door_profile](https://registry.terraform.io/providers/Azure/azapi/1.15.0/docs/resources/resource) (resource)
+- [azapi_resource.front_door_profile](https://registry.terraform.io/providers/Azure/azapi/1.9.0/docs/resources/resource) (resource)
 - [azurerm_cdn_endpoint.endpoint](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint) (resource)
 - [azurerm_cdn_endpoint_custom_domain.cds](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint_custom_domain) (resource)
 - [azurerm_cdn_frontdoor_custom_domain.cds](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_custom_domain) (resource)
@@ -43,6 +43,7 @@ The following resources are used by this module:
 - [azurerm_cdn_frontdoor_rule_set.rule_set](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_rule_set) (resource)
 - [azurerm_cdn_frontdoor_secret.frontdoorsecret](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_secret) (resource)
 - [azurerm_cdn_frontdoor_security_policy.security_policies](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_security_policy) (resource)
+- [azurerm_dns_cname_record.cdn](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/dns_cname_record) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.cdn_endpoint_diag](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_monitor_diagnostic_setting.front_door_diag](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
@@ -87,7 +88,11 @@ The following input variables are optional (have default values):
 Description:   Manages a map of CDN Endpoint Custom Domains. A CDN Endpoint Custom Domain is a custom domain that is associated with a CDN Endpoint.
 
  - `cdn_endpoint_key` - (Required) key of the endpoint defined in variable cdn\_endpoints.
- - `host_name` - (Required) The host name of the custom domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
+ - `dns_zone` - (Required) A map of DNS Zone details for the custom domain. Each dns\_zone block supports the following: -
+  - `is_azure_dns_zone` - (Required) Is the custom domain hosted on Azure DNS Zone?
+  - `name` - (Required) The name of the DNS Zone for the custom domain.
+  - `cname_record_name` - (Required) The name of the CNAME record to create in the DNS Zone.
+  - `azure_dns_zone_resource_group_name_name` - (Optional) The name of the Azure resource group where the DNS Zone is located. This is required if the DNS Zone is in azure.
  - `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
  - `cdn_managed_https` block supports the following:
   - `certificate_type` - (Required) The type of HTTPS certificate. Possible values are `Shared` and `Dedicated`.
@@ -100,18 +105,35 @@ Description:   Manages a map of CDN Endpoint Custom Domains. A CDN Endpoint Cust
  Example Input:
 
   ```terraform
-    cdn_endpoint_custom_domains = {
-      cdn1 = {
-        cdn_endpoint_key = "cdn_ep_key1"
-        host_name        = "www.example.com"
-        name             = "example"
-        cdn_managed_https = {
-          certificate_type = "Shared"
-          protocol_type    = "ServerNameIndication"
-          tls_version      = "TLS12"
-        }
+  cdn_endpoint_custom_domains = {
+    cdn1 = {
+      cdn_endpoint_key = "ep1"
+      dns_zone = {
+        is_azure_dns_zone                  = true                           
+        name                               = data.azurerm_dns_zone.dns.name
+        cname_record_name                  = "www"
+        azure_dns_zone_resource_group_name = data.azurerm_dns_zone.dns.resource_group_name
+      }
+      name = "example-domain"
+      cdn_managed_https = {
+        certificate_type = "Dedicated"
+        protocol_type    = "ServerNameIndication"
+        tls_version      = "TLS12"
       }
     }
+  }
+```
+  `Note:` You may face issue in destroying the CDN custom domain when running "terraform destroy" because it requires the Cname record in the DNS zone to be deleted first. In such case run the below commands (only once per subscription) before running the "terraform destroy" command :-
+
+  ```cli
+  \\run below command to register feature to bypass cname check for custom domain deletion
+  az feature register --namespace Microsoft.Cdn --name BypassCnameCheckForCustomDomainDeletion
+
+  \\run below command to check status of the registeration of the feature
+  az feature list -o table --query "[?contains(name, 'Microsoft.Cdn/BypassCnameCheckForCustomDomainDeletion')].{Name:name,State:properties.state}"
+
+  \\run below command once registeration is completed
+  az provider register --namespace Microsoft.Cdn
 ```
 
 Type:
@@ -119,8 +141,13 @@ Type:
 ```hcl
 map(object({
     cdn_endpoint_key = string
-    host_name        = string
-    name             = string
+    dns_zone = optional(object({
+      is_azure_dns_zone                  = bool
+      name                               = string
+      cname_record_name                  = string
+      azure_dns_zone_resource_group_name = optional(string, null)
+    }))
+    name = string
     cdn_managed_https = optional(object({
       certificate_type = string
       protocol_type    = string

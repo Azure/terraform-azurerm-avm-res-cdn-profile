@@ -38,6 +38,13 @@ resource "azurerm_storage_account" "storage" {
   public_network_access_enabled = false
 }
 
+# Uncheck below block if your custom domain is hosted in Azure DNS as per https://learn.microsoft.com/en-us/azure/dns/dns-delegate-domain-azure-dns and a DNS zone is already pre-created
+data "azurerm_dns_zone" "dns" {
+  name                = "azure.example.in"
+  resource_group_name = "DNS"
+}
+
+
 # This is the module call
 module "azurerm_cdn_profile" {
   source = "../../"
@@ -126,6 +133,24 @@ module "azurerm_cdn_profile" {
 
   }
 
+  cdn_endpoint_custom_domains = {
+    cdn1 = {
+      cdn_endpoint_key = "ep1"
+      dns_zone = {
+        is_azure_dns_zone                  = true                           # set it to false if your domain is hosted outside Azure DNS
+        name                               = data.azurerm_dns_zone.dns.name # Provide the DNS zone name if your domain is hosted outside Azure DNS
+        cname_record_name                  = "www"
+        azure_dns_zone_resource_group_name = data.azurerm_dns_zone.dns.resource_group_name # Only required if DNS is hosted in Azure
+      }
+      name = "example-domain"
+      cdn_managed_https = {
+        certificate_type = "Dedicated"
+        protocol_type    = "ServerNameIndication"
+        tls_version      = "TLS12"
+      }
+    }
+  }
+
   diagnostic_settings = {
     workspaceandstorage_diag = {
       name              = "workspaceandstorage_diag"
@@ -160,6 +185,7 @@ The following resources are used by this module:
 
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_storage_account.storage](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
+- [azurerm_dns_zone.dns](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/dns_zone) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
