@@ -1,4 +1,4 @@
-resource "azurerm_cdn_endpoint" "endpoint" {
+resource "azurerm_cdn_endpoint" "endpoints" {
   for_each = var.cdn_endpoints
 
   location                      = var.location
@@ -240,8 +240,8 @@ resource "azurerm_cdn_endpoint" "endpoint" {
 resource "azurerm_cdn_endpoint_custom_domain" "cds" {
   for_each = var.cdn_endpoint_custom_domains
 
-  cdn_endpoint_id = azurerm_cdn_endpoint.endpoint[each.value.cdn_endpoint_key].id
-  host_name       = "${each.value.dns_zone.cname_record_name}.${each.value.dns_zone.name}" #"${azurerm_dns_cname_record.cdn[each.key].name}.${each.value.dns_zone_name}" 
+  cdn_endpoint_id = azurerm_cdn_endpoint.endpoints[each.value.cdn_endpoint_key].id
+  host_name       = "${each.value.dns_zone.cname_record_name}.${each.value.dns_zone.name}"
   name            = each.value.name
 
   dynamic "cdn_managed_https" {
@@ -270,8 +270,9 @@ resource "azurerm_dns_cname_record" "cdn" {
 
   name                = each.value.dns_zone.cname_record_name
   resource_group_name = each.value.dns_zone.azure_dns_zone_resource_group_name
-  ttl                 = 300
+  ttl                 = each.value.dns_zone.ttl
   zone_name           = each.value.dns_zone.name
-  target_resource_id  = azurerm_cdn_endpoint.endpoint[each.value.cdn_endpoint_key].id
+  tags                = each.value.dns_zone.tags
+  target_resource_id  = azurerm_cdn_endpoint.endpoints[each.value.cdn_endpoint_key].id
 }
 

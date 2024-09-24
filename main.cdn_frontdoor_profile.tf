@@ -1,4 +1,4 @@
-#using azapi since azurerm_cdn_frontdoor_profile commented above does not support identity blocks
+# using azapi since azurerm_cdn_frontdoor_profile commented above does not support identity blocks
 resource "azapi_resource" "front_door_profile" {
   type = "Microsoft.Cdn/profiles@2023-07-01-preview"
   body = jsonencode({
@@ -15,7 +15,7 @@ resource "azapi_resource" "front_door_profile" {
   schema_validation_enabled = false
   tags                      = var.tags
 
-  ## Resources supporting both SystemAssigned and UserAssigned
+  # Resources supporting both SystemAssigned and UserAssigned
   dynamic "identity" {
     for_each = local.managed_identities.system_assigned_user_assigned
 

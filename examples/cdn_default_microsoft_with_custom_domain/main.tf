@@ -33,10 +33,10 @@ resource "azurerm_storage_account" "storage" {
 }
 
 # Uncheck below block if your custom domain is hosted in Azure DNS as per https://learn.microsoft.com/en-us/azure/dns/dns-delegate-domain-azure-dns and a DNS zone is already pre-created
-data "azurerm_dns_zone" "dns" {
-  name                = "azure.example.in"
-  resource_group_name = "DNS"
-}
+# data "azurerm_dns_zone" "dns" {
+#   name                = "azure.example.com"
+#   resource_group_name = "DNS"
+# }
 
 
 # This is the module call
@@ -60,7 +60,7 @@ module "azurerm_cdn_profile" {
       optimization_type             = "GeneralWebDelivery"
       geo_filters = { # Only one geo filter allowed for Standard_Microsoft sku
         gf1 = {
-          relative_path = "/" # Must be / for Standard_Microsoft sku
+          relative_path = "/" # Must be '/' for Standard_Microsoft sku
           action        = "Block"
           country_codes = ["AF", "GB"]
         }
@@ -126,31 +126,33 @@ module "azurerm_cdn_profile" {
     }
 
   }
-
-  cdn_endpoint_custom_domains = {
-    cdn1 = {
-      cdn_endpoint_key = "ep1"
-      dns_zone = {
-        is_azure_dns_zone                  = true                           # set it to false if your domain is hosted outside Azure DNS
-        name                               = data.azurerm_dns_zone.dns.name # Provide the DNS zone name if your domain is hosted outside Azure DNS
-        cname_record_name                  = "www"
-        azure_dns_zone_resource_group_name = data.azurerm_dns_zone.dns.resource_group_name # Only required if DNS is hosted in Azure
-      }
-      name = "example-domain"
-      cdn_managed_https = {
-        certificate_type = "Dedicated"
-        protocol_type    = "ServerNameIndication"
-        tls_version      = "TLS12"
-      }
-    }
-  }
+  # Uncheck below block to add custom domain to the CDN endpoint [ctrl + '/']
+  # cdn_endpoint_custom_domains = {
+  #   cdn1 = {
+  #     cdn_endpoint_key = "ep1"
+  #     dns_zone = {
+  #       is_azure_dns_zone                  = true                           # set it to false if your domain is hosted outside Azure DNS
+  #       name                               = data.azurerm_dns_zone.dns.name # Provide the DNS zone name if your domain is hosted outside Azure DNS
+  #       cname_record_name                  = "www"
+  #       ttl                                = 300
+  #       tags                               = { environment = "avm-demo" }
+  #       azure_dns_zone_resource_group_name = data.azurerm_dns_zone.dns.resource_group_name # Only required if DNS is hosted in Azure
+  #     }
+  #     name = "example-domain"
+  #     cdn_managed_https = {
+  #       certificate_type = "Dedicated"
+  #       protocol_type    = "ServerNameIndication"
+  #       tls_version      = "TLS12"
+  #     }
+  #   }
+  # }
 
   diagnostic_settings = {
     workspaceandstorage_diag = {
       name              = "workspaceandstorage_diag"
       metric_categories = ["AllMetrics"]
       #log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      log_groups                     = ["allLogs"] #must explicitly set since log_groups defaults to ["allLogs"]
+      log_groups                     = ["allLogs"] # must explicitly set since log_groups defaults to ["allLogs"]
       log_analytics_destination_type = "Dedicated"
       storage_account_resource_id    = azurerm_storage_account.storage.id
       #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"

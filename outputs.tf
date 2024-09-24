@@ -1,6 +1,11 @@
+output "cdn_endpoint_custom_domains" {
+  description = "CDN endpoint custom domains output object"
+  value       = azurerm_cdn_endpoint_custom_domain.cds
+}
+
 output "cdn_endpoints" {
   description = "CDN endpoint output object"
-  value       = azurerm_cdn_frontdoor_endpoint.endpoints
+  value       = azurerm_cdn_endpoint.endpoints
 }
 
 output "frontdoor_custom_domains" {

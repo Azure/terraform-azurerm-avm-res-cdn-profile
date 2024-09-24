@@ -55,7 +55,7 @@ module "azurerm_cdn_profile" {
       optimization_type             = "GeneralWebDelivery"
       geo_filters = { # Only one geo filter allowed for Standard_Microsoft sku
         gf1 = {
-          relative_path = "/" # Must be / for Standard_Microsoft sku
+          relative_path = "/" # Must be '/' for Standard_Microsoft sku
           action        = "Block"
           country_codes = ["AF", "GB"]
         }
@@ -131,7 +131,7 @@ module "azurerm_cdn_profile" {
   diagnostic_settings = {
     workspaceandstorage_diag1 = {
       name                           = "workspaceandstorage_diag"
-      log_groups                     = ["allLogs"] #must explicitly set since log_groups defaults to ["allLogs"]
+      log_groups                     = ["allLogs"] # must explicitly set since log_groups defaults to ["allLogs"]
       log_analytics_destination_type = "Dedicated"
       #workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
       storage_account_resource_id = azurerm_storage_account.storage.id
@@ -149,7 +149,7 @@ module "azurerm_cdn_profile" {
     },
     role_assignment_2 = {
       role_definition_id_or_name       = "Reader"
-      principal_id                     = data.azurerm_client_config.current.object_id #"125****-c***-4f**-**0d-******53b5**" # replace the principal id with appropriate one
+      principal_id                     = data.azurerm_client_config.current.object_id # replace the principal id with appropriate one
       description                      = "Example role assignment 2 of reader role"
       skip_service_principal_aad_check = false
       principal_type                   = "ServicePrincipal" # Kindly change it to "User" if you are using user principal

@@ -30,7 +30,7 @@ The following requirements are needed by this module:
 The following resources are used by this module:
 
 - [azapi_resource.front_door_profile](https://registry.terraform.io/providers/Azure/azapi/1.9.0/docs/resources/resource) (resource)
-- [azurerm_cdn_endpoint.endpoint](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint) (resource)
+- [azurerm_cdn_endpoint.endpoints](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint) (resource)
 - [azurerm_cdn_endpoint_custom_domain.cds](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint_custom_domain) (resource)
 - [azurerm_cdn_frontdoor_custom_domain.cds](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_custom_domain) (resource)
 - [azurerm_cdn_frontdoor_custom_domain_association.association](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_custom_domain_association) (resource)
@@ -92,6 +92,8 @@ Description:   Manages a map of CDN Endpoint Custom Domains. A CDN Endpoint Cust
   - `is_azure_dns_zone` - (Required) Is the custom domain hosted on Azure DNS Zone?
   - `name` - (Required) The name of the DNS Zone for the custom domain.
   - `cname_record_name` - (Required) The name of the CNAME record to create in the DNS Zone.
+  - `ttl` - (Required) The TTL of the CNAME record.
+  - `tags` - (Optional) A mapping of tags to assign to the CNAME record.
   - `azure_dns_zone_resource_group_name_name` - (Optional) The name of the Azure resource group where the DNS Zone is located. This is required if the DNS Zone is in azure.
  - `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
  - `cdn_managed_https` block supports the following:
@@ -145,6 +147,8 @@ map(object({
       is_azure_dns_zone                  = bool
       name                               = string
       cname_record_name                  = string
+      ttl                                = number
+      tags                               = optional(map(string))
       azure_dns_zone_resource_group_name = optional(string, null)
     }))
     name = string
@@ -417,7 +421,7 @@ map(object({
     })), {})
 
     is_compression_enabled        = optional(bool)
-    querystring_caching_behaviour = optional(string, "IgnoreQueryString") #create a validation: allowed values: IgnoreQueryString,BypassCaching ,UseQueryString,NotSet for premium verizon.
+    querystring_caching_behaviour = optional(string, "IgnoreQueryString") # create a validation: allowed values: IgnoreQueryString,BypassCaching ,UseQueryString,NotSet for premium verizon.
     optimization_type             = optional(string)                      # create a validation: allowed values: DynamicSiteAcceleration,GeneralMediaStreaming,GeneralWebDelivery,LargeFileDownload ,VideoOnDemandMediaStreaming
 
     origins = map(object({
@@ -428,10 +432,10 @@ map(object({
     }))
 
     origin_host_header = optional(string)
-    origin_path        = optional(string) # must start with / e.g. "/media"
-    probe_path         = optional(string) # must start with / e.g. "/foo.bar"
+    origin_path        = optional(string) # must start with '/' e.g. "/media"
+    probe_path         = optional(string) # must start with '/' e.g. "/foo.bar"
 
-    global_delivery_rule = optional(object({ #verify structure later
+    global_delivery_rule = optional(object({
       cache_expiration_action = optional(list(object({
         behavior = string           # Allowed Values: BypassCache, Override and SetIfMissing
         duration = optional(string) # Only allowed when behavior is Override or SetIfMissing. Format: [d.]hh:mm:ss e.g "1.10:30:00"
@@ -454,18 +458,18 @@ map(object({
         redirect_type = string                    # Allowed Values: Found, Moved, PermanentRedirect and TemporaryRedirect
         protocol      = optional(string, "Https") # Allowed Values: MatchRequest, Http and Https
         hostname      = optional(string)
-        path          = optional(string) # Should begin with /
-        fragment      = optional(string) #Specifies the fragment part of the URL. This value must not start with a #
-        query_string  = optional(string) # Specifies the query string part of the URL. This value must not start with a ? or & and must be in <key>=<value> format separated by &.
+        path          = optional(string) # Should begin with '/'
+        fragment      = optional(string) # Specifies the fragment part of the URL. This value must not start with a '#'
+        query_string  = optional(string) # Specifies the query string part of the URL. This value must not start with a '?' or '&' and must be in <key>=<value> format separated by '&'.
       })), [])
       url_rewrite_action = optional(list(object({
-        source_pattern          = string #(Required) This value must start with a / and can't be longer than 260 characters.
-        destination             = string # This value must start with a / and can't be longer than 260 characters.
+        source_pattern          = string # (Required) This value must start with a '/' and can't be longer than 260 characters.
+        destination             = string # This value must start with a '/' and can't be longer than 260 characters.
         preserve_unmatched_path = optional(bool, true)
       })), [])
     }), {})
 
-    delivery_rules = optional(list(object({ #verify structure later
+    delivery_rules = optional(list(object({
       name  = string
       order = number
       cache_expiration_action = optional(object({
@@ -540,7 +544,7 @@ map(object({
         negate_condition = optional(bool, false)
         match_values     = list(string)
       }))
-      request_scheme_condition = optional(object({ #request protocol
+      request_scheme_condition = optional(object({
         operator         = optional(string, "Equal")
         negate_condition = optional(bool, false)
         match_values     = list(string)
@@ -949,7 +953,7 @@ map(object({
     managed_rules = optional(map(object({
       type    = string
       version = string
-      action  = string #default Log
+      action  = string
       exclusions = optional(map(object({
         match_variable = string
         operator       = string
@@ -1463,7 +1467,7 @@ map(object({
       })), [])
       route_configuration_override_actions = optional(list(object({
         set_origin_groupid            = bool
-        cache_duration                = optional(string) #d.HH:MM:SS (365.23:59:59)
+        cache_duration                = optional(string) # d.HH:MM:SS (365.23:59:59)
         forwarding_protocol           = optional(string, "HttpsOnly")
         query_string_caching_behavior = optional(string)
         query_string_parameters       = optional(list(string))
@@ -1770,7 +1774,7 @@ map(object({
     role_definition_id_or_name             = string
     principal_id                           = string
     description                            = optional(string, null)
-    skip_service_principal_aad_check       = optional(bool, false) #Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
+    skip_service_principal_aad_check       = optional(bool, false) # Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
@@ -1799,6 +1803,10 @@ Default: `null`
 ## Outputs
 
 The following outputs are exported:
+
+### <a name="output_cdn_endpoint_custom_domains"></a> [cdn\_endpoint\_custom\_domains](#output\_cdn\_endpoint\_custom\_domains)
+
+Description: CDN endpoint custom domains output object
 
 ### <a name="output_cdn_endpoints"></a> [cdn\_endpoints](#output\_cdn\_endpoints)
 

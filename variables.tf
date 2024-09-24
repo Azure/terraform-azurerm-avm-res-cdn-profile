@@ -22,6 +22,8 @@ variable "cdn_endpoint_custom_domains" {
       is_azure_dns_zone                  = bool
       name                               = string
       cname_record_name                  = string
+      ttl                                = number
+      tags                               = optional(map(string))
       azure_dns_zone_resource_group_name = optional(string, null)
     }))
     name = string
@@ -45,6 +47,8 @@ variable "cdn_endpoint_custom_domains" {
   - `is_azure_dns_zone` - (Required) Is the custom domain hosted on Azure DNS Zone? 
   - `name` - (Required) The name of the DNS Zone for the custom domain.
   - `cname_record_name` - (Required) The name of the CNAME record to create in the DNS Zone.
+  - `ttl` - (Required) The TTL of the CNAME record.
+  - `tags` - (Optional) A mapping of tags to assign to the CNAME record.
   - `azure_dns_zone_resource_group_name_name` - (Optional) The name of the Azure resource group where the DNS Zone is located. This is required if the DNS Zone is in azure.
  - `name` - (Required) The name which should be used for this CDN Endpoint Custom Domain. Changing this forces a new CDN Endpoint Custom Domain to be created.
  - `cdn_managed_https` block supports the following:
@@ -108,7 +112,7 @@ variable "cdn_endpoints" {
     })), {})
 
     is_compression_enabled        = optional(bool)
-    querystring_caching_behaviour = optional(string, "IgnoreQueryString") #create a validation: allowed values: IgnoreQueryString,BypassCaching ,UseQueryString,NotSet for premium verizon.
+    querystring_caching_behaviour = optional(string, "IgnoreQueryString") # create a validation: allowed values: IgnoreQueryString,BypassCaching ,UseQueryString,NotSet for premium verizon.
     optimization_type             = optional(string)                      # create a validation: allowed values: DynamicSiteAcceleration,GeneralMediaStreaming,GeneralWebDelivery,LargeFileDownload ,VideoOnDemandMediaStreaming
 
     origins = map(object({
@@ -119,10 +123,10 @@ variable "cdn_endpoints" {
     }))
 
     origin_host_header = optional(string)
-    origin_path        = optional(string) # must start with / e.g. "/media"
-    probe_path         = optional(string) # must start with / e.g. "/foo.bar"
+    origin_path        = optional(string) # must start with '/' e.g. "/media"
+    probe_path         = optional(string) # must start with '/' e.g. "/foo.bar"
 
-    global_delivery_rule = optional(object({ #verify structure later
+    global_delivery_rule = optional(object({
       cache_expiration_action = optional(list(object({
         behavior = string           # Allowed Values: BypassCache, Override and SetIfMissing
         duration = optional(string) # Only allowed when behavior is Override or SetIfMissing. Format: [d.]hh:mm:ss e.g "1.10:30:00"
@@ -145,18 +149,18 @@ variable "cdn_endpoints" {
         redirect_type = string                    # Allowed Values: Found, Moved, PermanentRedirect and TemporaryRedirect
         protocol      = optional(string, "Https") # Allowed Values: MatchRequest, Http and Https
         hostname      = optional(string)
-        path          = optional(string) # Should begin with /
-        fragment      = optional(string) #Specifies the fragment part of the URL. This value must not start with a #
-        query_string  = optional(string) # Specifies the query string part of the URL. This value must not start with a ? or & and must be in <key>=<value> format separated by &.
+        path          = optional(string) # Should begin with '/'
+        fragment      = optional(string) # Specifies the fragment part of the URL. This value must not start with a '#'
+        query_string  = optional(string) # Specifies the query string part of the URL. This value must not start with a '?' or '&' and must be in <key>=<value> format separated by '&'.
       })), [])
       url_rewrite_action = optional(list(object({
-        source_pattern          = string #(Required) This value must start with a / and can't be longer than 260 characters.
-        destination             = string # This value must start with a / and can't be longer than 260 characters.
+        source_pattern          = string # (Required) This value must start with a '/' and can't be longer than 260 characters.
+        destination             = string # This value must start with a '/' and can't be longer than 260 characters.
         preserve_unmatched_path = optional(bool, true)
       })), [])
     }), {})
 
-    delivery_rules = optional(list(object({ #verify structure later
+    delivery_rules = optional(list(object({
       name  = string
       order = number
       cache_expiration_action = optional(object({
@@ -231,7 +235,7 @@ variable "cdn_endpoints" {
         negate_condition = optional(bool, false)
         match_values     = list(string)
       }))
-      request_scheme_condition = optional(object({ #request protocol
+      request_scheme_condition = optional(object({
         operator         = optional(string, "Equal")
         negate_condition = optional(bool, false)
         match_values     = list(string)
@@ -717,7 +721,7 @@ variable "front_door_firewall_policies" {
     managed_rules = optional(map(object({
       type    = string
       version = string
-      action  = string #default Log
+      action  = string
       exclusions = optional(map(object({
         match_variable = string
         operator       = string
@@ -1219,7 +1223,6 @@ variable "front_door_origins" {
     )
     error_message = "Possible values must be between 1 & 1000"
   }
-  # Need to verify below validation
   validation {
     condition = alltrue(
       [
@@ -1406,7 +1409,7 @@ variable "front_door_rules" {
       })), [])
       route_configuration_override_actions = optional(list(object({
         set_origin_groupid            = bool
-        cache_duration                = optional(string) #d.HH:MM:SS (365.23:59:59)
+        cache_duration                = optional(string) # d.HH:MM:SS (365.23:59:59)
         forwarding_protocol           = optional(string, "HttpsOnly")
         query_string_caching_behavior = optional(string)
         query_string_parameters       = optional(list(string))
@@ -1933,16 +1936,12 @@ variable "response_timeout_seconds" {
   }
 }
 
-#   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
-#   DESCRIPTION
-#   nullable    = false
-# }
 variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
     principal_id                           = string
     description                            = optional(string, null)
-    skip_service_principal_aad_check       = optional(bool, false) #Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
+    skip_service_principal_aad_check       = optional(bool, false) # Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
