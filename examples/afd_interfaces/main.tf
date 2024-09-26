@@ -50,7 +50,6 @@ resource "azurerm_eventhub_namespace" "eventhub_namespace" {
   tags = {
     environment = "avm-demo"
   }
-  zone_redundant = true
 }
 
 resource "azurerm_eventhub" "eventhub" {
@@ -222,7 +221,7 @@ module "azurerm_cdn_frontdoor_profile" {
           transforms       = ["Uppercase"]
         }]
 
-        request_scheme_conditions = [{ #request protocol
+        request_scheme_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["HTTP"]
@@ -271,7 +270,7 @@ module "azurerm_cdn_frontdoor_profile" {
       name                           = "workspaceandstorage_diag"
       metric_categories              = ["AllMetrics"]
       log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      log_groups                     = [] #must explicitly set since log_groups defaults to ["allLogs"]
+      log_groups                     = [] # must explicitly set since log_groups defaults to ["allLogs"]
       log_analytics_destination_type = "Dedicated"
       workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
       storage_account_resource_id    = azurerm_storage_account.storage.id
@@ -295,7 +294,7 @@ module "azurerm_cdn_frontdoor_profile" {
     },
     role_assignment_2 = {
       role_definition_id_or_name       = "Reader"
-      principal_id                     = data.azurerm_client_config.current.object_id #"125****-c***-4f**-**0d-******53b5**" # replace the principal id with appropriate one
+      principal_id                     = data.azurerm_client_config.current.object_id # replace the principal id with appropriate one
       description                      = "Example role assignment 2 of reader role"
       skip_service_principal_aad_check = false
       principal_type                   = "ServicePrincipal"

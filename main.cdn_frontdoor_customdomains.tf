@@ -13,7 +13,7 @@ resource "azurerm_cdn_frontdoor_custom_domain" "cds" {
   }
 }
 
-#creating domain association resource block for seamless updation of custom domains
+# creating domain association resource block for seamless updation of custom domains
 resource "azurerm_cdn_frontdoor_custom_domain_association" "association" {
   for_each = azurerm_cdn_frontdoor_custom_domain.cds
 
