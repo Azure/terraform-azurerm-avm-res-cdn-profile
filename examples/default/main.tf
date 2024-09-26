@@ -263,15 +263,6 @@ module "azurerm_cdn_frontdoor_profile" {
           destination_hostname = "contoso.com"
           destination_fragment = "UrlRedirect"
         }]
-        route_configuration_override_actions = [{
-          set_origin_groupid            = true
-          forwarding_protocol           = "HttpsOnly"
-          query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
-          query_string_parameters       = ["foo", "clientIp={client_ip}"]
-          compression_enabled           = true
-          cache_behavior                = "OverrideIfOriginMissing"
-          cache_duration                = "365.23:59:59"
-        }]
         response_header_actions = [{
           header_action = "Append"
           header_name   = "headername"
