@@ -20,17 +20,17 @@ module "naming" {
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  location = "eastus"
+  location = "swedencentral"
   name     = "pvtlink-webapp-${module.naming.resource_group.name_unique}"
 }
 
-# Creating App service plan with premium V3 SKU
+# Creating App service plan with Standard S1 SKU for testing only. For Production deployment Premium SKU is recommended.
 resource "azurerm_service_plan" "appservice" {
   location            = azurerm_resource_group.this.location
   name                = "asp-${module.naming.app_service_plan.name_unique}"
   os_type             = "Linux"
   resource_group_name = azurerm_resource_group.this.name
-  sku_name            = "S1"
+  sku_name            = "S1" # Change it to one of PremiumV3 pricing tier for Production deployment. Refer https://learn.microsoft.com/en-us/azure/app-service/overview-hosting-plans#premiumv3-pricing-tier
 }
 
 # Creating the linux web app
