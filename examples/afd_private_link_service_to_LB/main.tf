@@ -20,7 +20,7 @@ module "naming" {
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  location = "swedencentral"
+  location = "centralindia"
   name     = "pvtlink-lb-${module.naming.resource_group.name_unique}"
 }
 
