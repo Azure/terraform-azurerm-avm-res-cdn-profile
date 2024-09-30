@@ -17,18 +17,21 @@ resource "azurerm_monitor_diagnostic_setting" "front_door_diag" {
 
   dynamic "enabled_log" {
     for_each = each.value.log_categories
+
     content {
       category = enabled_log.value
     }
   }
   dynamic "enabled_log" {
     for_each = each.value.log_groups
+
     content {
       category_group = enabled_log.value
     }
   }
   dynamic "metric" {
     for_each = each.value.metric_categories
+
     content {
       category = metric.value
     }
@@ -47,7 +50,7 @@ resource "azurerm_monitor_diagnostic_setting" "cdn_endpoint_diag" {
   for_each = local.cdn_endpoint_diagnostics
 
   name                           = each.value.diagnostic_setting.name != null ? each.value.diagnostic_setting.name : "diag-${var.name}"
-  target_resource_id             = azurerm_cdn_endpoint.endpoint[each.key].id
+  target_resource_id             = azurerm_cdn_endpoint.endpoints[each.key].id
   eventhub_authorization_rule_id = each.value.diagnostic_setting.event_hub_authorization_rule_resource_id
   eventhub_name                  = each.value.diagnostic_setting.event_hub_name
   log_analytics_destination_type = try(each.value.diagnostic_setting.workspace_resource_id == null) ? null : each.value.diagnostic_setting.log_analytics_destination_type
@@ -57,18 +60,21 @@ resource "azurerm_monitor_diagnostic_setting" "cdn_endpoint_diag" {
 
   dynamic "enabled_log" {
     for_each = each.value.diagnostic_setting.log_categories
+
     content {
       category = enabled_log.value
     }
   }
   dynamic "enabled_log" {
     for_each = each.value.diagnostic_setting.log_groups
+
     content {
       category_group = enabled_log.value
     }
   }
   dynamic "metric" {
     for_each = each.value.diagnostic_setting.metric_categories
+
     content {
       category = metric.value
     }

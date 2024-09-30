@@ -20,7 +20,7 @@ module "naming" {
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
-  location = "eastus"
+  location = "centralindia"
   name     = "pvtlink-lb-${module.naming.resource_group.name_unique}"
 }
 
@@ -218,7 +218,7 @@ module "azurerm_cdn_frontdoor_profile" {
           transforms       = ["Uppercase"]
         }]
 
-        request_scheme_conditions = [{ #request protocol
+        request_scheme_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["HTTP"]

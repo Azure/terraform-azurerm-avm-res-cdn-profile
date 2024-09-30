@@ -31,7 +31,6 @@ resource "azurerm_resource_group" "this" {
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  #source = "/workspaces/terraform-azurerm-avm-res-cdn-profile"
   source              = "../../"
   enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
@@ -212,7 +211,7 @@ module "azurerm_cdn_frontdoor_profile" {
           transforms       = ["Uppercase"]
         }]
 
-        request_scheme_conditions = [{ #request protocol
+        request_scheme_conditions = [{
           negate_condition = false
           operator         = "Equal"
           match_values     = ["HTTP"]
@@ -269,15 +268,6 @@ module "azurerm_cdn_frontdoor_profile" {
           destination_path     = "/exampleredirection"
           destination_hostname = "contoso.com"
           destination_fragment = "UrlRedirect"
-        }]
-        route_configuration_override_actions = [{
-          set_origin_groupid            = true
-          forwarding_protocol           = "HttpsOnly"
-          query_string_caching_behavior = "IncludeSpecifiedQueryStrings"
-          query_string_parameters       = ["foo", "clientIp={client_ip}"]
-          compression_enabled           = true
-          cache_behavior                = "OverrideIfOriginMissing"
-          cache_duration                = "365.23:59:59"
         }]
         response_header_actions = [{
           header_action = "Append"
@@ -376,12 +366,6 @@ The following requirements are needed by this module:
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.74)
-
-## Providers
-
-The following providers are used by this module:
-
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (~> 3.74)
 
 ## Resources
 
