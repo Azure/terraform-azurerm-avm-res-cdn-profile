@@ -91,7 +91,7 @@ module "azurerm_cdn_frontdoor_profile" {
       http_port                      = 80
       https_port                     = 443
       host_header                    = "www.contoso2.com"
-      priority                       = 1
+      priority                       = 3
       weight                         = 1
     }
   }
