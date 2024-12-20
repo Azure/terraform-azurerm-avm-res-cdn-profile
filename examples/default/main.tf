@@ -100,7 +100,7 @@ module "azurerm_cdn_frontdoor_profile" {
     ep2_key = {
       name = "ep2-${module.naming.cdn_endpoint.name_unique}"
       tags = {
-        environment = "avm-demo"
+        environment = "avm-test"
       }
     }
   }
@@ -331,12 +331,6 @@ module "azurerm_cdn_frontdoor_profile" {
           operator       = "BeginsWith"
           match_values   = ["arg1", "arg2"]
           transforms     = ["Uppercase"]
-        }]
-
-        request_method_conditions = [{
-          operator         = "Equal"
-          negate_condition = false
-          match_values     = ["DELETE"]
         }]
 
         url_filename_conditions = [{

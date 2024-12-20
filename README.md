@@ -17,7 +17,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (2.0.1)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (>= 1.13, < 3)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71.0)
 
@@ -29,7 +29,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azapi_resource.front_door_profile](https://registry.terraform.io/providers/Azure/azapi/2.0.1/docs/resources/resource) (resource)
+- [azapi_resource.front_door_profile](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azurerm_cdn_endpoint.endpoints](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint) (resource)
 - [azurerm_cdn_endpoint_custom_domain.cds](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_endpoint_custom_domain) (resource)
 - [azurerm_cdn_frontdoor_custom_domain.cds](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_custom_domain) (resource)
@@ -1784,7 +1784,7 @@ Default: `{}`
 
 ### <a name="input_sku"></a> [sku](#input\_sku)
 
-Description: The SKU name of the Azure Front Door. Default is `Standard`. Possible values are `standard` and `premium`.SKU name for CDN can be 'Standard\_Akamai', 'Standard\_ChinaCdn, 'Standard\_Microsoft','Standard\_Verizon' or 'Premium\_Verizon'
+Description: The SKU name of the Azure Front Door. Default is `Standard`. Possible values are `standard` and `premium`.SKU name for CDN can be 'Standard\_ChinaCdn' or 'Standard\_Microsoft'
 
 Type: `string`
 
