@@ -1983,11 +1983,11 @@ variable "role_assignments" {
 variable "sku" {
   type        = string
   default     = "Standard_AzureFrontDoor"
-  description = "The SKU name of the Azure Front Door. Default is `Standard`. Possible values are `standard` and `premium`.SKU name for CDN can be 'Standard_Akamai', 'Standard_ChinaCdn, 'Standard_Microsoft','Standard_Verizon' or 'Premium_Verizon'"
+  description = "The SKU name of the Azure Front Door. Default is `Standard`. Possible values are `standard` and `premium`.SKU name for CDN can be 'Standard_ChinaCdn' or 'Standard_Microsoft' "
 
   validation {
-    condition     = contains(["Standard_AzureFrontDoor", "Premium_AzureFrontDoor", "Standard_Akamai", "Standard_ChinaCdn", "Standard_Microsoft", "Standard_Verizon", "Premium_Verizon"], var.sku)
-    error_message = "The SKU must be either 'Standard_AzureFrontDoor' or 'Premium_AzureFrontDoor' for Front Door. For CDN use correct SKU name"
+    condition     = contains(["Standard_AzureFrontDoor", "Premium_AzureFrontDoor", "Standard_ChinaCdn", "Standard_Microsoft"], var.sku)
+    error_message = "The SKU must be either 'Standard_AzureFrontDoor' or 'Premium_AzureFrontDoor' for Front Door. For CDN use either 'Standard_Microsoft' or 'Standard_ChinaCdn' "
   }
 }
 
