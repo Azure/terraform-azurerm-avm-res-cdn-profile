@@ -59,7 +59,7 @@ module "azurerm_cdn_profile" {
   cdn_endpoints = {
     ep1 = {
       name                          = "endpoint-${module.naming.cdn_endpoint.name_unique}"
-      is_http_allowed               = true
+      is_http_allowed               = false
       is_https_allowed              = true
       querystring_caching_behaviour = "BypassCaching"
       is_compression_enabled        = true
