@@ -927,15 +927,19 @@ variable "front_door_firewall_policies" {
   }
   validation {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : contains(["Detection", "Prevention"], v.mode)])
-    error_message = " Possible values are 'Detection', 'Prevention' for mode"
+    error_message = "Possible values are 'Detection', 'Prevention' for mode"
   }
   validation {
-    condition     = alltrue([for _, v in var.front_door_firewall_policies : contains(["200", "403", "405", "406", "429"], tostring(v.custom_block_response_status_code))])
-    error_message = " Possible values are 200, 403, 405, 406, or 429 for custom_block_response_status_code"
+    condition     = alltrue([for _, v in var.front_door_firewall_policies : v.custom_block_response_status_code == null ? true : contains(["200", "403", "405", "406", "429"], tostring(v.custom_block_response_status_code))])
+    error_message = "Possible values are 200, 403, 405, 406, 429 or null for custom_block_response_status_code"
   }
   validation {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : contains(["Allow", "Block", "Log", "Redirect"], x["action"])])])
     error_message = "Possible values are 'Allow', 'Block', 'Log', or 'Redirect' for action"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_firewall_policies : v.custom_block_response_status_code == null ? alltrue([for _, x in v["custom_rules"] : x["action"] != "Block"]) : true])
+    error_message = "If custom_rules' action is set to 'Block', custom_block_response_status_code cannot be null"
   }
   validation {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : contains(["MatchRule", "RateLimitRule"], x["type"])])])
