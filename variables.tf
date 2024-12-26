@@ -107,13 +107,13 @@ variable "cdn_endpoints" {
 
     geo_filters = optional(map(object({
       relative_path = string       # must be "/" for Standard_Microsoft. Must be unique across all filters. Only one allowed for Standard_Microsoft
-      action        = string       # create a validation: allowed values: Allow or Block
-      country_codes = list(string) # Create a validation. Two letter country codes allows e.g. ["US", "CA"]
+      action        = string       # allowed values: Allow or Block
+      country_codes = list(string) # Two letter country codes allows e.g. ["US", "CA"]
     })), {})
 
     is_compression_enabled        = optional(bool)
-    querystring_caching_behaviour = optional(string, "IgnoreQueryString") # create a validation: allowed values: IgnoreQueryString,BypassCaching ,UseQueryString,NotSet for premium verizon.
-    optimization_type             = optional(string)                      # create a validation: allowed values: DynamicSiteAcceleration,GeneralMediaStreaming,GeneralWebDelivery,LargeFileDownload ,VideoOnDemandMediaStreaming
+    querystring_caching_behaviour = optional(string, "IgnoreQueryString") # allowed values: IgnoreQueryString,BypassCaching ,UseQueryString,NotSet for premium verizon.
+    optimization_type             = optional(string)                      # allowed values: DynamicSiteAcceleration,GeneralMediaStreaming,GeneralWebDelivery,LargeFileDownload ,VideoOnDemandMediaStreaming
 
     origins = map(object({
       name       = string
@@ -529,6 +529,91 @@ variable "cdn_endpoints" {
   ```
   DESCRIPTION
   nullable    = false
+
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.querystring_caching_behaviour != null ? contains(["IgnoreQueryString", "BypassCaching", "UseQueryString", "NotSet"], v.querystring_caching_behaviour) : true])
+    error_message = "Querystring caching behaviour must be one of: 'IgnoreQueryString', 'BypassCaching', 'UseQueryString', 'NotSet'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.optimization_type != null ? contains(["DynamicSiteAcceleration", "GeneralMediaStreaming", "GeneralWebDelivery", "LargeFileDownload", "VideoOnDemandMediaStreaming"], v.optimization_type) : true])
+    error_message = "Optimization type must be one of: 'DynamicSiteAcceleration', 'GeneralMediaStreaming', 'GeneralWebDelivery', 'LargeFileDownload', 'VideoOnDemandMediaStreaming'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.diagnostic_setting != null && v.diagnostic_setting.log_analytics_destination_type != null ? contains(["Dedicated", "AzureDiagnostics"], v.diagnostic_setting.log_analytics_destination_type) : true])
+    error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.geo_filters != null ? alltrue([for _, x in v.geo_filters : contains(["Allow", "Block"], x.action)]) : true])
+    error_message = "Values for geo_filters action must be one of: 'Allow', 'Block'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.geo_filters != null ? alltrue([for _, x in v.geo_filters : length(x.country_codes) > 0]) : true])
+    error_message = "Country codes is required. Values for geo_filters country_codes must be a list of two-letter country codes."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.origin_path != null ? substr(v.origin_path, 0, 1) == "/" : true])
+    error_message = "origin_path must start with '/' e.g '/media'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.probe_path != null ? substr(v.probe_path, 0, 1) == "/" : true])
+    error_message = "probe_path must start with '/' e.g '/foo.bar'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.cache_expiration_action != null ? alltrue([for _, x in v.global_delivery_rule.cache_expiration_action : contains(["BypassCache", "Override", "SetIfMissing"], x.behavior)]) : true])
+    error_message = "Values for global_delivery_rule cache_expiration_action behavior must be one of: 'BypassCache', 'Override', 'SetIfMissing'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.cache_expiration_action != null ? alltrue([for _, x in v.global_delivery_rule.cache_expiration_action : x.behavior != "BypassCache" ? x.duration != null : true]) : true])
+    error_message = "Duration is required when behavior is 'Override' or 'SelfMissing'.Format should be [d.]hh:mm:ss e.g '1.10:30:00'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.cache_key_query_string_action != null ? alltrue([for _, x in v.global_delivery_rule.cache_key_query_string_action : contains(["Exclude", "ExcludeAll", "Include", "IncludeAll"], x.behavior)]) : true])
+    error_message = "Values for global_delivery_rule cache_key_query_string_action behavior must be one of: 'Exclude', 'ExcludeAll', 'Include', 'IncludeAll'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.modify_request_header_action != null ? alltrue([for _, x in v.global_delivery_rule.modify_request_header_action : contains(["Append", "Delete", "Overwrite"], x.action)]) : true])
+    error_message = "Values for global_delivery_rule modify_request_header_action action must be one of: 'Append', 'Delete', 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.modify_request_header_action != null ? alltrue([for _, x in v.global_delivery_rule.modify_request_header_action : x.action != "Delete" ? x.value != null : true]) : true])
+    error_message = "modify_request_header_action value is required when action is 'Append' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.modify_response_header_action != null ? alltrue([for _, x in v.global_delivery_rule.modify_response_header_action : contains(["Append", "Delete", "Overwrite"], x.action)]) : true])
+    error_message = "Values for global_delivery_rule modify_response_header_action action must be one of: 'Append', 'Delete', 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.modify_response_header_action != null ? alltrue([for _, x in v.global_delivery_rule.modify_response_header_action : x.action != "Delete" ? x.value != null : true]) : true])
+    error_message = "modify_response_header_action value is required when action is 'Append' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_redirect_action != null ? alltrue([for _, x in v.global_delivery_rule.url_redirect_action : contains(["Found", "Moved", "PermanentRedirect", "TemporaryRedirect"], x.redirect_type)]) : true])
+    error_message = "Values for global_delivery_rule url_redirect_action redirect_type must be one of: 'Found', 'Moved', 'PermanentRedirect', 'TemporaryRedirect'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_redirect_action != null ? alltrue([for _, x in v.global_delivery_rule.url_redirect_action : x.protocol != null ? contains(["MatchRequest", "Http", "Https"], x.protocol) : true]) : true])
+    error_message = "Values for global_delivery_rule url_redirect_action protocol must be one of: 'MatchRequest', 'Http', 'Https'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_redirect_action != null ? alltrue([for _, x in v.global_delivery_rule.url_redirect_action : x.path != null ? substr(x.path, 0, 1) == "/" : true]) : true])
+    error_message = "global_delivery_rule url_redirect_action path must start with '/' e.g '/media'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_redirect_action != null ? alltrue([for _, x in v.global_delivery_rule.url_redirect_action : x.fragment != null ? substr(x.fragment, 0, 1) != "#" : true]) : true])
+    error_message = "global_delivery_rule url_redirect_action fragment must not start with '#'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_redirect_action != null ? alltrue([for _, x in v.global_delivery_rule.url_redirect_action : x.query_string != null ? substr(x.query_string, 0, 1) != "?" && substr(x.query_string, 0, 1) != "&" : true]) : true])
+    error_message = "global_delivery_rule url_redirect_action query_string must not start with '?' or '&' and must be in '<key>=<value>' format separated by '&'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_rewrite_action != null ? alltrue([for _, x in v.global_delivery_rule.url_rewrite_action : substr(x.source_pattern, 0, 1) == "/" && length(x.source_pattern) <= 260]) : true])
+    error_message = "global_delivery_rule url_rewrite_action source_pattern must start with '/' and can't be longer than 260 characters."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_rewrite_action != null ? alltrue([for _, x in v.global_delivery_rule.url_rewrite_action : substr(x.destination, 0, 1) == "/" && length(x.destination) <= 260]) : true])
+    error_message = "global_delivery_rule url_rewrite_action destination must start with '/' and can't be longer than 260 characters."
+  }
 }
 
 variable "diagnostic_settings" {
