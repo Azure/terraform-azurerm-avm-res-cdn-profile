@@ -95,6 +95,23 @@ variable "cdn_endpoint_custom_domains" {
 
   Description
   nullable    = false
+
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoint_custom_domains : v.cdn_managed_https != null ? contains(["Shared", "Dedicated"], v.cdn_managed_https.certificate_type) : true])
+    error_message = "Certificate type must be one of: 'Shared', 'Dedicated'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoint_custom_domains : v.cdn_managed_https != null ? contains(["ServerNameIndication", "IPBased"], v.cdn_managed_https.protocol_type) : true])
+    error_message = "Protocol type must be one of: 'ServerNameIndication', 'IPBased'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoint_custom_domains : v.cdn_managed_https != null ? contains(["TLS10", "TLS12", "None"], v.cdn_managed_https.tls_version) : true])
+    error_message = "TLS version must be one of: 'TLS10', 'TLS12', 'None'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoint_custom_domains : v.user_managed_https != null ? contains(["TLS10", "TLS12", "None"], v.user_managed_https.tls_version) : true])
+    error_message = "TLS version must be one of: 'TLS10', 'TLS12', 'None'."
+  }
 }
 
 variable "cdn_endpoints" {
@@ -743,6 +760,15 @@ variable "front_door_custom_domains" {
   ```
   DESCRIPTION
   nullable    = false
+
+  validation {
+    condition     = alltrue([for _, v in var.front_door_custom_domains : contains(["CustomerCertificate", "ManagedCertificate"], v.tls.certificate_type)])
+    error_message = "Certificate type must be one of: 'CustomerCertificate', 'ManagedCertificate'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_custom_domains : contains(["TLS10", "TLS12"], v.tls.minimum_tls_version)])
+    error_message = "Minimum TLS version must be one of: 'TLS10', 'TLS12'."
+  }
 }
 
 variable "front_door_endpoints" {
@@ -1868,6 +1894,111 @@ variable "front_door_rules" {
   ```
   DESCRIPTION
   nullable    = false
+
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.behavior_on_match != null ? contains(["Continue", "Stop"], v.behavior_on_match) : true])
+    error_message = "The behavior_on_match must be either 'Continue' or 'Stop'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.order > 0])
+    error_message = "The order must be greater than 0."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.url_redirect_actions != null ? alltrue([for _, x in v.actions.url_redirect_actions : contains(["Moved", "Found", "TemporaryRedirect", "PermanentRedirect", "SeeOther"], x.redirect_type)]) : true])
+    error_message = "The redirect_type must be either 'Moved', 'Found', 'TemporaryRedirect', 'PermanentRedirect' or 'SeeOther'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.url_redirect_actions != null ? alltrue([for _, x in v.actions.url_redirect_actions : contains(["Http", "Https", "MatchRequest"], x.redirect_protocol)]) : true])
+    error_message = "The redirect_protocol must be either 'Http', 'Https' or 'MatchRequest'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.url_redirect_actions != null ? alltrue([for _, x in v.actions.url_redirect_actions : length(x.destination_hostname) <= 2048]) : true])
+    error_message = "The destination_hostname must be a string between 0 and 2048 characters in length."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.route_configuration_override_actions != null ? alltrue([for _, x in v.actions.route_configuration_override_actions : contains(["HttpOnly", "HttpsOnly", "MatchRequest"], x.forwarding_protocol)]) : true])
+    error_message = "The forwarding_protocol must be either 'HttpOnly', 'HttpsOnly' or 'MatchRequest'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.route_configuration_override_actions != null ? alltrue([for _, x in v.actions.route_configuration_override_actions : x.query_string_caching_behavior != null ? contains(["IgnoreQueryString", "IgnoreSpecifiedQueryStrings", "IncludeSpecifiedQueryStrings", "UseQueryString"], x.query_string_caching_behavior) : true]) : true])
+    error_message = "The query_string_caching_behavior if used must be either 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.route_configuration_override_actions != null ? alltrue([for _, x in v.actions.route_configuration_override_actions : x.cache_behavior != null ? contains(["HonorOrigin", "OverrideAlways", "OverrideIfOriginMissing", "Disabled"], x.cache_behavior) : true]) : true])
+    error_message = "The cache_behavior if used must be either 'HonorOrigin', 'OverrideAlways', 'OverrideIfOriginMissing' or 'Disabled'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.response_header_actions != null ? alltrue([for _, x in v.actions.response_header_actions : contains(["Append", "Delete", "Overwrite"], x.header_action)]) : true])
+    error_message = "The header_action for response_header_actions must be either 'Append', 'Delete' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.response_header_actions != null ? alltrue([for _, x in v.actions.response_header_actions : contains(["Append", "Delete"], x.header_action) ? x.value != null : true]) : true])
+    error_message = "The value is required if the header_action is set to 'Append' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.request_header_actions != null ? alltrue([for _, x in v.actions.request_header_actions : contains(["Append", "Delete", "Overwrite"], x.header_action)]) : true])
+    error_message = "The header_action for request_header_actions must be either 'Append', 'Delete' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.request_header_actions != null ? alltrue([for _, x in v.actions.request_header_actions : contains(["Append", "Delete"], x.header_action) ? x.value != null : true]) : true])
+    error_message = "The value is required if the header_action is set to 'Append' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.remote_address_conditions != null ? alltrue([for _, x in v.conditions.remote_address_conditions : contains(["Any", "IPMatch", "GeoMatch"], x.operator)]) : true])
+    error_message = "The operator for remote_address_conditions must be either 'Any', 'IPMatch' or 'GeoMatch'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.query_string_conditions != null ? alltrue([for _, x in v.conditions.query_string_conditions : contains(["BeginsWith", "Contains", "EndsWith", "Equal", "LessThan"], x.operator)]) : true])
+    error_message = "The operator for query_string_conditions must be either 'BeginsWith', 'Contains', 'EndsWith', 'Equal' or 'LessThan'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.post_args_conditions != null ? alltrue([for _, x in v.conditions.post_args_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for post_args_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.request_uri_conditions != null ? alltrue([for _, x in v.conditions.request_uri_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for request_uri_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.request_header_conditions != null ? alltrue([for _, x in v.conditions.request_header_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for request_header_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.request_body_conditions != null ? alltrue([for _, x in v.conditions.request_body_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for request_body_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.url_path_conditions != null ? alltrue([for _, x in v.conditions.url_path_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for url_path_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.url_file_extension_conditions != null ? alltrue([for _, x in v.conditions.url_file_extension_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for url_file_extension_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.url_filename_conditions != null ? alltrue([for _, x in v.conditions.url_filename_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for url_filename_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.cookies_conditions != null ? alltrue([for _, x in v.conditions.cookies_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for cookies_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.socket_address_conditions != null ? alltrue([for _, x in v.conditions.socket_address_conditions : x.operator != null ? contains(["Any", "IPMatch"], x.operator) : true]) : true])
+    error_message = "socket_address_conditions operator must be either 'Any' or 'IPMatch'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.client_port_conditions != null ? alltrue([for _, x in v.conditions.client_port_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for client_port_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.server_port_conditions != null ? alltrue([for _, x in v.conditions.server_port_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for server_port_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.host_name_conditions != null ? alltrue([for _, x in v.conditions.host_name_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for host_name_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
 }
 
 variable "front_door_secrets" {
