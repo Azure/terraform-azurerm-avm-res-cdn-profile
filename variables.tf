@@ -95,6 +95,23 @@ variable "cdn_endpoint_custom_domains" {
 
   Description
   nullable    = false
+
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoint_custom_domains : v.cdn_managed_https != null ? contains(["Shared", "Dedicated"], v.cdn_managed_https.certificate_type) : true])
+    error_message = "Certificate type must be one of: 'Shared', 'Dedicated'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoint_custom_domains : v.cdn_managed_https != null ? contains(["ServerNameIndication", "IPBased"], v.cdn_managed_https.protocol_type) : true])
+    error_message = "Protocol type must be one of: 'ServerNameIndication', 'IPBased'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoint_custom_domains : v.cdn_managed_https != null ? contains(["TLS10", "TLS12", "None"], v.cdn_managed_https.tls_version) : true])
+    error_message = "TLS version must be one of: 'TLS10', 'TLS12', 'None'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoint_custom_domains : v.user_managed_https != null ? contains(["TLS10", "TLS12", "None"], v.user_managed_https.tls_version) : true])
+    error_message = "TLS version must be one of: 'TLS10', 'TLS12', 'None'."
+  }
 }
 
 variable "cdn_endpoints" {
@@ -107,13 +124,13 @@ variable "cdn_endpoints" {
 
     geo_filters = optional(map(object({
       relative_path = string       # must be "/" for Standard_Microsoft. Must be unique across all filters. Only one allowed for Standard_Microsoft
-      action        = string       # create a validation: allowed values: Allow or Block
-      country_codes = list(string) # Create a validation. Two letter country codes allows e.g. ["US", "CA"]
+      action        = string       # allowed values: Allow or Block
+      country_codes = list(string) # Two letter country codes allows e.g. ["US", "CA"]
     })), {})
 
     is_compression_enabled        = optional(bool)
-    querystring_caching_behaviour = optional(string, "IgnoreQueryString") # create a validation: allowed values: IgnoreQueryString,BypassCaching ,UseQueryString,NotSet for premium verizon.
-    optimization_type             = optional(string)                      # create a validation: allowed values: DynamicSiteAcceleration,GeneralMediaStreaming,GeneralWebDelivery,LargeFileDownload ,VideoOnDemandMediaStreaming
+    querystring_caching_behaviour = optional(string, "IgnoreQueryString") # allowed values: IgnoreQueryString,BypassCaching ,UseQueryString,NotSet for premium verizon.
+    optimization_type             = optional(string)                      # allowed values: DynamicSiteAcceleration,GeneralMediaStreaming,GeneralWebDelivery,LargeFileDownload ,VideoOnDemandMediaStreaming
 
     origins = map(object({
       name       = string
@@ -529,6 +546,91 @@ variable "cdn_endpoints" {
   ```
   DESCRIPTION
   nullable    = false
+
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.querystring_caching_behaviour != null ? contains(["IgnoreQueryString", "BypassCaching", "UseQueryString", "NotSet"], v.querystring_caching_behaviour) : true])
+    error_message = "Querystring caching behaviour must be one of: 'IgnoreQueryString', 'BypassCaching', 'UseQueryString', 'NotSet'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.optimization_type != null ? contains(["DynamicSiteAcceleration", "GeneralMediaStreaming", "GeneralWebDelivery", "LargeFileDownload", "VideoOnDemandMediaStreaming"], v.optimization_type) : true])
+    error_message = "Optimization type must be one of: 'DynamicSiteAcceleration', 'GeneralMediaStreaming', 'GeneralWebDelivery', 'LargeFileDownload', 'VideoOnDemandMediaStreaming'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.diagnostic_setting != null && v.diagnostic_setting.log_analytics_destination_type != null ? contains(["Dedicated", "AzureDiagnostics"], v.diagnostic_setting.log_analytics_destination_type) : true])
+    error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.geo_filters != null ? alltrue([for _, x in v.geo_filters : contains(["Allow", "Block"], x.action)]) : true])
+    error_message = "Values for geo_filters action must be one of: 'Allow', 'Block'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.geo_filters != null ? alltrue([for _, x in v.geo_filters : length(x.country_codes) > 0]) : true])
+    error_message = "Country codes is required. Values for geo_filters country_codes must be a list of two-letter country codes."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.origin_path != null ? substr(v.origin_path, 0, 1) == "/" : true])
+    error_message = "origin_path must start with '/' e.g '/media'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.probe_path != null ? substr(v.probe_path, 0, 1) == "/" : true])
+    error_message = "probe_path must start with '/' e.g '/foo.bar'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.cache_expiration_action != null ? alltrue([for _, x in v.global_delivery_rule.cache_expiration_action : contains(["BypassCache", "Override", "SetIfMissing"], x.behavior)]) : true])
+    error_message = "Values for global_delivery_rule cache_expiration_action behavior must be one of: 'BypassCache', 'Override', 'SetIfMissing'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.cache_expiration_action != null ? alltrue([for _, x in v.global_delivery_rule.cache_expiration_action : x.behavior != "BypassCache" ? x.duration != null : true]) : true])
+    error_message = "Duration is required when behavior is 'Override' or 'SelfMissing'.Format should be [d.]hh:mm:ss e.g '1.10:30:00'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.cache_key_query_string_action != null ? alltrue([for _, x in v.global_delivery_rule.cache_key_query_string_action : contains(["Exclude", "ExcludeAll", "Include", "IncludeAll"], x.behavior)]) : true])
+    error_message = "Values for global_delivery_rule cache_key_query_string_action behavior must be one of: 'Exclude', 'ExcludeAll', 'Include', 'IncludeAll'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.modify_request_header_action != null ? alltrue([for _, x in v.global_delivery_rule.modify_request_header_action : contains(["Append", "Delete", "Overwrite"], x.action)]) : true])
+    error_message = "Values for global_delivery_rule modify_request_header_action action must be one of: 'Append', 'Delete', 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.modify_request_header_action != null ? alltrue([for _, x in v.global_delivery_rule.modify_request_header_action : x.action != "Delete" ? x.value != null : true]) : true])
+    error_message = "modify_request_header_action value is required when action is 'Append' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.modify_response_header_action != null ? alltrue([for _, x in v.global_delivery_rule.modify_response_header_action : contains(["Append", "Delete", "Overwrite"], x.action)]) : true])
+    error_message = "Values for global_delivery_rule modify_response_header_action action must be one of: 'Append', 'Delete', 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.modify_response_header_action != null ? alltrue([for _, x in v.global_delivery_rule.modify_response_header_action : x.action != "Delete" ? x.value != null : true]) : true])
+    error_message = "modify_response_header_action value is required when action is 'Append' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_redirect_action != null ? alltrue([for _, x in v.global_delivery_rule.url_redirect_action : contains(["Found", "Moved", "PermanentRedirect", "TemporaryRedirect"], x.redirect_type)]) : true])
+    error_message = "Values for global_delivery_rule url_redirect_action redirect_type must be one of: 'Found', 'Moved', 'PermanentRedirect', 'TemporaryRedirect'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_redirect_action != null ? alltrue([for _, x in v.global_delivery_rule.url_redirect_action : x.protocol != null ? contains(["MatchRequest", "Http", "Https"], x.protocol) : true]) : true])
+    error_message = "Values for global_delivery_rule url_redirect_action protocol must be one of: 'MatchRequest', 'Http', 'Https'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_redirect_action != null ? alltrue([for _, x in v.global_delivery_rule.url_redirect_action : x.path != null ? substr(x.path, 0, 1) == "/" : true]) : true])
+    error_message = "global_delivery_rule url_redirect_action path must start with '/' e.g '/media'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_redirect_action != null ? alltrue([for _, x in v.global_delivery_rule.url_redirect_action : x.fragment != null ? substr(x.fragment, 0, 1) != "#" : true]) : true])
+    error_message = "global_delivery_rule url_redirect_action fragment must not start with '#'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_redirect_action != null ? alltrue([for _, x in v.global_delivery_rule.url_redirect_action : x.query_string != null ? substr(x.query_string, 0, 1) != "?" && substr(x.query_string, 0, 1) != "&" : true]) : true])
+    error_message = "global_delivery_rule url_redirect_action query_string must not start with '?' or '&' and must be in '<key>=<value>' format separated by '&'"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_rewrite_action != null ? alltrue([for _, x in v.global_delivery_rule.url_rewrite_action : substr(x.source_pattern, 0, 1) == "/" && length(x.source_pattern) <= 260]) : true])
+    error_message = "global_delivery_rule url_rewrite_action source_pattern must start with '/' and can't be longer than 260 characters."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.cdn_endpoints : v.global_delivery_rule != null && v.global_delivery_rule.url_rewrite_action != null ? alltrue([for _, x in v.global_delivery_rule.url_rewrite_action : substr(x.destination, 0, 1) == "/" && length(x.destination) <= 260]) : true])
+    error_message = "global_delivery_rule url_rewrite_action destination must start with '/' and can't be longer than 260 characters."
+  }
 }
 
 variable "diagnostic_settings" {
@@ -658,6 +760,15 @@ variable "front_door_custom_domains" {
   ```
   DESCRIPTION
   nullable    = false
+
+  validation {
+    condition     = alltrue([for _, v in var.front_door_custom_domains : contains(["CustomerCertificate", "ManagedCertificate"], v.tls.certificate_type)])
+    error_message = "Certificate type must be one of: 'CustomerCertificate', 'ManagedCertificate'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_custom_domains : contains(["TLS10", "TLS12"], v.tls.minimum_tls_version)])
+    error_message = "Minimum TLS version must be one of: 'TLS10', 'TLS12'."
+  }
 }
 
 variable "front_door_endpoints" {
@@ -927,15 +1038,19 @@ variable "front_door_firewall_policies" {
   }
   validation {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : contains(["Detection", "Prevention"], v.mode)])
-    error_message = " Possible values are 'Detection', 'Prevention' for mode"
+    error_message = "Possible values are 'Detection', 'Prevention' for mode"
   }
   validation {
-    condition     = alltrue([for _, v in var.front_door_firewall_policies : contains(["200", "403", "405", "406", "429"], tostring(v.custom_block_response_status_code))])
-    error_message = " Possible values are 200, 403, 405, 406, or 429 for custom_block_response_status_code"
+    condition     = alltrue([for _, v in var.front_door_firewall_policies : v.custom_block_response_status_code == null ? true : contains(["200", "403", "405", "406", "429"], tostring(v.custom_block_response_status_code))])
+    error_message = "Possible values are 200, 403, 405, 406, 429 or null for custom_block_response_status_code"
   }
   validation {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : contains(["Allow", "Block", "Log", "Redirect"], x["action"])])])
     error_message = "Possible values are 'Allow', 'Block', 'Log', or 'Redirect' for action"
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_firewall_policies : v.custom_block_response_status_code == null ? alltrue([for _, x in v["custom_rules"] : x["action"] != "Block"]) : true])
+    error_message = "If custom_rules' action is set to 'Block', custom_block_response_status_code cannot be null"
   }
   validation {
     condition     = alltrue([for _, v in var.front_door_firewall_policies : alltrue([for _, x in v["custom_rules"] : contains(["MatchRule", "RateLimitRule"], x["type"])])])
@@ -1779,6 +1894,111 @@ variable "front_door_rules" {
   ```
   DESCRIPTION
   nullable    = false
+
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.behavior_on_match != null ? contains(["Continue", "Stop"], v.behavior_on_match) : true])
+    error_message = "The behavior_on_match must be either 'Continue' or 'Stop'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.order > 0])
+    error_message = "The order must be greater than 0."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.url_redirect_actions != null ? alltrue([for _, x in v.actions.url_redirect_actions : contains(["Moved", "Found", "TemporaryRedirect", "PermanentRedirect", "SeeOther"], x.redirect_type)]) : true])
+    error_message = "The redirect_type must be either 'Moved', 'Found', 'TemporaryRedirect', 'PermanentRedirect' or 'SeeOther'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.url_redirect_actions != null ? alltrue([for _, x in v.actions.url_redirect_actions : contains(["Http", "Https", "MatchRequest"], x.redirect_protocol)]) : true])
+    error_message = "The redirect_protocol must be either 'Http', 'Https' or 'MatchRequest'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.url_redirect_actions != null ? alltrue([for _, x in v.actions.url_redirect_actions : length(x.destination_hostname) <= 2048]) : true])
+    error_message = "The destination_hostname must be a string between 0 and 2048 characters in length."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.route_configuration_override_actions != null ? alltrue([for _, x in v.actions.route_configuration_override_actions : contains(["HttpOnly", "HttpsOnly", "MatchRequest"], x.forwarding_protocol)]) : true])
+    error_message = "The forwarding_protocol must be either 'HttpOnly', 'HttpsOnly' or 'MatchRequest'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.route_configuration_override_actions != null ? alltrue([for _, x in v.actions.route_configuration_override_actions : x.query_string_caching_behavior != null ? contains(["IgnoreQueryString", "IgnoreSpecifiedQueryStrings", "IncludeSpecifiedQueryStrings", "UseQueryString"], x.query_string_caching_behavior) : true]) : true])
+    error_message = "The query_string_caching_behavior if used must be either 'IgnoreQueryString', 'IgnoreSpecifiedQueryStrings', 'IncludeSpecifiedQueryStrings' or 'UseQueryString'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.route_configuration_override_actions != null ? alltrue([for _, x in v.actions.route_configuration_override_actions : x.cache_behavior != null ? contains(["HonorOrigin", "OverrideAlways", "OverrideIfOriginMissing", "Disabled"], x.cache_behavior) : true]) : true])
+    error_message = "The cache_behavior if used must be either 'HonorOrigin', 'OverrideAlways', 'OverrideIfOriginMissing' or 'Disabled'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.response_header_actions != null ? alltrue([for _, x in v.actions.response_header_actions : contains(["Append", "Delete", "Overwrite"], x.header_action)]) : true])
+    error_message = "The header_action for response_header_actions must be either 'Append', 'Delete' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.response_header_actions != null ? alltrue([for _, x in v.actions.response_header_actions : contains(["Append", "Delete"], x.header_action) ? x.value != null : true]) : true])
+    error_message = "The value is required if the header_action is set to 'Append' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.request_header_actions != null ? alltrue([for _, x in v.actions.request_header_actions : contains(["Append", "Delete", "Overwrite"], x.header_action)]) : true])
+    error_message = "The header_action for request_header_actions must be either 'Append', 'Delete' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.request_header_actions != null ? alltrue([for _, x in v.actions.request_header_actions : contains(["Append", "Delete"], x.header_action) ? x.value != null : true]) : true])
+    error_message = "The value is required if the header_action is set to 'Append' or 'Overwrite'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.remote_address_conditions != null ? alltrue([for _, x in v.conditions.remote_address_conditions : contains(["Any", "IPMatch", "GeoMatch"], x.operator)]) : true])
+    error_message = "The operator for remote_address_conditions must be either 'Any', 'IPMatch' or 'GeoMatch'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.query_string_conditions != null ? alltrue([for _, x in v.conditions.query_string_conditions : contains(["BeginsWith", "Contains", "EndsWith", "Equal", "LessThan"], x.operator)]) : true])
+    error_message = "The operator for query_string_conditions must be either 'BeginsWith', 'Contains', 'EndsWith', 'Equal' or 'LessThan'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.post_args_conditions != null ? alltrue([for _, x in v.conditions.post_args_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for post_args_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.request_uri_conditions != null ? alltrue([for _, x in v.conditions.request_uri_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for request_uri_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.request_header_conditions != null ? alltrue([for _, x in v.conditions.request_header_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for request_header_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.request_body_conditions != null ? alltrue([for _, x in v.conditions.request_body_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for request_body_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.url_path_conditions != null ? alltrue([for _, x in v.conditions.url_path_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for url_path_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.url_file_extension_conditions != null ? alltrue([for _, x in v.conditions.url_file_extension_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for url_file_extension_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.url_filename_conditions != null ? alltrue([for _, x in v.conditions.url_filename_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for url_filename_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.cookies_conditions != null ? alltrue([for _, x in v.conditions.cookies_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for cookies_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.socket_address_conditions != null ? alltrue([for _, x in v.conditions.socket_address_conditions : x.operator != null ? contains(["Any", "IPMatch"], x.operator) : true]) : true])
+    error_message = "socket_address_conditions operator must be either 'Any' or 'IPMatch'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.client_port_conditions != null ? alltrue([for _, x in v.conditions.client_port_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for client_port_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.server_port_conditions != null ? alltrue([for _, x in v.conditions.server_port_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for server_port_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.front_door_rules : v.conditions.host_name_conditions != null ? alltrue([for _, x in v.conditions.host_name_conditions : contains(["Any", "BeginsWith", "Contains", "EndsWith", "Equal", "LessThan", "LessThanOrEqual", "GreaterThan", "greaterThanOrEqual", "RegEx"], x.operator)]) : true])
+    error_message = "The operator for host_name_conditions must be either 'Any', 'BeginsWith', 'Contains', 'EndsWith', 'Equal', 'LessThan', 'LessThanOrEqual', 'GreaterThan', 'greaterThanOrEqual' or 'RegEx'."
+  }
 }
 
 variable "front_door_secrets" {

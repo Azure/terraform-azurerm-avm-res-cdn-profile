@@ -414,13 +414,13 @@ map(object({
 
     geo_filters = optional(map(object({
       relative_path = string       # must be "/" for Standard_Microsoft. Must be unique across all filters. Only one allowed for Standard_Microsoft
-      action        = string       # create a validation: allowed values: Allow or Block
-      country_codes = list(string) # Create a validation. Two letter country codes allows e.g. ["US", "CA"]
+      action        = string       # allowed values: Allow or Block
+      country_codes = list(string) # Two letter country codes allows e.g. ["US", "CA"]
     })), {})
 
     is_compression_enabled        = optional(bool)
-    querystring_caching_behaviour = optional(string, "IgnoreQueryString") # create a validation: allowed values: IgnoreQueryString,BypassCaching ,UseQueryString,NotSet for premium verizon.
-    optimization_type             = optional(string)                      # create a validation: allowed values: DynamicSiteAcceleration,GeneralMediaStreaming,GeneralWebDelivery,LargeFileDownload ,VideoOnDemandMediaStreaming
+    querystring_caching_behaviour = optional(string, "IgnoreQueryString") # allowed values: IgnoreQueryString,BypassCaching ,UseQueryString,NotSet for premium verizon.
+    optimization_type             = optional(string)                      # allowed values: DynamicSiteAcceleration,GeneralMediaStreaming,GeneralWebDelivery,LargeFileDownload ,VideoOnDemandMediaStreaming
 
     origins = map(object({
       name       = string
