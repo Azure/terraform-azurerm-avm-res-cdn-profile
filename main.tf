@@ -113,3 +113,80 @@ resource "azurerm_management_lock" "this" {
   depends_on = [azapi_resource.front_door_profile]
 }
 
+# metric alerts
+resource "azurerm_monitor_metric_alert" "this" {
+  for_each = var.metric_alerts != null ? var.metric_alerts : {}
+
+  name                = each.value.name
+  resource_group_name = data.azurerm_resource_group.rg.name
+  scopes              = [azapi_resource.front_door_profile.id]
+  description         = each.value.description
+  enabled             = each.value.enabled
+  frequency           = each.value.frequency
+  severity            = each.value.severity
+  window_size         = each.value.window_size
+  target_resource_type = each.value.target_resource_type
+  target_resource_location = each.value.target_resource_location
+  auto_mitigate       = each.value.auto_mitigate
+  dynamic "action" {
+    for_each = each.value.actions != null ? each.value.actions : []
+
+    content {
+      action_group_id = action.value.action_group_id
+      webhook_properties = action.value.webhook_properties
+    }
+  }
+
+  dynamic "criteria" {
+    for_each = try(each.value.criterias, [])
+
+    content {
+      aggregation      = criteria.value.aggregation
+      metric_name      = criteria.value.metric_name
+      metric_namespace = criteria.value.metric_namespace
+      operator         = criteria.value.operator
+      threshold        = criteria.value.threshold
+      skip_metric_validation = criteria.value.skip_metric_validation
+      dynamic dimension {
+        for_each = criteria.value.dimensions != null ? criteria.value.dimensions : []
+
+        content {
+          name     = dimension.value.name
+          operator = dimension.value.operator
+          values   = dimension.value.values
+        }
+      }
+    }
+  }
+
+  dynamic "dynamic_criteria" {
+    for_each = each.value.dynamic_criterias != null ? each.value.dynamic_criterias : []
+
+    content {
+      aggregation      = dynamic_criteria.value.aggregation
+      metric_name      = dynamic_criteria.value.metric_name
+      metric_namespace = dynamic_criteria.value.metric_namespace
+      operator         = dynamic_criteria.value.operator
+      alert_sensitivity = dynamic_criteria.value.alert_sensitivity
+      evaluation_failure_count = dynamic_criteria.value.evaluation_failure_count
+      evaluation_total_count = dynamic_criteria.value.evaluation_total_count
+      ignore_data_before = dynamic_criteria.value.ignore_data_before
+      skip_metric_validation = dynamic_criteria.value.skip_metric_validation
+      dimension {
+        name     = dynamic_criteria.value.dimension.name
+        operator = dynamic_criteria.value.dimension.operator
+        values   = dynamic_criteria.value.dimension.values
+      }
+    }
+  }
+
+  dynamic "application_insights_web_test_location_availability_criteria" {
+    for_each = each.value.application_insights_web_test_location_availability_criterias != null ? each.value.application_insights_web_test_location_availability_criterias : []
+
+    content {
+      component_id    = application_insights_web_test_location_availability_criteria.value.component_id
+      failed_location_count = application_insights_web_test_location_availability_criteria.value.failed_location_count
+      web_test_id     = application_insights_web_test_location_availability_criteria.value.web_test_id
+    }
+  }
+}

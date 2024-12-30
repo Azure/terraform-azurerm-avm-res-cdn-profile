@@ -1996,3 +1996,59 @@ variable "tags" {
   default     = null
   description = "Map of tags to assign to the CDN profile resource."
 }
+
+variable "metric_alerts" {
+  type = map(object({
+    name = string
+    # resource_group_name = string
+    # scopes = set(string)
+    criterias = optional(list(object({
+      metric_namespace = string
+      metric_name      = string
+      aggregation      = string # Possible values are Average, Count, Minimum, Maximum and Total
+      operator         = string # Possible values are Equals, GreaterThan, GreaterThanOrEqual, LessThan and LessThanOrEqual
+      threshold        = number
+      skip_metric_validation = optional(bool, false)
+      dimensions = optional(list(object({
+        name     = string
+        operator = string
+        values   = list(string)
+  })))
+    })), [])
+    actions = optional(list(object({
+      action_group_id = string
+      webhook_properties = optional(map(string))
+    })), [])
+    dynamic_criterias = optional(list(object({
+      alert_sensitivity = string # Possible values are 'Low', 'Medium' and 'High'
+      aggregation       = string # Possible values are 'Average', 'Count', 'Minimum', 'Maximum' and 'Total'.
+      operator          = string # Possible values are 'GreaterThan', 'LessThan', 'GreaterOrLessThan'.
+      dimension = optional(list(object({
+        name     = string
+        operator = string # Possible values are 'Include', 'Exclude' and 'StartsWith'.
+        values   = list(string)
+      })), [])
+      evaluation_failure_count = optional(number, 4)
+      evaluation_total_count   = optional(number, 4)
+      ignore_data_before = optional(string) # The ISO8601 date from which to start learning the metric historical data and calculate the dynamic thresholds.
+      metric_namespace = string
+      metric_name      = string
+      skip_metric_validation = optional(bool, false)
+    })), [])
+    application_insights_web_test_location_availability_criterias = optional(list(object({
+      component_id           = string
+      failed_location_count  = number
+      web_test_id            = string
+    })), [])
+    auto_mitigate = optional(bool, true)
+    description = optional(string)
+    enabled = optional(bool, true)
+    frequency = optional(string, "PT1M") # Possible values are PT1M, PT5M, PT15M, PT30M and PT1H
+    severity = optional(number, 3) # Possible values are 0, 1, 2, 3 and 4
+    target_resource_type = optional(string) # This is Required when using a Subscription as scope, a Resource Group as scope or Multiple Scopes.
+    target_resource_location = optional(string) # This is Required when using a Subscription as scope, a Resource Group as scope or Multiple Scopes.
+    window_size = optional(string, "PT5M") # This value must be greater than 'frequency'. Possible values are PT1M, PT5M, PT15M, PT30M, PT1H, PT6H, PT12H and P1D
+    tags = optional(map(string))
+  }))
+  default = {}
+  }
