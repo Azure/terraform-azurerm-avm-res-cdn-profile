@@ -43,6 +43,9 @@ module "azurerm_cdn_frontdoor_profile" {
   location            = azurerm_resource_group.this.location
   sku                 = "Premium_AzureFrontDoor"
   resource_group_name = azurerm_resource_group.this.name
+  tags = {
+    environment = "avm-demo"
+  }
   front_door_origin_groups = {
     og1_key = {
       name = "og1"

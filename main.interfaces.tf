@@ -125,6 +125,7 @@ resource "azurerm_monitor_metric_alert" "this" {
   enabled                  = each.value.enabled
   frequency                = each.value.frequency
   severity                 = each.value.severity
+  tags                     = each.value.tags != null ? each.value.tags : var.tags
   target_resource_location = each.value.target_resource_location
   target_resource_type     = each.value.target_resource_type
   window_size              = each.value.window_size

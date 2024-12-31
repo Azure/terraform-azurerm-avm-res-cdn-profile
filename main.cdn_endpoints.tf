@@ -13,7 +13,7 @@ resource "azurerm_cdn_endpoint" "endpoints" {
   origin_path                   = each.value.origin_path
   probe_path                    = each.value.probe_path
   querystring_caching_behaviour = each.value.querystring_caching_behaviour
-  tags                          = each.value.tags
+  tags                          = each.value.tags != null ? each.value.tags : var.tags
 
   dynamic "origin" {
     for_each = each.value.origins

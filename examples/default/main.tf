@@ -25,11 +25,14 @@ resource "azurerm_resource_group" "this" {
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source              = "../../"
-  enable_telemetry    = var.enable_telemetry
-  name                = module.naming.cdn_profile.name_unique
-  location            = azurerm_resource_group.this.location
-  sku                 = "Standard_AzureFrontDoor"
+  source           = "../../"
+  enable_telemetry = var.enable_telemetry
+  name             = module.naming.cdn_profile.name_unique
+  location         = azurerm_resource_group.this.location
+  sku              = "Standard_AzureFrontDoor"
+  tags = {
+    environment = "avm-demo"
+  }
   resource_group_name = azurerm_resource_group.this.name
   front_door_origin_groups = {
     og1_key = {
@@ -99,9 +102,6 @@ module "azurerm_cdn_frontdoor_profile" {
     }
     ep2_key = {
       name = "ep2-${module.naming.cdn_endpoint.name_unique}"
-      tags = {
-        environment = "avm-test"
-      }
     }
   }
   front_door_rule_sets = ["ruleset1", "ruleset2"]

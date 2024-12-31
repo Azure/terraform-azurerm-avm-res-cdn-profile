@@ -294,9 +294,6 @@ module "azurerm_cdn_frontdoor_profile" {
       severity             = 2
       target_resource_type = "Microsoft.Cdn/profiles"
       window_size          = "PT30M"
-      tags = {
-        environment = "AVM-Test"
-      }
       criterias = [{
         metric_namespace = "Microsoft.Cdn/profiles"
         metric_name      = "ByteHitRatio"
@@ -317,9 +314,6 @@ module "azurerm_cdn_frontdoor_profile" {
       severity             = 2
       target_resource_type = "Microsoft.Cdn/profiles"
       window_size          = "PT5M"
-      tags = {
-        environment = "AVM-Test"
-      }
       criterias = [{
         metric_namespace = "Microsoft.Cdn/profiles"
         metric_name      = "OriginHealthPercentage"
@@ -345,9 +339,6 @@ module "azurerm_cdn_frontdoor_profile" {
       severity             = 2
       target_resource_type = "Microsoft.Cdn/profiles"
       window_size          = "PT5M"
-      tags = {
-        environment = "AVM-Test"
-      }
       criterias = [{
         metric_namespace = "Microsoft.Cdn/profiles"
         metric_name      = "Percentage5XX"
@@ -368,6 +359,7 @@ module "azurerm_cdn_frontdoor_profile" {
       severity             = 3
       target_resource_type = "Microsoft.Cdn/profiles"
       window_size          = "PT5M"
+      # Provide tags value if you dont want the default tags of CDN profile to be inherited
       tags = {
         environment = "AVM-Test"
       }
@@ -391,9 +383,6 @@ module "azurerm_cdn_frontdoor_profile" {
       severity             = 2
       target_resource_type = "Microsoft.Cdn/profiles"
       window_size          = "PT5M"
-      tags = {
-        environment = "AVM-Test"
-      }
       criterias = [{
         metric_namespace = "Microsoft.Cdn/profiles"
         metric_name      = "TotalLatency"
@@ -432,14 +421,14 @@ module "azurerm_cdn_frontdoor_profile" {
       role_definition_id_or_name       = "Contributor"
       principal_id                     = data.azurerm_client_config.current.object_id
       skip_service_principal_aad_check = true
-      principal_type                   = "User"
+      principal_type                   = "ServicePrincipal"
     },
     role_assignment_2 = {
       role_definition_id_or_name       = "Reader"
       principal_id                     = data.azurerm_client_config.current.object_id # replace the principal id with appropriate one
       description                      = "Example role assignment 2 of reader role"
       skip_service_principal_aad_check = false
-      principal_type                   = "User"
+      principal_type                   = "ServicePrincipal"
       #condition                        = "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"
       #condition_version                = "2.0"
     }
