@@ -55,7 +55,7 @@ resource "azurerm_eventhub_namespace" "eventhub_namespace" {
 resource "azurerm_eventhub" "eventhub" {
   message_retention   = 1
   name                = "acceptanceTestEventHub"
-  namespace_name     = azurerm_eventhub_namespace.eventhub_namespace.name
+  namespace_name      = azurerm_eventhub_namespace.eventhub_namespace.name
   partition_count     = 2
   resource_group_name = azurerm_resource_group.this.name
 }
@@ -80,12 +80,13 @@ resource "azurerm_monitor_action_group" "example" {
   name                = "CriticalAlertsAction"
   resource_group_name = azurerm_resource_group.this.name
   short_name          = "p0action"
-    email_receiver {
-    name                    = "sendtodevops"
+
+  email_receiver {
     email_address           = "devops@contoso.com"
+    name                    = "sendtodevops"
     use_common_alert_schema = true
   }
-}  
+}
 
 /* This is the module call that shows how to add interfaces for waf alignment
 Locks
@@ -277,17 +278,17 @@ module "azurerm_cdn_frontdoor_profile" {
     }
   }
 
-# Below example represents the recommended metric alerts for CDN profile as per [Azure Monitor baseline Alerts](https://azure.github.io/azure-monitor-baseline-alerts/services/Cdn/profiles/)
+  # Below example represents the recommended metric alerts for CDN profile as per [Azure Monitor baseline Alerts](https://azure.github.io/azure-monitor-baseline-alerts/services/Cdn/profiles/)
   metric_alerts = {
     alert1 = {
-      name                = "1st criterion"
-      description         = "Action will be triggered when ByteHitRatio is less than 90."
-      enabled             = false
-      frequency           = "PT5M"
-      severity            = 2
+      name                 = "1st criterion"
+      description          = "Action will be triggered when ByteHitRatio is less than 90."
+      enabled              = false
+      frequency            = "PT5M"
+      severity             = 2
       target_resource_type = "Microsoft.Cdn/profiles"
-      window_size         = "PT30M"
-      tags                = {
+      window_size          = "PT30M"
+      tags = {
         environment = "AVM-Test"
       }
       criterias = [{
@@ -303,14 +304,14 @@ module "azurerm_cdn_frontdoor_profile" {
     }
 
     alert2 = {
-      name                = "2nd criterion"
-      description         = "Action will be triggered when OriginHealthPercentage is less than 90."
-      enabled             = false
-      frequency           = "PT1M"
-      severity            = 2
+      name                 = "2nd criterion"
+      description          = "Action will be triggered when OriginHealthPercentage is less than 90."
+      enabled              = false
+      frequency            = "PT1M"
+      severity             = 2
       target_resource_type = "Microsoft.Cdn/profiles"
-      window_size         = "PT5M"
-      tags                = {
+      window_size          = "PT5M"
+      tags = {
         environment = "AVM-Test"
       }
       criterias = [{
@@ -331,14 +332,14 @@ module "azurerm_cdn_frontdoor_profile" {
     }
 
     alert3 = {
-      name                = "3rd criterion"
-      description         = "Action will be triggered when Percentage5XX is greater than 10."
-      enabled             = false
-      frequency           = "PT1M"
-      severity            = 2
+      name                 = "3rd criterion"
+      description          = "Action will be triggered when Percentage5XX is greater than 10."
+      enabled              = false
+      frequency            = "PT1M"
+      severity             = 2
       target_resource_type = "Microsoft.Cdn/profiles"
-      window_size         = "PT5M"
-      tags                = {
+      window_size          = "PT5M"
+      tags = {
         environment = "AVM-Test"
       }
       criterias = [{
@@ -354,14 +355,14 @@ module "azurerm_cdn_frontdoor_profile" {
     }
 
     alert4 = {
-      name                = "4th criterion"
-      description         = "Action will be triggered when RequestCount is greater than 1000."
-      enabled             = false
-      frequency           = "PT1M"
-      severity            = 3
+      name                 = "4th criterion"
+      description          = "Action will be triggered when RequestCount is greater than 1000."
+      enabled              = false
+      frequency            = "PT1M"
+      severity             = 3
       target_resource_type = "Microsoft.Cdn/profiles"
-      window_size         = "PT5M"
-      tags                = {
+      window_size          = "PT5M"
+      tags = {
         environment = "AVM-Test"
       }
       criterias = [{
@@ -377,14 +378,14 @@ module "azurerm_cdn_frontdoor_profile" {
     }
 
     alert5 = {
-      name                = "5th criterion"
-      description         = "Action will be triggered when TotalLatency is greater than 100."
-      enabled             = false
-      frequency           = "PT1M"
-      severity            = 2
+      name                 = "5th criterion"
+      description          = "Action will be triggered when TotalLatency is greater than 100."
+      enabled              = false
+      frequency            = "PT1M"
+      severity             = 2
       target_resource_type = "Microsoft.Cdn/profiles"
-      window_size         = "PT5M"
-      tags                = {
+      window_size          = "PT5M"
+      tags = {
         environment = "AVM-Test"
       }
       criterias = [{
@@ -398,7 +399,7 @@ module "azurerm_cdn_frontdoor_profile" {
         action_group_id = azurerm_monitor_action_group.example.id
       }]
     }
-  } 
+  }
 
   diagnostic_settings = {
     workspaceandstorage_diag = {
