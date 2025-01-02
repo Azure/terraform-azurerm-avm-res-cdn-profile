@@ -75,6 +75,19 @@ resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
   resource_group_name = azurerm_resource_group.this.name
 }
 
+# Creating an action group for metric alerts
+resource "azurerm_monitor_action_group" "example" {
+  name                = "CriticalAlertsAction"
+  resource_group_name = azurerm_resource_group.this.name
+  short_name          = "p0action"
+
+  email_receiver {
+    email_address           = "devops@contoso.com"
+    name                    = "sendtodevops"
+    use_common_alert_schema = true
+  }
+}
+
 /* This is the module call that shows how to add interfaces for waf alignment
 Locks
 Tags
@@ -262,6 +275,118 @@ module "azurerm_cdn_frontdoor_profile" {
           transforms       = ["Uppercase"]
         }]
       }
+    }
+  }
+
+  # Below example represents the recommended metric alerts for CDN profile as per [Azure Monitor baseline Alerts](https://azure.github.io/azure-monitor-baseline-alerts/services/Cdn/profiles/)
+  metric_alerts = {
+    alert1 = {
+      name                 = "1st criterion"
+      description          = "Action will be triggered when ByteHitRatio is less than 90."
+      enabled              = false
+      frequency            = "PT5M"
+      severity             = 2
+      target_resource_type = "Microsoft.Cdn/profiles"
+      window_size          = "PT30M"
+      criterias = [{
+        metric_namespace = "Microsoft.Cdn/profiles"
+        metric_name      = "ByteHitRatio"
+        aggregation      = "Average"
+        operator         = "LessThan"
+        threshold        = 90
+      }]
+      actions = [{
+        action_group_id = azurerm_monitor_action_group.example.id
+      }]
+    }
+
+    alert2 = {
+      name                 = "2nd criterion"
+      description          = "Action will be triggered when OriginHealthPercentage is less than 90."
+      enabled              = false
+      frequency            = "PT1M"
+      severity             = 2
+      target_resource_type = "Microsoft.Cdn/profiles"
+      window_size          = "PT5M"
+      criterias = [{
+        metric_namespace = "Microsoft.Cdn/profiles"
+        metric_name      = "OriginHealthPercentage"
+        aggregation      = "Average"
+        operator         = "LessThanOrEqual"
+        threshold        = 90
+        dimensions = [{
+          name     = "Origingroup"
+          operator = "Include"
+          values   = ["render"]
+        }]
+      }]
+      actions = [{
+        action_group_id = azurerm_monitor_action_group.example.id
+      }]
+    }
+
+    alert3 = {
+      name                 = "3rd criterion"
+      description          = "Action will be triggered when Percentage5XX is greater than 10."
+      enabled              = false
+      frequency            = "PT1M"
+      severity             = 2
+      target_resource_type = "Microsoft.Cdn/profiles"
+      window_size          = "PT5M"
+      criterias = [{
+        metric_namespace = "Microsoft.Cdn/profiles"
+        metric_name      = "Percentage5XX"
+        aggregation      = "Average"
+        operator         = "GreaterThan"
+        threshold        = 10
+      }]
+      actions = [{
+        action_group_id = azurerm_monitor_action_group.example.id
+      }]
+    }
+
+    alert4 = {
+      name                 = "4th criterion"
+      description          = "Action will be triggered when RequestCount is greater than 1000."
+      enabled              = false
+      frequency            = "PT1M"
+      severity             = 3
+      target_resource_type = "Microsoft.Cdn/profiles"
+      window_size          = "PT5M"
+      # Provide tags value if you dont want the default tags of CDN profile to be inherited
+      tags = {
+        environment = "AVM-Test"
+      }
+      criterias = [{
+        metric_namespace = "Microsoft.Cdn/profiles"
+        metric_name      = "RequestCount"
+        aggregation      = "Total"
+        operator         = "GreaterThan"
+        threshold        = 1000
+      }]
+      actions = [{
+        action_group_id = azurerm_monitor_action_group.example.id
+      }]
+    }
+
+    alert5 = {
+      name                 = "5th criterion"
+      description          = "Action will be triggered when TotalLatency is greater than 100."
+      enabled              = false
+      frequency            = "PT1M"
+      severity             = 2
+      target_resource_type = "Microsoft.Cdn/profiles"
+      window_size          = "PT5M"
+      criterias = [{
+        metric_namespace = "Microsoft.Cdn/profiles"
+        metric_name      = "TotalLatency"
+        aggregation      = "Average"
+        operator         = "GreaterThan"
+        threshold        = 100
+      }]
+      actions = [{
+        action_group_id = azurerm_monitor_action_group.example.id
+      }]
     }
   }
 

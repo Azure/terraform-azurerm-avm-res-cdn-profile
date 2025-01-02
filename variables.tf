@@ -2145,6 +2145,178 @@ variable "managed_identities" {
   nullable    = false
 }
 
+variable "metric_alerts" {
+  type = map(object({
+    name = string
+    criterias = optional(list(object({
+      metric_namespace       = string
+      metric_name            = string
+      aggregation            = string # Possible values are Average, Count, Minimum, Maximum and Total
+      operator               = string # Possible values are Equals, GreaterThan, GreaterThanOrEqual, LessThan and LessThanOrEqual
+      threshold              = number
+      skip_metric_validation = optional(bool, false)
+      dimensions = optional(list(object({
+        name     = string
+        operator = string
+        values   = list(string)
+      })))
+    })), [])
+    actions = optional(list(object({
+      action_group_id    = string
+      webhook_properties = optional(map(string))
+    })), [])
+    dynamic_criterias = optional(list(object({
+      alert_sensitivity = string # Possible values are 'Low', 'Medium' and 'High'
+      aggregation       = string # Possible values are 'Average', 'Count', 'Minimum', 'Maximum' and 'Total'.
+      operator          = string # Possible values are 'GreaterThan', 'LessThan', 'GreaterOrLessThan'.
+      dimension = optional(list(object({
+        name     = string
+        operator = string # Possible values are 'Include', 'Exclude' and 'StartsWith'.
+        values   = list(string)
+      })), [])
+      evaluation_failure_count = optional(number, 4)
+      evaluation_total_count   = optional(number, 4)
+      ignore_data_before       = optional(string) # The ISO8601 date from which to start learning the metric historical data and calculate the dynamic thresholds.
+      metric_namespace         = string
+      metric_name              = string
+      skip_metric_validation   = optional(bool, false)
+    })), [])
+    application_insights_web_test_location_availability_criterias = optional(list(object({
+      component_id          = string
+      failed_location_count = number
+      web_test_id           = string
+    })), [])
+    auto_mitigate            = optional(bool, true)
+    description              = optional(string)
+    enabled                  = optional(bool, true)
+    frequency                = optional(string, "PT1M") # Possible values are PT1M, PT5M, PT15M, PT30M and PT1H
+    severity                 = optional(number, 3)      # Possible values are 0, 1, 2, 3 and 4
+    target_resource_type     = optional(string)         # This is Required when using a Subscription as scope, a Resource Group as scope or Multiple Scopes.
+    target_resource_location = optional(string)         # This is Required when using a Subscription as scope, a Resource Group as scope or Multiple Scopes.
+    window_size              = optional(string, "PT5M") # This value must be greater than 'frequency'. Possible values are PT1M, PT5M, PT15M, PT30M, PT1H, PT6H, PT12H and P1D
+    tags                     = optional(map(string))
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+  Manages a map of Metric Alerts to create on the cdn/Front door profile.
+
+  - `name` - (Required) The name of the metric alert.Changing this forces a new resource to be created.
+  - `auto_mitigate` - (Optional) If set to true, automatically mitigates the alert. Defaults to `true`.
+  - `description` - (Optional) The description of the metric alert.
+  - `enabled` - (Optional) If set to true, enables the metric alert. Defaults to `true`.
+  - `frequency` - (Optional) The frequency of the metric alert. Possible values are `PT1M`, `PT5M`, `PT15M`, `PT30M` and `PT1H`. Defaults to `PT1M`.
+  - `severity` - (Optional) The severity of the metric alert. Possible values are `0`, `1`, `2`, `3` and `4`. Defaults to `3`.
+  - `target_resource_type` - (Optional) The type of the target resource. This is Required when using a Subscription as scope, a Resource Group as scope or Multiple Scopes.
+  - `target_resource_location` - (Optional) The location of the target resource. This is Required when using a Subscription as scope, a Resource Group as scope or Multiple Scopes.
+  - `window_size` - (Optional) The period of time that is used to monitor alert activity, represented in ISO 8601 duration format. This value must be greater than `frequency`. Possible values are `PT1M`, `PT5M`, `PT15M`, `PT30M`, `PT1H`, `PT6H`, `PT12H` and `P1D`. Defaults to `PT5M`.
+  - `tags` - (Optional) A map of tags to assign to the metric alert.
+  - `actions` - (Optional) A list of actions blocks as defined below:-
+    - `action_group_id` - (Required) The ID of the action group, can be sourced from the `azurerm_monitor_action_group` resource.
+    - `webhook_properties` - (Optional) A map of webhook properties.
+  - `criterias` - (Optional) A list of criterias blocks as defined below:-
+    - `metric_namespace` - (Required) The namespace of the metric.
+    - `metric_name` - (Required) The name of the metric.
+    - `aggregation` - (Required) The statistic that runs over the metric values. Possible values are `Average`, `Count`, `Minimum`, `Maximum` and `Total`.
+    - `operator` - (Required) The operator of the metric. Possible values are `Equals`, `GreaterThan`, `GreaterThanOrEqual`, `LessThan` and `LessThanOrEqual`.
+    - `threshold` - (Required) The criteria threshold value that activates the alert.
+    - `skip_metric_validation` - (Optional) If set to true, skips the validation of the metric. Defaults to `false`.
+    - `dimensions` - (Optional) A list of dimensions blocks as defined below:-
+      - `name` - (Required) The name of the dimension.
+      - `operator` - (Required) The operator of the dimension. Possible values are `Include`, `Exclude` and `StartsWith`.
+      - `values` - (Required) The values of the dimension.
+  - `dynamic_criterias` - (Optional) A list of dynamic_criteria blocks as defined below:-
+    - `alert_sensitivity` - (Required) The sensitivity of the alert. Possible values are `Low`, `Medium` and `High`.
+    - `aggregation` - (Required) The aggregation type of the metric. Possible values are `Average`, `Count`, `Minimum`, `Maximum` and `Total`.
+    - `operator` - (Required) The operator of the metric. Possible values are `GreaterThan`, `LessThan`, `GreaterOrLessThan`.
+    - `dimension` - (Optional) A list of dimension blocks as defined below:-
+      - `name` - (Required) The name of the dimension.
+      - `operator` - (Required) The operator of the dimension. Possible values are `Include`, `Exclude` and `StartsWith`.
+      - `values` - (Required) The values of the dimension.
+    - `evaluation_failure_count` - (Optional) The number of consecutive breaches of the threshold required to trigger an alert. Defaults to `4`.
+    - `evaluation_total_count` - (Optional) The number of consecutive evaluations required to trigger an alert.The lookback time window is calculated based on the aggregation granularity (window_size) and the selected number of aggregated points. Defaults to `4`.
+    - `ignore_data_before` - (Optional) The ISO8601 date from which to start learning the metric historical data and calculate the dynamic thresholds.
+    - `metric_namespace` - (Required) The namespace of the metric.
+    - `metric_name` - (Required) The name of the metric.
+    - `skip_metric_validation` - (Optional) If set to true, skips the validation of the metric. Defaults to `false`.
+  - `application_insights_web_test_location_availability_criterias` - (Optional) A list of application_insights_web_test_location_availability_criteria blocks as defined below:-
+    - `component_id` - (Required) The ID of the Application Insights component.
+    - `failed_location_count` - (Required) The number of failed locations.
+    - `web_test_id` - (Required) The ID of the web test.
+
+  Example Input:
+
+  ```terraform  
+
+  metric_alerts = {
+    alert1 = {
+      name                = "1st criterion"
+      description         = "Action will be triggered when ByteHitRatio is less than 90."
+      enabled             = false
+      frequency           = "PT5M"
+      severity            = 2
+      target_resource_type = "Microsoft.Cdn/profiles"
+      window_size         = "PT30M"
+      tags                = {
+        environment = "AVM-Test"
+      }
+      criterias = [{
+        metric_namespace = "Microsoft.Cdn/profiles"
+        metric_name      = "ByteHitRatio"
+        aggregation      = "Average"
+        operator         = "LessThan"
+        threshold        = 90
+      }]
+      actions = [{
+        action_group_id = azurerm_monitor_action_group.example.id
+      }]
+    }
+
+  ```
+  DESCRIPTION
+  nullable    = false
+
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : contains(["PT1M", "PT5M", "PT15M", "PT30M", "PT1H"], v.frequency)])
+    error_message = "The frequency must be either `PT1M`, `PT5M`, `PT15M`, `PT30M` or `PT1H`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : contains(["PT1M", "PT5M", "PT15M", "PT30M", "PT1H", "PT6H", "PT12H", "P1D"], v.window_size)])
+    error_message = "The window_size must be either `PT1M`, `PT5M`, `PT15M`, `PT30M`, `PT1H`, `PT6H`, `PT12H` or `P1D`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : contains([0, 1, 2, 3, 4], v.severity)])
+    error_message = "The severity must be either `0`, `1`, `2`, `3` or `4`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.criterias != null ? alltrue([for c in v.criterias : contains(["Average", "Count", "Minimum", "Maximum", "Total"], c.aggregation)]) : true])
+    error_message = "Invalid aggregation value in criterias. Possible values are `Average`, `Count`, `Minimum`, `Maximum` and `Total`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.criterias != null ? alltrue([for c in v.criterias : contains(["Equals", "GreaterThan", "GreaterThanOrEqual", "LessThan", "LessThanOrEqual"], c.operator)]) : true])
+    error_message = "Invalid operator value in criterias. Possible values are `Equals`, `GreaterThan`, `GreaterThanOrEqual`, `LessThan` and `LessThanOrEqual`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.criterias != null ? alltrue([for c in v.criterias : c.dimensions != null ? alltrue([for d in c.dimensions : contains(["Include", "Exclude", "StartsWith"], d.operator)]) : true]) : true])
+    error_message = "Invalid operator value in dimensions. Possible values are `Include`, `Exclude` and `StartsWith`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.dynamic_criterias != null ? alltrue([for dc in v.dynamic_criterias : contains(["Low", "Medium", "High"], dc.alert_sensitivity)]) : true])
+    error_message = "Invalid alert sensitivity value in dynamic_criterias. Possible values are `Low`, `Medium` and `High`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.dynamic_criterias != null ? alltrue([for dc in v.dynamic_criterias : contains(["Average", "Count", "Minimum", "Maximum", "Total"], dc.aggregation)]) : true])
+    error_message = "Invalid aggregation value in dynamic_criterias. Possible values are `Average`, `Count`, `Minimum`, `Maximum` and `Total`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.dynamic_criterias != null ? alltrue([for dc in v.dynamic_criterias : contains(["GreaterThan", "LessThan", "GreaterOrLessThan"], dc.operator)]) : true])
+    error_message = "Invalid operator value in dynamic_criterias. Possible values are `GreaterThan`, `LessThan`, `GreaterOrLessThan`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.dynamic_criterias != null ? alltrue([for dc in v.dynamic_criterias : dc.dimension != null ? alltrue([for d in dc.dimension : contains(["Include", "Exclude", "StartsWith"], d.operator)]) : true]) : true])
+    error_message = "Invalid operator value in dynamic_criterias dimensions. Possible values are `Include`, `Exclude` and `StartsWith`."
+  }
+}
+
 variable "response_timeout_seconds" {
   type        = number
   default     = 120

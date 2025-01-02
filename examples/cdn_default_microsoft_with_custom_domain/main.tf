@@ -43,7 +43,7 @@ resource "azurerm_storage_account" "storage" {
 module "azurerm_cdn_profile" {
   source = "../../"
   tags = {
-    environment = "avm-demo"
+    environment = "avm-CDN-demo"
   }
   enable_telemetry    = var.enable_telemetry
   name                = module.naming.cdn_profile.name_unique
