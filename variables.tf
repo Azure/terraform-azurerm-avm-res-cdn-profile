@@ -2054,6 +2054,47 @@ variable "metric_alerts" {
   ```
   DESCRIPTION
   nullable    = false
+
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : contains(["PT1M", "PT5M", "PT15M", "PT30M", "PT1H"], v.frequency)])
+    error_message = "The frequency must be either `PT1M`, `PT5M`, `PT15M`, `PT30M` or `PT1H`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : contains(["PT1M", "PT5M", "PT15M", "PT30M", "PT1H", "PT6H", "PT12H", "P1D"], v.window_size)])
+    error_message = "The window_size must be either `PT1M`, `PT5M`, `PT15M`, `PT30M`, `PT1H`, `PT6H`, `PT12H` or `P1D`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : contains([0, 1, 2, 3, 4], v.severity)])
+    error_message = "The severity must be either `0`, `1`, `2`, `3` or `4`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.criterias != null ? alltrue([for c in v.criterias : contains(["Average", "Count", "Minimum", "Maximum", "Total"], c.aggregation)]) : true])
+    error_message = "Invalid aggregation value in criterias. Possible values are `Average`, `Count`, `Minimum`, `Maximum` and `Total`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.criterias != null ? alltrue([for c in v.criterias : contains(["Equals", "GreaterThan", "GreaterThanOrEqual", "LessThan", "LessThanOrEqual"], c.operator)]) : true])
+    error_message = "Invalid operator value in criterias. Possible values are `Equals`, `GreaterThan`, `GreaterThanOrEqual`, `LessThan` and `LessThanOrEqual`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.criterias != null ? alltrue([for c in v.criterias : c.dimensions != null ? alltrue([for d in c.dimensions : contains(["Include", "Exclude", "StartsWith"], d.operator)]) : true]) : true])
+    error_message = "Invalid operator value in dimensions. Possible values are `Include`, `Exclude` and `StartsWith`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.dynamic_criterias != null ? alltrue([for dc in v.dynamic_criterias : contains(["Low", "Medium", "High"], dc.alert_sensitivity)]) : true])
+    error_message = "Invalid alert sensitivity value in dynamic_criterias. Possible values are `Low`, `Medium` and `High`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.dynamic_criterias != null ? alltrue([for dc in v.dynamic_criterias : contains(["Average", "Count", "Minimum", "Maximum", "Total"], dc.aggregation)]) : true])
+    error_message = "Invalid aggregation value in dynamic_criterias. Possible values are `Average`, `Count`, `Minimum`, `Maximum` and `Total`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.dynamic_criterias != null ? alltrue([for dc in v.dynamic_criterias : contains(["GreaterThan", "LessThan", "GreaterOrLessThan"], dc.operator)]) : true])
+    error_message = "Invalid operator value in dynamic_criterias. Possible values are `GreaterThan`, `LessThan`, `GreaterOrLessThan`."
+  }
+  validation {
+    condition     = alltrue([for _, v in var.metric_alerts : v.dynamic_criterias != null ? alltrue([for dc in v.dynamic_criterias : dc.dimension != null ? alltrue([for d in dc.dimension : contains(["Include", "Exclude", "StartsWith"], d.operator)]) : true]) : true])
+    error_message = "Invalid operator value in dynamic_criterias dimensions. Possible values are `Include`, `Exclude` and `StartsWith`."
+  }
 }
 
 variable "response_timeout_seconds" {
