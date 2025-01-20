@@ -1,7 +1,3 @@
-data "azurerm_resource_group" "rg" {
-  name = var.resource_group_name
-}
-
 # diagnostic settings can be set at profile level for front door skus and standard_microsoft cdn sku.
 resource "azurerm_monitor_diagnostic_setting" "front_door_diag" {
   for_each = strcontains(var.sku, "AzureFrontDoor") || strcontains(var.sku, "Standard_Microsoft") ? var.diagnostic_settings : {}
@@ -118,7 +114,7 @@ resource "azurerm_monitor_metric_alert" "this" {
   for_each = var.metric_alerts != null ? var.metric_alerts : {}
 
   name                     = each.value.name
-  resource_group_name      = data.azurerm_resource_group.rg.name
+  resource_group_name      = var.resource_group_name
   scopes                   = [azapi_resource.front_door_profile.id]
   auto_mitigate            = each.value.auto_mitigate
   description              = each.value.description
