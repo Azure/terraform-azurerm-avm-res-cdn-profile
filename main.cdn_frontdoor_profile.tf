@@ -1,5 +1,4 @@
-data "azapi_client_config" "current" {
-}
+data "azapi_client_config" "current" {}
 
 # using azapi since azurerm_cdn_frontdoor_profile commented above does not support identity blocks
 resource "azapi_resource" "front_door_profile" {
