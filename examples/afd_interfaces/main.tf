@@ -55,8 +55,8 @@ resource "azurerm_eventhub_namespace" "eventhub_namespace" {
 resource "azurerm_eventhub" "eventhub" {
   message_retention   = 1
   name                = "acceptanceTestEventHub"
-  namespace_name      = azurerm_eventhub_namespace.eventhub_namespace.name
   partition_count     = 2
+  namespace_name      = azurerm_eventhub_namespace.eventhub_namespace.name
   resource_group_name = azurerm_resource_group.this.name
 }
 
