@@ -48,13 +48,9 @@ resource "azurerm_storage_account" "storage" {
 # This is the module call
 module "azurerm_cdn_profile" {
   source = "../../"
-  tags = {
-    environment = "avm-CDN-demo"
-  }
-  enable_telemetry    = var.enable_telemetry
-  name                = module.naming.cdn_profile.name_unique
+
   location            = azurerm_resource_group.this.location
-  sku                 = "Standard_Microsoft"
+  name                = module.naming.cdn_profile.name_unique
   resource_group_name = azurerm_resource_group.this.name
   cdn_endpoints = {
     ep1 = {
@@ -132,27 +128,6 @@ module "azurerm_cdn_profile" {
     }
 
   }
-  # Uncheck below block to add custom domain to the CDN endpoint [ctrl + '/']
-  # cdn_endpoint_custom_domains = {
-  #   cdn1 = {
-  #     cdn_endpoint_key = "ep1"
-  #     dns_zone = {
-  #       is_azure_dns_zone                  = true                           # set it to false if your domain is hosted outside Azure DNS
-  #       name                               = data.azurerm_dns_zone.dns.name # Provide the DNS zone name if your domain is hosted outside Azure DNS
-  #       cname_record_name                  = "www"
-  #       ttl                                = 300
-  #       tags                               = { environment = "avm-demo" }
-  #       azure_dns_zone_resource_group_name = data.azurerm_dns_zone.dns.resource_group_name # Only required if DNS is hosted in Azure
-  #     }
-  #     name = "example-domain"
-  #     cdn_managed_https = {
-  #       certificate_type = "Dedicated"
-  #       protocol_type    = "ServerNameIndication"
-  #       tls_version      = "TLS12"
-  #     }
-  #   }
-  # }
-
   diagnostic_settings = {
     workspaceandstorage_diag = {
       name              = "workspaceandstorage_diag"
@@ -165,9 +140,13 @@ module "azurerm_cdn_profile" {
     }
 
   }
-
+  enable_telemetry = var.enable_telemetry
   managed_identities = {
     system_assigned = true
+  }
+  sku = "Standard_Microsoft"
+  tags = {
+    environment = "avm-CDN-demo"
   }
 }
 ```

@@ -39,18 +39,18 @@ resource "azurerm_dns_zone" "dnszone" {
 
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
-  source              = "Azure/avm-res-keyvault-vault/azurerm"
-  version             = "0.5.3"
-  tenant_id           = data.azurerm_client_config.current.tenant_id
+  source  = "Azure/avm-res-keyvault-vault/azurerm"
+  version = "0.5.3"
+
+  location            = azurerm_resource_group.this.location
   name                = module.naming.key_vault.name_unique
   resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
+  tenant_id           = data.azurerm_client_config.current.tenant_id
   network_acls = {
     default_action = "Allow"
     bypass         = "AzureServices"
     ip_rules       = ["74.225.0.0/24"]
   }
-
   role_assignments = {
     deployment_currentuser_secrets = {
       role_definition_id_or_name = "Key Vault Administrator"
@@ -65,12 +65,11 @@ module "avm_res_keyvault_vault" {
       principal_id               = azurerm_user_assigned_identity.identity_for_keyvault.principal_id
     }
   }
-
-  wait_for_rbac_before_secret_operations = {
-    create = "60s"
-  }
   tags = {
     scenario = "AVM AFD Sample Certificates deployment"
+  }
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
   }
 }
 
@@ -126,12 +125,20 @@ resource "azurerm_key_vault_certificate" "keyvaultcert" {
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source              = "../../"
-  enable_telemetry    = var.enable_telemetry
-  name                = module.naming.cdn_profile.name_unique
+  source = "../../"
+
   location            = azurerm_resource_group.this.location
-  sku                 = "Standard_AzureFrontDoor"
+  name                = module.naming.cdn_profile.name_unique
   resource_group_name = azurerm_resource_group.this.name
+  enable_telemetry    = var.enable_telemetry
+  front_door_endpoints = {
+    ep1_key = {
+      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
+      tags = {
+        environment = "avm-demo"
+      }
+    }
+  }
   front_door_origin_groups = {
     og1_key = {
       name = "og1"
@@ -191,17 +198,6 @@ module "azurerm_cdn_frontdoor_profile" {
     }
 
   }
-
-  front_door_endpoints = {
-    ep1_key = {
-      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
-      tags = {
-        environment = "avm-demo"
-      }
-    }
-  }
-
-  front_door_rule_sets = ["ruleset1", "ruleset2"]
   front_door_routes = {
     route1_key = {
       name             = "route1"
@@ -224,7 +220,7 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
+  front_door_rule_sets = ["ruleset1", "ruleset2"]
   front_door_rules = {
     rule1_key = {
       name              = "examplerule1"
@@ -332,38 +328,13 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
-  # Certificate must be signed by intermediate CA. Self Signed Certificates do not work. 
-  # Uncomment front_door_secrets adn front_door_custom_domains if you have intermediate CA signed certificate in your keyvault.
-
-  # front_door_secrets = {
-  #   secret1_key = {
-  #     name                     = "contoso1fabrikamcom"
-  #     key_vault_certificate_id = azurerm_key_vault_certificate.keyvaultcert.versionless_id
-
-  #   }
-  # }
-
-  # front_door_custom_domains = {
-  #   contoso1_key = {
-  #     name        = "contoso1"
-  #     dns_zone_id = azurerm_dns_zone.dnszone.id
-  #     host_name   = "contoso1.fabrikam.com"
-
-  #     tls = {
-  #       certificate_type         = "CustomerCertificate "
-  #       minimum_tls_version      = "TLS12" # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
-  #       cdn_frontdoor_secret_key = "secret1_key"
-  #     }
-  #   }
-  # }
-
   managed_identities = {
     system_assigned = true
     user_assigned_resource_ids = [
       azurerm_user_assigned_identity.identity_for_keyvault.id
     ]
   }
+  sku = "Standard_AzureFrontDoor"
 }
 
 

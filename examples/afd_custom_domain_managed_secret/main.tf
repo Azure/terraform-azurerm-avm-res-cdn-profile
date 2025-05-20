@@ -31,12 +31,41 @@ resource "azurerm_dns_zone" "dnszone" {
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source              = "../../"
-  enable_telemetry    = var.enable_telemetry
-  name                = module.naming.cdn_profile.name_unique
+  source = "../../"
+
   location            = azurerm_resource_group.this.location
-  sku                 = "Standard_AzureFrontDoor"
+  name                = module.naming.cdn_profile.name_unique
   resource_group_name = azurerm_resource_group.this.name
+  enable_telemetry    = var.enable_telemetry
+  front_door_custom_domains = {
+    contoso1_key = {
+      name        = "contoso1"
+      dns_zone_id = azurerm_dns_zone.dnszone.id
+      host_name   = "contoso1.fabrikam.com"
+
+      tls = {
+        certificate_type    = "ManagedCertificate"
+        minimum_tls_version = "TLS12" # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
+      }
+    },
+    contoso2_key = {
+      name        = "contoso2"
+      dns_zone_id = azurerm_dns_zone.dnszone.id
+      host_name   = "contoso2.fabrikam.com"
+      tls = {
+        certificate_type    = "ManagedCertificate"
+        minimum_tls_version = "TLS12" # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
+      }
+    }
+  }
+  front_door_endpoints = {
+    ep1_key = {
+      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
+      tags = {
+        environment = "avm-demo"
+      }
+    }
+  }
   front_door_origin_groups = {
     og1_key = {
       name = "og1"
@@ -83,37 +112,6 @@ module "azurerm_cdn_frontdoor_profile" {
       weight                         = 1
     }
   }
-  front_door_custom_domains = {
-    contoso1_key = {
-      name        = "contoso1"
-      dns_zone_id = azurerm_dns_zone.dnszone.id
-      host_name   = "contoso1.fabrikam.com"
-
-      tls = {
-        certificate_type    = "ManagedCertificate"
-        minimum_tls_version = "TLS12" # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
-      }
-    },
-    contoso2_key = {
-      name        = "contoso2"
-      dns_zone_id = azurerm_dns_zone.dnszone.id
-      host_name   = "contoso2.fabrikam.com"
-      tls = {
-        certificate_type    = "ManagedCertificate"
-        minimum_tls_version = "TLS12" # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
-      }
-    }
-  }
-  front_door_endpoints = {
-    ep1_key = {
-      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
-      tags = {
-        environment = "avm-demo"
-      }
-    }
-  }
-  front_door_rule_sets = ["ruleset1"]
-
   front_door_routes = {
     route1_key = {
       name                   = "route1"
@@ -136,7 +134,7 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
+  front_door_rule_sets = ["ruleset1"]
   front_door_rules = {
     rule1_key = {
       name              = "examplerule1"
@@ -244,4 +242,5 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
+  sku = "Standard_AzureFrontDoor"
 }
