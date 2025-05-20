@@ -1,9 +1,9 @@
 terraform {
-  required_version = "~> 1.5"
+  required_version = ">= 1.9, < 2.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.74"
+      version = "~> 4.0"
     }
   }
 }
@@ -41,7 +41,7 @@ resource "azurerm_subnet" "subnet" {
   private_link_service_network_policies_enabled = false
 }
 
-# Create an Internal Load balancer resource 
+# Create an Internal Load balancer resource
 resource "azurerm_lb" "lb" {
   location            = azurerm_resource_group.this.location
   name                = "lb-example"
