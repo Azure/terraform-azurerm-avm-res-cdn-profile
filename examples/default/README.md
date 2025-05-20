@@ -31,15 +31,23 @@ resource "azurerm_resource_group" "this" {
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source           = "../../"
-  enable_telemetry = var.enable_telemetry
-  name             = module.naming.cdn_profile.name_unique
-  location         = azurerm_resource_group.this.location
-  sku              = "Standard_AzureFrontDoor"
-  tags = {
-    environment = "avm-demo"
-  }
+  source = "../../"
+
+  location            = azurerm_resource_group.this.location
+  name                = module.naming.cdn_profile.name_unique
   resource_group_name = azurerm_resource_group.this.name
+  enable_telemetry    = var.enable_telemetry
+  front_door_endpoints = {
+    ep1_key = {
+      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
+      tags = {
+        environment = "avm-demo"
+      }
+    }
+    ep2_key = {
+      name = "ep2-${module.naming.cdn_endpoint.name_unique}"
+    }
+  }
   front_door_origin_groups = {
     og1_key = {
       name = "og1"
@@ -98,20 +106,6 @@ module "azurerm_cdn_frontdoor_profile" {
       weight                         = 1
     }
   }
-
-  front_door_endpoints = {
-    ep1_key = {
-      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
-      tags = {
-        environment = "avm-demo"
-      }
-    }
-    ep2_key = {
-      name = "ep2-${module.naming.cdn_endpoint.name_unique}"
-    }
-  }
-  front_door_rule_sets = ["ruleset1", "ruleset2"]
-
   front_door_routes = {
     route1_key = {
       name                      = "route1"
@@ -146,7 +140,7 @@ module "azurerm_cdn_frontdoor_profile" {
       cdn_frontdoor_origin_path = "/originpath"
     }
   }
-
+  front_door_rule_sets = ["ruleset1", "ruleset2"]
   front_door_rules = {
     rule1_key = {
       name              = "examplerule1"
@@ -348,7 +342,10 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
+  sku = "Standard_AzureFrontDoor"
+  tags = {
+    environment = "avm-demo"
+  }
 }
 ```
 

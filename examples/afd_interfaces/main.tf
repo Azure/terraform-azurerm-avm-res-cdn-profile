@@ -42,11 +42,12 @@ resource "azurerm_log_analytics_workspace" "workspace" {
 }
 
 resource "azurerm_eventhub_namespace" "eventhub_namespace" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.eventhub_namespace.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-  sku                 = "Standard"
-  capacity            = 1
+  location             = azurerm_resource_group.this.location
+  name                 = module.naming.eventhub_namespace.name_unique
+  resource_group_name  = azurerm_resource_group.this.name
+  sku                  = "Standard"
+  auto_inflate_enabled = true
+  capacity             = 1
   tags = {
     environment = "avm-demo"
   }
@@ -96,12 +97,39 @@ Diagnostic Settings
 Managed Identity
 */
 module "azurerm_cdn_frontdoor_profile" {
-  source              = "../../"
-  enable_telemetry    = var.enable_telemetry
-  name                = module.naming.cdn_profile.name_unique
+  source = "../../"
+
   location            = azurerm_resource_group.this.location
-  sku                 = "Standard_AzureFrontDoor"
+  name                = module.naming.cdn_profile.name_unique
   resource_group_name = azurerm_resource_group.this.name
+  diagnostic_settings = {
+    workspaceandstorage_diag = {
+      name                           = "workspaceandstorage_diag"
+      metric_categories              = ["AllMetrics"]
+      log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
+      log_groups                     = [] # must explicitly set since log_groups defaults to ["allLogs"]
+      log_analytics_destination_type = "Dedicated"
+      workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
+      storage_account_resource_id    = azurerm_storage_account.storage.id
+      #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
+    }
+    eventhub_diag = {
+      name                                     = "eventhubforwarding"
+      log_groups                               = ["allLogs", "Audit"] # you can set either log_categories or log_groups.
+      metric_categories                        = ["AllMetrics"]
+      event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
+      event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
+    }
+  }
+  enable_telemetry = var.enable_telemetry
+  front_door_endpoints = {
+    ep1_key = {
+      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
+      tags = {
+        env = "prod"
+      }
+    }
+  }
   front_door_origin_groups = {
     og1_key = {
       name = "og1"
@@ -122,7 +150,6 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
   front_door_origins = {
     origin1_key = {
       name                           = "origin1"
@@ -137,16 +164,6 @@ module "azurerm_cdn_frontdoor_profile" {
       weight                         = 1
     }
   }
-  front_door_endpoints = {
-    ep1_key = {
-      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
-      tags = {
-        env = "prod"
-      }
-    }
-  }
-  front_door_rule_sets = ["ruleset1"]
-
   front_door_routes = {
     route1_key = {
       name                   = "route1"
@@ -168,8 +185,7 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
-
+  front_door_rule_sets = ["ruleset1"]
   front_door_rules = {
     rule1_key = {
       name              = "examplerule1"
@@ -277,7 +293,12 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
+  managed_identities = {
+    system_assigned = true
+    user_assigned_resource_ids = [
+      azurerm_user_assigned_identity.identity_for_keyvault.id
+    ]
+  }
   # Below example represents the recommended metric alerts for CDN profile as per [Azure Monitor baseline Alerts](https://azure.github.io/azure-monitor-baseline-alerts/services/Cdn/profiles/)
   metric_alerts = {
     alert1 = {
@@ -389,27 +410,6 @@ module "azurerm_cdn_frontdoor_profile" {
       }]
     }
   }
-
-  diagnostic_settings = {
-    workspaceandstorage_diag = {
-      name                           = "workspaceandstorage_diag"
-      metric_categories              = ["AllMetrics"]
-      log_categories                 = ["FrontDoorAccessLog", "FrontDoorHealthProbeLog", "FrontDoorWebApplicationFirewallLog"]
-      log_groups                     = [] # must explicitly set since log_groups defaults to ["allLogs"]
-      log_analytics_destination_type = "Dedicated"
-      workspace_resource_id          = azurerm_log_analytics_workspace.workspace.id
-      storage_account_resource_id    = azurerm_storage_account.storage.id
-      #marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
-    }
-    eventhub_diag = {
-      name                                     = "eventhubforwarding"
-      log_groups                               = ["allLogs", "Audit"] # you can set either log_categories or log_groups.
-      metric_categories                        = ["AllMetrics"]
-      event_hub_authorization_rule_resource_id = azurerm_eventhub_namespace_authorization_rule.example.id
-      event_hub_name                           = azurerm_eventhub_namespace.eventhub_namespace.name
-    }
-  }
-
   role_assignments = {
     self_contributor = {
       role_definition_id_or_name       = "Contributor"
@@ -427,22 +427,9 @@ module "azurerm_cdn_frontdoor_profile" {
       #condition_version                = "2.0"
     }
   }
-
+  sku = "Standard_AzureFrontDoor"
   tags = {
     environment = "avm-demo"
     costcenter  = "IT"
-  }
-
-  # A lock needs to be removed before destroy or before making changes
-  #  lock = {
-  #      name = "lock-cdnprofile" # optional
-  #      kind = "CanNotDelete"
-  #    }
-
-  managed_identities = {
-    system_assigned = true
-    user_assigned_resource_ids = [
-      azurerm_user_assigned_identity.identity_for_keyvault.id
-    ]
   }
 }

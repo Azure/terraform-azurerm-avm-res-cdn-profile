@@ -86,12 +86,20 @@ resource "azurerm_private_dns_zone_virtual_network_link" "dns_link" {
 
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
-  source              = "../../"
-  enable_telemetry    = var.enable_telemetry
-  name                = module.naming.cdn_profile.name_unique
+  source = "../../"
+
   location            = azurerm_resource_group.this.location
-  sku                 = "Premium_AzureFrontDoor"
+  name                = module.naming.cdn_profile.name_unique
   resource_group_name = azurerm_resource_group.this.name
+  enable_telemetry    = var.enable_telemetry
+  front_door_endpoints = {
+    ep1_key = {
+      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
+      tags = {
+        environment = "avm-demo"
+      }
+    }
+  }
   front_door_origin_groups = {
     og1_key = {
       name = "og1"
@@ -134,18 +142,6 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
-  front_door_endpoints = {
-    ep1_key = {
-      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
-      tags = {
-        environment = "avm-demo"
-      }
-    }
-  }
-
-  front_door_rule_sets = ["ruleset1"]
-
   front_door_routes = {
     route1_key = {
       name                   = "route1"
@@ -166,7 +162,7 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
-
+  front_door_rule_sets = ["ruleset1"]
   front_door_rules = {
     rule1_key = {
       name              = "examplerule1"
@@ -274,6 +270,7 @@ module "azurerm_cdn_frontdoor_profile" {
       }
     }
   }
+  sku = "Premium_AzureFrontDoor"
 }
 ```
 
