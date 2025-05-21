@@ -28,8 +28,12 @@ locals {
       }
     } : {}
   }
+  resource_group_id                  = provider::azapi::subscription_resource_id(local.subscription_id, local.resource_type, local.resource_names)
+  resource_names                     = [var.resource_group_name]
+  resource_type                      = "Microsoft.Resources/resourceGroups"
   role_definition_resource_substring = "providers/Microsoft.Authorization/roleDefinitions"
   route_custom_domains = {
     for k, v in var.front_door_routes : k => [for cd in v.custom_domain_keys : azurerm_cdn_frontdoor_custom_domain.cds[cd].id]
   }
+  subscription_id = data.azapi_client_config.current.subscription_id
 }
