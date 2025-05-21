@@ -492,3 +492,4 @@ module "azurerm_cdn_frontdoor_profile" {
     environment = "avm-demo"
   }
 }
+

@@ -47,7 +47,7 @@ resource "azurerm_subnet" "subnet" {
   private_link_service_network_policies_enabled = false
 }
 
-# Create an Internal Load balancer resource 
+# Create an Internal Load balancer resource
 resource "azurerm_lb" "lb" {
   location            = azurerm_resource_group.this.location
   name                = "lb-example"
