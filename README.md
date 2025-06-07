@@ -1059,7 +1059,7 @@ Description:   Manages a map of Front Door (standard/premium) Origins.
   - `weight` - (Optional) The weight of the origin in a given origin group for load balancing. Must be between 1 and 1000. Defaults to 500.
   - `private_link` - (Optional) A private\_link block as defined below:-
       - `request_message` - (Optional) Specifies the request message that will be submitted to the private\_link\_target\_id when requesting the private link endpoint connection. Values must be between 1 and 140 characters in length. Defaults to Access request for CDN FrontDoor Private Link Origin.
-      - `target_type` - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are blob, blob\_secondary, web and sites.
+      - `target_type` - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are blob, blob\_secondary, web, web\_secondary, sites, Gateway and managedEnvironments.
       - `location` - (Required) Specifies the location where the Private Link resource should exist. Changing this forces a new resource to be created.
       - `private_link_target_id` - (Required) Specifies the ID of the Private Link resource to connect to.  
 
