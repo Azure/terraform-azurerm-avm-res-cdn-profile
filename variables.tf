@@ -41,10 +41,10 @@ variable "cdn_endpoint_custom_domains" {
   default     = {}
   description = <<Description
   Manages a map of CDN Endpoint Custom Domains. A CDN Endpoint Custom Domain is a custom domain that is associated with a CDN Endpoint.
-  
+
  - `cdn_endpoint_key` - (Required) key of the endpoint defined in variable cdn_endpoints.
  - `dns_zone` - (Required) A map of DNS Zone details for the custom domain. Each dns_zone block supports the following: -
-  - `is_azure_dns_zone` - (Required) Is the custom domain hosted on Azure DNS Zone? 
+  - `is_azure_dns_zone` - (Required) Is the custom domain hosted on Azure DNS Zone?
   - `name` - (Required) The name of the DNS Zone for the custom domain.
   - `cname_record_name` - (Required) The name of the CNAME record to create in the DNS Zone.
   - `ttl` - (Required) The TTL of the CNAME record.
@@ -66,10 +66,10 @@ variable "cdn_endpoint_custom_domains" {
     cdn1 = {
       cdn_endpoint_key = "ep1"
       dns_zone = {
-        is_azure_dns_zone                  = true                           
-        name                               = data.azurerm_dns_zone.dns.name 
+        is_azure_dns_zone                  = true
+        name                               = data.azurerm_dns_zone.dns.name
         cname_record_name                  = "www"
-        azure_dns_zone_resource_group_name = data.azurerm_dns_zone.dns.resource_group_name 
+        azure_dns_zone_resource_group_name = data.azurerm_dns_zone.dns.resource_group_name
       }
       name = "example-domain"
       cdn_managed_https = {
@@ -310,7 +310,7 @@ variable "cdn_endpoints" {
   }))
   default     = {}
   description = <<DESCRIPTION
-  Manages a map of CDN Endpoints. A CDN Endpoint is the entity within a CDN Profile containing configuration information regarding caching behaviours and origins. 
+  Manages a map of CDN Endpoints. A CDN Endpoint is the entity within a CDN Profile containing configuration information regarding caching behaviours and origins.
 
   - `name` - (Required) The name of the CDN Endpoint. Changing this forces a new CDN Endpoint to be created.
   - `tags` - (Optional) A mapping of tags to assign to the CDN Endpoint.
@@ -465,7 +465,7 @@ variable "cdn_endpoints" {
     - `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
     - `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
     - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
-    
+
   Example Input:
 
   ```terraform
@@ -479,7 +479,7 @@ variable "cdn_endpoints" {
         optimization_type             = "GeneralWebDelivery"
         geo_filters = { # Only one geo filter allowed for Standard_Microsoft sku
           gf1 = {
-            relative_path = "/" 
+            relative_path = "/"
             action        = "Block"
             country_codes = ["AF", "GB"]
           }
@@ -537,7 +537,7 @@ variable "cdn_endpoints" {
         }
         diagnostic_setting = {
           name                        = "storage_diag"
-          log_groups                  = ["allLogs"] 
+          log_groups                  = ["allLogs"]
           storage_account_resource_id = azurerm_storage_account.storage.id
           marketplace_partner_resource_id          = "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{partnerResourceProvider}/{partnerResourceType}/{partnerResourceName}"
         }
@@ -649,7 +649,7 @@ variable "diagnostic_settings" {
   default     = {}
   description = <<DESCRIPTION
   Manages a map of diagnostic settings on the CDN/front door profile. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-  
+
   - `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
   - `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
   - `log_groups` - (Optional) A set of log groups to send to the log analytics workspace. Defaults to `["allLogs"]`.
@@ -734,8 +734,8 @@ variable "front_door_custom_domains" {
   default     = {}
   description = <<DESCRIPTION
   Manages a map of Front Door (standard/premium) Custom Domains.
-  
-  - `name` - (Required) The name which should be used for this Front Door Custom Domain. 
+
+  - `name` - (Required) The name which should be used for this Front Door Custom Domain.
   - `dns_zone_id` - (Optional) The ID of the Azure DNS Zone which should be used for this Front Door Custom Domain.
   - `host_name` - (Required) The host name of the domain. The host_name field must be the FQDN of your domain.
   - `tls` - (Required) A tls block as defined below : -
@@ -752,7 +752,7 @@ variable "front_door_custom_domains" {
         host_name   = "contoso1.fabrikam.com"
         tls = {
           certificate_type    = "ManagedCertificate"
-          minimum_tls_version = "TLS12" 
+          minimum_tls_version = "TLS12"
           cdn_frontdoor_secret_key = "Secret1_key"
         }
       }
@@ -780,8 +780,8 @@ variable "front_door_endpoints" {
   default     = {}
   description = <<DESCRIPTION
   Manages a map of Front Door (standard/premium) Endpoints.
-  
-  - `name` - (Required) The name which should be used for this Front Door Endpoint.  
+
+  - `name` - (Required) The name which should be used for this Front Door Endpoint.
   - `enabled` - (Optional) Specifies if this Front Door Endpoint is enabled? Defaults to true.
   - `tags` - (Optional) Specifies a mapping of tags which should be assigned to the Front Door Endpoint.
   Example Input:
@@ -862,7 +862,7 @@ variable "front_door_firewall_policies" {
   default     = {}
   description = <<DESCRIPTION
   Manages a map of Front Door (standard/premium) Firewall Policies.
-  
+
   - `name` - (Required) The name which should be used for this Front Door Security Policy. Possible values must not be an empty string.
   - `resource_group_name` - (Required) The name of the resource group. Changing this forces a new resource to be created.
   - `sku_name` - (Required) The sku's pricing tier for this Front Door Firewall Policy. Possible values include 'Standard_AzureFrontDoor' or 'Premium_AzureFrontDoor'.
@@ -1111,8 +1111,8 @@ variable "front_door_origin_groups" {
   default     = {}
   description = <<DESCRIPTION
   Manages a map of Front Door (standard/premium) Origin groups.
-  
-  - `name` - (Required) The name which should be used for this Front Door Origin Group. 
+
+  - `name` - (Required) The name which should be used for this Front Door Origin Group.
   - `load_balancing` - (Required) A load_balancing block as defined below:-
       - `additional_latency_in_milliseconds` - (Optional) Specifies the additional latency in milliseconds for probes to fall into the lowest latency bucket. Possible values are between 0 and 1000 milliseconds (inclusive). Defaults to 50
       - `sample_size` - (Optional) Specifies the number of samples to consider for load balancing decisions. Possible values are between 0 and 255 (inclusive). Defaults to 4.
@@ -1260,7 +1260,7 @@ variable "front_door_origins" {
   default     = {}
   description = <<DESCRIPTION
   Manages a map of Front Door (standard/premium) Origins.
-  
+
   - `name` - (Required) The name which should be used for this Front Door Origin.
   - `origin_group_key` - (Required) The key of the origin group to which this origin belongs.
   - `host_name` - (Required) The IPv4 address, IPv6 address or Domain name of the Origin.
@@ -1273,10 +1273,10 @@ variable "front_door_origins" {
   - `weight` - (Optional) The weight of the origin in a given origin group for load balancing. Must be between 1 and 1000. Defaults to 500.
   - `private_link` - (Optional) A private_link block as defined below:-
       - `request_message` - (Optional) Specifies the request message that will be submitted to the private_link_target_id when requesting the private link endpoint connection. Values must be between 1 and 140 characters in length. Defaults to Access request for CDN FrontDoor Private Link Origin.
-      - `target_type` - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are blob, blob_secondary, web and sites.
+      - `target_type` - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are `blob`, `blob_secondary`, `web`, `sites`, `Gateway`, `managedEnvironments` and `web_secondary`.
       - `location` - (Required) Specifies the location where the Private Link resource should exist. Changing this forces a new resource to be created.
       - `private_link_target_id` - (Required) Specifies the ID of the Private Link resource to connect to.
-  
+
   Example Input:
 
   ```terraform
@@ -1355,12 +1355,12 @@ variable "front_door_origins" {
       [
         for _, v in var.front_door_origins : v["private_link"] == null ? true : alltrue(
           [
-            for _, x in v["private_link"] : x["target_type"] == null ? true : contains(["blob", "blob_secondary", "web", "sites"], x["target_type"])
+            for _, x in v["private_link"] : x["target_type"] == null ? true : contains(["blob", "blob_secondary", "web", "sites", "Gateway", "managedEnvironments", "web_secondary"], x["target_type"])
           ]
         )
       ]
     )
-    error_message = "Possible values are 'blob', 'blob_secondary', 'web' and 'sites'. Set it to 'null' for Load balancer as origin"
+    error_message = "Possible values are 'blob', 'blob_secondary', 'web', 'sites', 'Gateway', 'managedEnvironments' and 'web_secondary'. Set it to 'null' for Load balancer as origin"
   }
 }
 
@@ -1389,7 +1389,7 @@ variable "front_door_routes" {
   default     = {}
   description = <<DESCRIPTION
   Manages a map of Front Door (standard/premium) Routes.
-  
+
   - `name` - (Required) The name which should be used for this Front Door Route. Valid values must begin with a letter or number, end with a letter or number and may only contain letters, numbers and hyphens with a maximum length of 90 characters.
   - `origin_group_key` - (Required) The key of the origin group to associate the route with.
   - `origin_keys` - (Required) The list of the keys of the origins to associate the route with.
@@ -1745,7 +1745,7 @@ variable "front_door_rules" {
       - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
       - `match_values` - (Optional) One or more string or integer values(e.g. "1") representing the value of the POST argument to match. If multiple values are specified, they're evaluated using OR logic.
       - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
-    - `http_version_conditions` - (Optional) A http_version_conditions block as defined below:- 
+    - `http_version_conditions` - (Optional) A http_version_conditions block as defined below:-
       - `operator` - (Optional) The operator to use when matching the HTTP version. Defaults to 'Equal'.
       - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
       - `match_values` - (Required) What HTTP version should this condition match? Possible values 2.0, 1.1, 1.0 or 0.9.
@@ -1777,7 +1777,7 @@ variable "front_door_rules" {
       - `transforms` - (Optional) The transforms to apply to the match values. Possible values include 'Lowercase', 'RemoveNulls', 'Trim', 'Uppercase', 'UrlDecode' or 'UrlEncode'.
       - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
     - `ssl_protocol_conditions` - (Optional) A ssl_protocol_conditions block as defined below:-
-      - `match_values` - (Required) The values to match against. Possible values include 'TLSv1', 'TLSv1.1' and 'TLSv1.2'.  'TLSv1.3' support yet to be included in terraform. 
+      - `match_values` - (Required) The values to match against. Possible values include 'TLSv1', 'TLSv1.1' and 'TLSv1.2'.  'TLSv1.3' support yet to be included in terraform.
       - `operator` - (Optional) The operator to use when matching the SSL protocol. Defaults to 'Equal'.
       - `negate_condition` - (Optional) Should the condition be negated? Possible values are true or false. Defaults to false.
 
@@ -1932,7 +1932,7 @@ variable "front_door_rules" {
     error_message = "The header_action for response_header_actions must be either 'Append', 'Delete' or 'Overwrite'."
   }
   validation {
-    condition     = alltrue([for _, v in var.front_door_rules : v.actions.response_header_actions != null ? alltrue([for _, x in v.actions.response_header_actions : contains(["Append", "Delete"], x.header_action) ? x.value != null : true]) : true])
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.response_header_actions != null ? alltrue([for _, x in v.actions.response_header_actions : contains(["Append", "Overwrite"], x.header_action) ? x.value != null : true]) : true])
     error_message = "The value is required if the header_action is set to 'Append' or 'Overwrite'."
   }
   validation {
@@ -1940,7 +1940,7 @@ variable "front_door_rules" {
     error_message = "The header_action for request_header_actions must be either 'Append', 'Delete' or 'Overwrite'."
   }
   validation {
-    condition     = alltrue([for _, v in var.front_door_rules : v.actions.request_header_actions != null ? alltrue([for _, x in v.actions.request_header_actions : contains(["Append", "Delete"], x.header_action) ? x.value != null : true]) : true])
+    condition     = alltrue([for _, v in var.front_door_rules : v.actions.request_header_actions != null ? alltrue([for _, x in v.actions.request_header_actions : contains(["Append", "Overwrite"], x.header_action) ? x.value != null : true]) : true])
     error_message = "The value is required if the header_action is set to 'Append' or 'Overwrite'."
   }
   validation {
@@ -2009,8 +2009,8 @@ variable "front_door_secrets" {
   default     = {}
   description = <<DESCRIPTION
   Manages a map of Front Door (standard/premium) Secrets.
-  
-  - `name` - (Required) The name which should be used for this Front Door Secret. 
+
+  - `name` - (Required) The name which should be used for this Front Door Secret.
   - `key_vault_certificate_id` - (Required) The ID of the Key Vault certificate resource to use.
   Example Input:
 
@@ -2046,7 +2046,7 @@ variable "front_door_security_policies" {
   default     = {}
   description = <<DESCRIPTION
   Manages a map of Front Door (standard/premium) Security Policies.
-  
+
   - `name` - (Required) The name which should be used for this Front Door Security Policy. Possible values must not be an empty string.
   - `firewall` - (Required) An firewall block as defined below: -
   - `front_door_firewall_policy_key` - (Required) the key of Front Door Firewall Policy that should be linked to this Front Door Security Policy.
@@ -2101,7 +2101,7 @@ variable "lock" {
   default     = null
   description = <<DESCRIPTION
   Controls the Resource Lock configuration for this resource. The following properties can be specified:
-  
+
   - `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
   - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
   Example Input:
@@ -2128,7 +2128,7 @@ variable "managed_identities" {
   default     = {}
   description = <<DESCRIPTION
   Controls the Managed Identities configuration on this resource. The following properties can be specified:
-  
+
   - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
   - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
   Example Input:
@@ -2245,7 +2245,7 @@ variable "metric_alerts" {
 
   Example Input:
 
-  ```terraform  
+  ```terraform
 
   metric_alerts = {
     alert1 = {
@@ -2342,7 +2342,7 @@ variable "role_assignments" {
   default     = {}
   description = <<DESCRIPTION
   A map of role assignments to create on the cdn/Front door profile. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-  
+
   - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
   - `principal_id` - The ID of the principal to assign the role to.
   - `description` - (Optional) The description of the role assignment.
@@ -2351,7 +2351,7 @@ variable "role_assignments" {
   - `condition_version` - (Optional) The version of the condition syntax. Leave as `null` if you are not using a condition, if you are then valid values are '2.0'.
   - `delegated_managed_identity_resource_id` - (Optional) The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created. This field is only used in cross-tenant scenario.
   - `principal_type` - (Optional) The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
-  
+
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
   Example Input:
 
@@ -2359,7 +2359,7 @@ variable "role_assignments" {
   role_assignments = {
     role_assignment_2 = {
       role_definition_id_or_name       = "Reader"
-      principal_id                     = data.azurerm_client_config.current.object_id #"125****-c***-4f**-**0d-******53b5**" 
+      principal_id                     = data.azurerm_client_config.current.object_id #"125****-c***-4f**-**0d-******53b5**"
       description                      = "Example role assignment 2 of reader role"
       skip_service_principal_aad_check = false
       principal_type                   = "ServicePrincipal"

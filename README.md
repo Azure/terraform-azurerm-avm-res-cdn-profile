@@ -110,7 +110,7 @@ Description:   Manages a map of CDN Endpoint Custom Domains. A CDN Endpoint Cust
     cdn1 = {
       cdn_endpoint_key = "ep1"
       dns_zone = {
-        is_azure_dns_zone                  = true                           
+        is_azure_dns_zone                  = true
         name                               = data.azurerm_dns_zone.dns.name
         cname_record_name                  = "www"
         azure_dns_zone_resource_group_name = data.azurerm_dns_zone.dns.resource_group_name
@@ -322,7 +322,7 @@ Description:   Manages a map of CDN Endpoints. A CDN Endpoint is the entity with
     - `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
     - `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
     - `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
-    - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.  
+    - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
 
   Example Input:
 
@@ -719,7 +719,7 @@ Default: `{}`
 
 Description:   Manages a map of Front Door (standard/premium) Endpoints.
 
-  - `name` - (Required) The name which should be used for this Front Door Endpoint.  
+  - `name` - (Required) The name which should be used for this Front Door Endpoint.
   - `enabled` - (Optional) Specifies if this Front Door Endpoint is enabled? Defaults to true.
   - `tags` - (Optional) Specifies a mapping of tags which should be assigned to the Front Door Endpoint.  
   Example Input:
@@ -1059,9 +1059,9 @@ Description:   Manages a map of Front Door (standard/premium) Origins.
   - `weight` - (Optional) The weight of the origin in a given origin group for load balancing. Must be between 1 and 1000. Defaults to 500.
   - `private_link` - (Optional) A private\_link block as defined below:-
       - `request_message` - (Optional) Specifies the request message that will be submitted to the private\_link\_target\_id when requesting the private link endpoint connection. Values must be between 1 and 140 characters in length. Defaults to Access request for CDN FrontDoor Private Link Origin.
-      - `target_type` - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are blob, blob\_secondary, web and sites.
+      - `target_type` - (Optional) Specifies the type of target for this Private Link Endpoint. Possible values are `blob`, `blob_secondary`, `web`, `sites`, `Gateway`, `managedEnvironments` and `web_secondary`.
       - `location` - (Required) Specifies the location where the Private Link resource should exist. Changing this forces a new resource to be created.
-      - `private_link_target_id` - (Required) Specifies the ID of the Private Link resource to connect to.  
+      - `private_link_target_id` - (Required) Specifies the ID of the Private Link resource to connect to.
 
   Example Input:
 
@@ -1777,7 +1777,7 @@ Description:   Manages a map of Metric Alerts to create on the cdn/Front door pr
 
   Example Input:
 
-  ```terraform  
+  ```terraform
 
   metric_alerts = {
     alert1 = {
