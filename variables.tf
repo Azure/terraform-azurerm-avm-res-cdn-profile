@@ -306,7 +306,7 @@ variable "cdn_endpoints" {
       event_hub_authorization_rule_resource_id = optional(string, null)
       event_hub_name                           = optional(string, null)
       marketplace_partner_resource_id          = optional(string, null)
-    }), {})
+    }), null)
   }))
   default     = {}
   description = <<DESCRIPTION
@@ -727,7 +727,6 @@ variable "front_door_custom_domains" {
     host_name   = string
     tls = object({
       certificate_type         = optional(string, "ManagedCertificate")
-      minimum_tls_version      = optional(string, "TLS12") # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
       cdn_frontdoor_secret_key = optional(string, null)
     })
   }))
@@ -740,7 +739,6 @@ variable "front_door_custom_domains" {
   - `host_name` - (Required) The host name of the domain. The host_name field must be the FQDN of your domain.
   - `tls` - (Required) A tls block as defined below : -
     - `certificate_type` - (Optional) Defines the source of the SSL certificate. Possible values include 'CustomerCertificate' and 'ManagedCertificate'. Defaults to 'ManagedCertificate'.
-    - `minimum_tls_version` - (Optional) TLS protocol version that will be used for Https. Possible values include 'TLS10' and 'TLS12'. Defaults to 'TLS12'.
     - `cdn_frontdoor_secret_key` - (Optional) Key of the Front Door Secret object. This is required when certificate_type is 'CustomerCertificate'.
   Example Input:
 
@@ -752,7 +750,6 @@ variable "front_door_custom_domains" {
         host_name   = "contoso1.fabrikam.com"
         tls = {
           certificate_type    = "ManagedCertificate"
-          minimum_tls_version = "TLS12"
           cdn_frontdoor_secret_key = "Secret1_key"
         }
       }
@@ -764,10 +761,6 @@ variable "front_door_custom_domains" {
   validation {
     condition     = alltrue([for _, v in var.front_door_custom_domains : contains(["CustomerCertificate", "ManagedCertificate"], v.tls.certificate_type)])
     error_message = "Certificate type must be one of: 'CustomerCertificate', 'ManagedCertificate'."
-  }
-  validation {
-    condition     = alltrue([for _, v in var.front_door_custom_domains : contains(["TLS10", "TLS12"], v.tls.minimum_tls_version)])
-    error_message = "Minimum TLS version must be one of: 'TLS10', 'TLS12'."
   }
 }
 
