@@ -1,5 +1,6 @@
 terraform {
   required_version = ">= 1.9, < 2.0"
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -37,10 +38,10 @@ resource "azurerm_storage_account" "storage" {
 
 # Create a virtual network
 resource "azurerm_virtual_network" "vnet" {
-  address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.this.location
   name                = "storage-vnet"
   resource_group_name = azurerm_resource_group.this.name
+  address_space       = ["10.0.0.0/16"]
 }
 
 # Create a subnet within the virtual network

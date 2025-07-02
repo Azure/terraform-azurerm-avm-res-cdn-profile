@@ -597,7 +597,7 @@ map(object({
       event_hub_authorization_rule_resource_id = optional(string, null)
       event_hub_name                           = optional(string, null)
       marketplace_partner_resource_id          = optional(string, null)
-    }), {})
+    }), null)
   }))
 ```
 
@@ -679,7 +679,6 @@ Description:   Manages a map of Front Door (standard/premium) Custom Domains.
   - `host_name` - (Required) The host name of the domain. The host\_name field must be the FQDN of your domain.
   - `tls` - (Required) A tls block as defined below : -
     - `certificate_type` - (Optional) Defines the source of the SSL certificate. Possible values include 'CustomerCertificate' and 'ManagedCertificate'. Defaults to 'ManagedCertificate'.
-    - `minimum_tls_version` - (Optional) TLS protocol version that will be used for Https. Possible values include 'TLS10' and 'TLS12'. Defaults to 'TLS12'.
     - `cdn_frontdoor_secret_key` - (Optional) Key of the Front Door Secret object. This is required when certificate\_type is 'CustomerCertificate'.  
   Example Input:
 
@@ -691,7 +690,6 @@ Description:   Manages a map of Front Door (standard/premium) Custom Domains.
         host_name   = "contoso1.fabrikam.com"
         tls = {
           certificate_type    = "ManagedCertificate"
-          minimum_tls_version = "TLS12"
           cdn_frontdoor_secret_key = "Secret1_key"
         }
       }
@@ -707,7 +705,6 @@ map(object({
     host_name   = string
     tls = object({
       certificate_type         = optional(string, "ManagedCertificate")
-      minimum_tls_version      = optional(string, "TLS12") # TLS1.3 is not yet supported in Terraform azurerm_cdn_frontdoor_custom_domain
       cdn_frontdoor_secret_key = optional(string, null)
     })
   }))
