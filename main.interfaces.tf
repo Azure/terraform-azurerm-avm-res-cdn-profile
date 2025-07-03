@@ -25,23 +25,24 @@ resource "azurerm_monitor_diagnostic_setting" "front_door_diag" {
       category_group = enabled_log.value
     }
   }
-  dynamic "metric" {
+  dynamic "enabled_metric" {
     for_each = each.value.metric_categories
 
     content {
-      category = metric.value
+      category = enabled_metric.value
     }
   }
 
   lifecycle {
     ignore_changes = [
-      log_analytics_destination_type
+      log_analytics_destination_type,
+      enabled_metric
     ]
   }
 }
 
 
-# cdn profile endpoints are seperate child resources that have their own diagnostic settings.
+# cdn profile endpoints are separate child resources that have their own diagnostic settings.
 resource "azurerm_monitor_diagnostic_setting" "cdn_endpoint_diag" {
   for_each = local.cdn_endpoint_diagnostics
 
@@ -68,17 +69,17 @@ resource "azurerm_monitor_diagnostic_setting" "cdn_endpoint_diag" {
       category_group = enabled_log.value
     }
   }
-  dynamic "metric" {
+  dynamic "enabled_metric" {
     for_each = each.value.diagnostic_setting.metric_categories
 
     content {
-      category = metric.value
+      category = enabled_metric.value
     }
   }
 
   lifecycle {
     ignore_changes = [
-      log_analytics_destination_type
+      log_analytics_destination_type,
     ]
   }
 }

@@ -9,7 +9,6 @@ resource "azurerm_cdn_frontdoor_custom_domain" "cds" {
   tls {
     cdn_frontdoor_secret_id = each.value.tls.certificate_type == "CustomerCertificate" ? azurerm_cdn_frontdoor_secret.frontdoorsecret[each.value.tls.cdn_frontdoor_secret_key].id : null
     certificate_type        = each.value.tls.certificate_type
-    minimum_tls_version     = each.value.tls.minimum_tls_version
   }
 }
 
