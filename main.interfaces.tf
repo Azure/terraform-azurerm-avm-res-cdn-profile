@@ -35,7 +35,8 @@ resource "azurerm_monitor_diagnostic_setting" "front_door_diag" {
 
   lifecycle {
     ignore_changes = [
-      log_analytics_destination_type
+      log_analytics_destination_type,
+      enabled_metric
     ]
   }
 }
@@ -78,7 +79,7 @@ resource "azurerm_monitor_diagnostic_setting" "cdn_endpoint_diag" {
 
   lifecycle {
     ignore_changes = [
-      log_analytics_destination_type
+      log_analytics_destination_type,
     ]
   }
 }
