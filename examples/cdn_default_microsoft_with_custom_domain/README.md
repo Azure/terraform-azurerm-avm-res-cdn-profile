@@ -18,7 +18,6 @@ terraform {
 provider "azurerm" {
   features {}
   # subscription_id = "your-subscription-id" # Replace with your Azure subscription ID
-  subscription_id = "9ff79d1b-9fac-40a9-b1e6-f7791d2b9ba6"
 }
 
 # This ensures we have unique CAF compliant names for our resources.
