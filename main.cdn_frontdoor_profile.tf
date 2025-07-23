@@ -9,6 +9,7 @@ resource "azapi_resource" "front_door_profile" {
   body = {
     properties = {
       originResponseTimeoutSeconds = var.response_timeout_seconds
+      # Only include logScrubbing when rules are present
       logScrubbing = length(var.scrubbing_rule) > 0 ? {
         state = "Enabled"
         scrubbingRules = [
@@ -18,10 +19,7 @@ resource "azapi_resource" "front_door_profile" {
             state                 = "Enabled"
           }
         ]
-        } : {
-        state          = "Disabled"
-        scrubbingRules = null
-      }
+      } : null
     }
     sku = {
       name = var.sku
