@@ -17,7 +17,7 @@ provider "azurerm" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  version = "0.4.2"
 }
 
 # This is required for resource modules
@@ -42,7 +42,7 @@ resource "azurerm_dns_zone" "dnszone" {
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "0.5.3"
+  version = "0.10.1"
 
   location            = azurerm_resource_group.this.location
   name                = module.naming.key_vault.name_unique

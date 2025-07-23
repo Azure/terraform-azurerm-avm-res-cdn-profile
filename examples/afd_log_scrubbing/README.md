@@ -72,7 +72,7 @@ resource "azurerm_resource_group" "this" {
 
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.1"
+  version = "0.4.2"
 }
 
 # Deploy the Azure Front Door profile with log scrubbing
@@ -172,7 +172,7 @@ Version:
 
 Source: Azure/naming/azurerm
 
-Version: 0.4.1
+Version: 0.4.2
 
 ## Clean up
 
