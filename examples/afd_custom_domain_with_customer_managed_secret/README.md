@@ -48,7 +48,7 @@ resource "azurerm_dns_zone" "dnszone" {
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "0.10.1"
+  version = "0.5.3"
 
   location            = azurerm_resource_group.this.location
   name                = module.naming.key_vault.name_unique
@@ -399,7 +399,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: 0.10.1
+Version: 0.5.3
 
 ### <a name="module_azurerm_cdn_frontdoor_profile"></a> [azurerm\_cdn\_frontdoor\_profile](#module\_azurerm\_cdn\_frontdoor\_profile)
 
