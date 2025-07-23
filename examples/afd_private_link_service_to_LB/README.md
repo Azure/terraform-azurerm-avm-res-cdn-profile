@@ -68,10 +68,10 @@ resource "azurerm_lb" "lb" {
 
 # Create Private link service
 resource "azurerm_private_link_service" "pls" {
-  load_balancer_frontend_ip_configuration_ids = [azurerm_lb.lb.frontend_ip_configuration[0].id]
   location                                    = azurerm_resource_group.this.location
   name                                        = "afd-lb-pls"
   resource_group_name                         = azurerm_resource_group.this.name
+  load_balancer_frontend_ip_configuration_ids = [azurerm_lb.lb.frontend_ip_configuration[0].id]
 
   nat_ip_configuration {
     name                       = "primary"
