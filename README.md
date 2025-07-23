@@ -1914,6 +1914,39 @@ map(object({
 
 Default: `{}`
 
+### <a name="input_scrubbing_rule"></a> [scrubbing\_rule](#input\_scrubbing\_rule)
+
+Description: A set of scrubbing rule objects that define what data should be scrubbed from logs for compliance and privacy purposes.
+
+Each `scrubbing_rule` object supports the following:
+- `match_variable` - (Required) The variable to be scrubbed from the logs. Possible values are `QueryStringArgNames`, `RequestIPAddress`, and `RequestUri`.
+
+When no `scrubbing_rule` blocks are defined, log scrubbing will be automatically disabled. When one or more `scrubbing_rule` blocks are present, log scrubbing will be enabled.
+
+Example:
+```terraform
+scrubbing_rule = [
+  {
+    match_variable = "RequestIPAddress"
+  },
+  {
+    match_variable = "QueryStringArgNames"
+  }
+]
+```
+
+Note: The operator field is implicitly set to `EqualsAny`, as it is the sole supported value, and is therefore not exposed as a configurable option.
+
+Type:
+
+```hcl
+set(object({
+    match_variable = string
+  }))
+```
+
+Default: `[]`
+
 ### <a name="input_sku"></a> [sku](#input\_sku)
 
 Description: The SKU name of the Azure Front Door. Default is `Standard`. Possible values are `standard` and `premium`.SKU name for CDN can be 'Standard\_ChinaCdn' or 'Standard\_Microsoft'
