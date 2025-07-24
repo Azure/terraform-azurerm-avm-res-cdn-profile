@@ -2,6 +2,10 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 
   required_providers {
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.5"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
@@ -10,7 +14,9 @@ terraform {
 }
 
 provider "azurerm" {
-  features {}
+  features {
+
+  }
   # subscription_id = "your-subscription-id" # Replace with your Azure subscription ID
 }
 
@@ -60,12 +66,18 @@ resource "azurerm_lb" "lb" {
   }
 }
 
+locals {
+  azure_front_door_managed_subscription_id = "c1bc5dd7-ea97-469c-89fa-8f26624902fd"
+}
+
 # Create Private link service
 resource "azurerm_private_link_service" "pls" {
   location                                    = azurerm_resource_group.this.location
   name                                        = "afd-lb-pls"
   resource_group_name                         = azurerm_resource_group.this.name
+  auto_approval_subscription_ids              = [local.azure_front_door_managed_subscription_id]
   load_balancer_frontend_ip_configuration_ids = [azurerm_lb.lb.frontend_ip_configuration[0].id]
+  visibility_subscription_ids                 = [local.azure_front_door_managed_subscription_id]
 
   nat_ip_configuration {
     name                       = "primary"
@@ -73,6 +85,29 @@ resource "azurerm_private_link_service" "pls" {
     subnet_id                  = azurerm_subnet.subnet.id
     private_ip_address_version = "IPv4"
   }
+}
+
+data "azapi_resource_list" "list_private_endpoint_connections" {
+  parent_id = azurerm_private_link_service.pls.id
+  type      = "Microsoft.Network/privateLinkServices/privateEndpointConnections@2019-04-01"
+  response_export_values = [
+    "value",
+  ]
+
+  depends_on = [
+    module.azurerm_cdn_frontdoor_profile,
+  ]
+}
+
+resource "azapi_resource_action" "remove_private_endpoint_connection" {
+  method      = "DELETE"
+  resource_id = data.azapi_resource_list.list_private_endpoint_connections.output.value[0].id
+  type        = "Microsoft.Network/privateLinkServices/privateEndpointConnections@2023-05-01"
+  when        = "destroy"
+
+  depends_on = [
+    azurerm_private_link_service.pls,
+  ]
 }
 
 # This is the module call
@@ -264,5 +299,7 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   sku = "Premium_AzureFrontDoor"
 
-  depends_on = [azurerm_private_link_service.pls]
+  depends_on = [
+    azurerm_private_link_service.pls,
+  ]
 }
