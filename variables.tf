@@ -2317,8 +2317,8 @@ variable "response_timeout_seconds" {
   description = "Specifies the maximum response timeout in seconds. Possible values are between 16 and 240 seconds (inclusive). Defaults to 120 seconds. "
 
   validation {
-    condition     = var.response_timeout_seconds >= 16 && var.response_timeout_seconds <= 120
-    error_message = "The respoonse time must be between 16 & 120 Seconds"
+    condition     = var.response_timeout_seconds >= 16 && var.response_timeout_seconds <= 240
+    error_message = "The response time must be between 16 & 240 Seconds"
   }
 }
 
