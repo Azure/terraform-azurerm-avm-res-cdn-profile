@@ -2318,7 +2318,7 @@ variable "response_timeout_seconds" {
 
   validation {
     condition     = var.response_timeout_seconds >= 16 && var.response_timeout_seconds <= 240
-    error_message = "The respoonse time must be between 16 & 240 Seconds"
+    error_message = "The response time must be between 16 & 240 Seconds"
   }
 }
 
