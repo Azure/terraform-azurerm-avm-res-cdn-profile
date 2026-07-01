@@ -18,7 +18,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.5)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
 
@@ -1914,6 +1914,39 @@ map(object({
 ```
 
 Default: `{}`
+
+### <a name="input_scrubbing_rule"></a> [scrubbing\_rule](#input\_scrubbing\_rule)
+
+Description: A set of scrubbing rule objects that define what data should be scrubbed from logs for compliance and privacy purposes.
+
+Each `scrubbing_rule` object supports the following:
+- `match_variable` - (Required) The variable to be scrubbed from the logs. Possible values are `QueryStringArgNames`, `RequestIPAddress`, and `RequestUri`.
+
+When no `scrubbing_rule` blocks are defined, log scrubbing will be automatically disabled. When one or more `scrubbing_rule` blocks are present, log scrubbing will be enabled.
+
+Example:
+```terraform
+scrubbing_rule = [
+  {
+    match_variable = "RequestIPAddress"
+  },
+  {
+    match_variable = "QueryStringArgNames"
+  }
+]
+```
+
+Note: The operator field is implicitly set to `EqualsAny`, as it is the sole supported value, and is therefore not exposed as a configurable option.
+
+Type:
+
+```hcl
+set(object({
+    match_variable = string
+  }))
+```
+
+Default: `[]`
 
 ### <a name="input_sku"></a> [sku](#input\_sku)
 

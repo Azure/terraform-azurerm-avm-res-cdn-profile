@@ -9,6 +9,10 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 
   required_providers {
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.5"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
@@ -17,14 +21,16 @@ terraform {
 }
 
 provider "azurerm" {
-  features {}
+  features {
+
+  }
   # subscription_id = "your-subscription-id" # Replace with your Azure subscription ID
 }
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  version = "0.4.2"
 }
 
 # This is required for resource modules
@@ -67,12 +73,18 @@ resource "azurerm_lb" "lb" {
   }
 }
 
+locals {
+  azure_front_door_managed_subscription_id = "c1bc5dd7-ea97-469c-89fa-8f26624902fd"
+}
+
 # Create Private link service
 resource "azurerm_private_link_service" "pls" {
   location                                    = azurerm_resource_group.this.location
   name                                        = "afd-lb-pls"
   resource_group_name                         = azurerm_resource_group.this.name
+  auto_approval_subscription_ids              = [local.azure_front_door_managed_subscription_id]
   load_balancer_frontend_ip_configuration_ids = [azurerm_lb.lb.frontend_ip_configuration[0].id]
+  visibility_subscription_ids                 = [local.azure_front_door_managed_subscription_id]
 
   nat_ip_configuration {
     name                       = "primary"
@@ -80,6 +92,29 @@ resource "azurerm_private_link_service" "pls" {
     subnet_id                  = azurerm_subnet.subnet.id
     private_ip_address_version = "IPv4"
   }
+}
+
+data "azapi_resource_list" "list_private_endpoint_connections" {
+  parent_id = azurerm_private_link_service.pls.id
+  type      = "Microsoft.Network/privateLinkServices/privateEndpointConnections@2019-04-01"
+  response_export_values = [
+    "value",
+  ]
+
+  depends_on = [
+    module.azurerm_cdn_frontdoor_profile,
+  ]
+}
+
+resource "azapi_resource_action" "remove_private_endpoint_connection" {
+  method      = "DELETE"
+  resource_id = data.azapi_resource_list.list_private_endpoint_connections.output.value[0].id
+  type        = "Microsoft.Network/privateLinkServices/privateEndpointConnections@2023-05-01"
+  when        = "destroy"
+
+  depends_on = [
+    azurerm_private_link_service.pls,
+  ]
 }
 
 # This is the module call
@@ -271,7 +306,9 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   sku = "Premium_AzureFrontDoor"
 
-  depends_on = [azurerm_private_link_service.pls]
+  depends_on = [
+    azurerm_private_link_service.pls,
+  ]
 }
 ```
 
@@ -282,17 +319,21 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.5)
+
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
 
 ## Resources
 
 The following resources are used by this module:
 
+- [azapi_resource_action.remove_private_endpoint_connection](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [azurerm_lb.lb](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/lb) (resource)
 - [azurerm_private_link_service.pls](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_link_service) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
+- [azapi_resource_list.list_private_endpoint_connections](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_list) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -311,7 +352,7 @@ If it is set to false, then no telemetry will be collected.
 
 Type: `bool`
 
-Default: `true`
+Default: `false`
 
 ## Outputs
 
@@ -331,7 +372,7 @@ Version:
 
 Source: Azure/naming/azurerm
 
-Version: 0.3.0
+Version: 0.4.2
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

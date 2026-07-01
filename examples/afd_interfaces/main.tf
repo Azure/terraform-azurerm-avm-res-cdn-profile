@@ -17,7 +17,7 @@ provider "azurerm" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  version = "0.4.2"
 }
 
 # This is required for resource modules
@@ -57,10 +57,14 @@ resource "azurerm_eventhub_namespace" "eventhub_namespace" {
 }
 
 resource "azurerm_eventhub" "eventhub" {
-  message_retention = 1
-  name              = "acceptanceTestEventHub"
-  partition_count   = 2
-  namespace_id      = azurerm_eventhub_namespace.eventhub_namespace.id
+  name            = "acceptanceTestEventHub"
+  partition_count = 2
+  namespace_id    = azurerm_eventhub_namespace.eventhub_namespace.id
+
+  retention_description {
+    cleanup_policy          = "Delete"
+    retention_time_in_hours = 24
+  }
 }
 
 resource "azurerm_eventhub_namespace_authorization_rule" "example" {
