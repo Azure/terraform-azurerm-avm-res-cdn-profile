@@ -23,6 +23,7 @@ resource "azurerm_cdn_endpoint" "endpoints" {
       name      = origin.value.name
     }
   }
+
   # azurerm_cdn_endpoint supports `global_delivery_rule` and `delivery_rule` only when `Standard_Microsoft` sku is used.
   dynamic "delivery_rule" {
     for_each = coalesce(each.value.delivery_rules, [])
@@ -226,6 +227,7 @@ resource "azurerm_cdn_endpoint" "endpoints" {
       }
     }
   }
+
   dynamic "geo_filter" {
     for_each = each.value.geo_filters
 
@@ -253,6 +255,7 @@ resource "azurerm_cdn_endpoint_custom_domain" "cds" {
       tls_version      = cdn_managed_https.value.tls_version
     }
   }
+
   dynamic "user_managed_https" {
     for_each = each.value.user_managed_https == null ? [] : [each.value.user_managed_https]
 
@@ -275,4 +278,3 @@ resource "azurerm_dns_cname_record" "cdn" {
   tags                = each.value.dns_zone.tags
   target_resource_id  = azurerm_cdn_endpoint.endpoints[each.value.cdn_endpoint_key].id
 }
-
