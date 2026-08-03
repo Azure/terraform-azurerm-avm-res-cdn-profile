@@ -1,4 +1,3 @@
-
 resource "azurerm_cdn_frontdoor_secret" "frontdoorsecret" {
   for_each = var.front_door_secrets
 
@@ -11,5 +10,3 @@ resource "azurerm_cdn_frontdoor_secret" "frontdoorsecret" {
     }
   }
 }
-
-

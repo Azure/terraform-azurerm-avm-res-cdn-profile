@@ -37,6 +37,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "wafs" {
       }
     }
   }
+
   dynamic "managed_rule" {
     for_each = try(each.value.managed_rules, null)
 
@@ -120,10 +121,3 @@ resource "azurerm_cdn_frontdoor_security_policy" "security_policies" {
 
   depends_on = [azurerm_cdn_frontdoor_custom_domain.cds, azurerm_cdn_frontdoor_endpoint.endpoints]
 }
-
-
-
-
-
-
-
