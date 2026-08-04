@@ -5,10 +5,21 @@ resource "azapi_resource" "front_door_profile" {
   location  = "Global"
   name      = var.name
   parent_id = local.resource_group_id
-  type      = "Microsoft.Cdn/profiles@2023-07-01-preview"
+  type      = "Microsoft.Cdn/profiles@2025-06-01"
   body = {
     properties = {
       originResponseTimeoutSeconds = var.response_timeout_seconds
+      # Only include logScrubbing when rules are present
+      logScrubbing = length(var.scrubbing_rule) > 0 ? {
+        state = "Enabled"
+        scrubbingRules = [
+          for rule in var.scrubbing_rule : {
+            matchVariable         = rule.match_variable
+            selectorMatchOperator = "EqualsAny"
+            state                 = "Enabled"
+          }
+        ]
+      } : null
     }
     sku = {
       name = var.sku
