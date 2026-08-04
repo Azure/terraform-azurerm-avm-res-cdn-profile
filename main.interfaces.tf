@@ -25,6 +25,7 @@ resource "azurerm_monitor_diagnostic_setting" "front_door_diag" {
       category_group = enabled_log.value
     }
   }
+
   dynamic "enabled_metric" {
     for_each = each.value.metric_categories
 
@@ -40,7 +41,6 @@ resource "azurerm_monitor_diagnostic_setting" "front_door_diag" {
     ]
   }
 }
-
 
 # cdn profile endpoints are separate child resources that have their own diagnostic settings.
 resource "azurerm_monitor_diagnostic_setting" "cdn_endpoint_diag" {
@@ -69,6 +69,7 @@ resource "azurerm_monitor_diagnostic_setting" "cdn_endpoint_diag" {
       category_group = enabled_log.value
     }
   }
+
   dynamic "enabled_metric" {
     for_each = each.value.diagnostic_setting.metric_categories
 
@@ -135,6 +136,7 @@ resource "azurerm_monitor_metric_alert" "this" {
       webhook_properties = action.value.webhook_properties
     }
   }
+
   dynamic "application_insights_web_test_location_availability_criteria" {
     for_each = each.value.application_insights_web_test_location_availability_criterias != null ? each.value.application_insights_web_test_location_availability_criterias : []
 
@@ -144,6 +146,7 @@ resource "azurerm_monitor_metric_alert" "this" {
       web_test_id           = application_insights_web_test_location_availability_criteria.value.web_test_id
     }
   }
+
   dynamic "criteria" {
     for_each = try(each.value.criterias, [])
 
@@ -166,6 +169,7 @@ resource "azurerm_monitor_metric_alert" "this" {
       }
     }
   }
+
   dynamic "dynamic_criteria" {
     for_each = each.value.dynamic_criterias != null ? each.value.dynamic_criterias : []
 

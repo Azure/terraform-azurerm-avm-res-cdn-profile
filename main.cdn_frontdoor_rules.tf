@@ -67,6 +67,7 @@ resource "azurerm_cdn_frontdoor_rule" "rules" {
       }
     }
   }
+
   conditions {
     dynamic "client_port_condition" {
       for_each = each.value.conditions.client_port_conditions

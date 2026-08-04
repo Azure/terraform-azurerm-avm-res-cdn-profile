@@ -15,6 +15,7 @@ resource "azurerm_cdn_frontdoor_origin_group" "origin_groups" {
       successful_samples_required        = load_balancing.value["successful_samples_required"]
     }
   }
+
   dynamic "health_probe" {
     for_each = each.value.health_probe
 
