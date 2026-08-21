@@ -2366,6 +2366,47 @@ variable "role_assignments" {
   nullable    = false
 }
 
+variable "scrubbing_rule" {
+  type = set(object({
+    match_variable = string
+  }))
+  default     = []
+  description = <<DESCRIPTION
+A set of scrubbing rule objects that define what data should be scrubbed from logs for compliance and privacy purposes.
+
+Each `scrubbing_rule` object supports the following:
+- `match_variable` - (Required) The variable to be scrubbed from the logs. Possible values are `QueryStringArgNames`, `RequestIPAddress`, and `RequestUri`.
+
+When no `scrubbing_rule` blocks are defined, log scrubbing will be automatically disabled. When one or more `scrubbing_rule` blocks are present, log scrubbing will be enabled.
+
+Example:
+```terraform
+scrubbing_rule = [
+  {
+    match_variable = "RequestIPAddress"
+  },
+  {
+    match_variable = "QueryStringArgNames"
+  }
+]
+```
+
+Note: The operator field is implicitly set to `EqualsAny`, as it is the sole supported value, and is therefore not exposed as a configurable option.
+DESCRIPTION
+  nullable    = false
+
+  validation {
+    condition = alltrue([
+      for rule in var.scrubbing_rule : contains(["QueryStringArgNames", "RequestIPAddress", "RequestUri"], rule.match_variable)
+    ])
+    error_message = "Each scrubbing_rule.match_variable must be one of: QueryStringArgNames, RequestIPAddress, RequestUri."
+  }
+  validation {
+    condition     = length(var.scrubbing_rule) <= 3
+    error_message = "No more than 3 scrubbing_rule blocks are allowed."
+  }
+}
+
 variable "sku" {
   type        = string
   default     = "Standard_AzureFrontDoor"
