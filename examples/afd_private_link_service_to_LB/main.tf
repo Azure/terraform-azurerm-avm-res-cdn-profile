@@ -36,10 +36,10 @@ resource "azurerm_virtual_network" "vnet" {
 
 # Create a subnet within the virtual network
 resource "azurerm_subnet" "subnet" {
-  address_prefixes                              = ["10.5.1.0/24"]
   name                                          = "front-end-subnet"
   resource_group_name                           = azurerm_resource_group.this.name
   virtual_network_name                          = azurerm_virtual_network.vnet.name
+  address_prefixes                              = ["10.5.1.0/24"]
   private_link_service_network_policies_enabled = false
 }
 
