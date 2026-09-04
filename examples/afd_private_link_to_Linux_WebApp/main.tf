@@ -241,6 +241,3 @@ module "azurerm_cdn_frontdoor_profile" {
   sku                      = "Premium_AzureFrontDoor"
   tags                     = { environment = "dev" }
 }
-
-
-

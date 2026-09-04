@@ -345,9 +345,6 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   sku = "Standard_AzureFrontDoor"
 }
-
-
-
 ```
 
 <!-- markdownlint-disable MD033 -->
