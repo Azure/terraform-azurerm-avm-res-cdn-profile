@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-verified-modules-tools/main/src/Avm.Authoring/Resources/Schemas/v1/avm-module-metadata.schema.json",
+  "moduleDisplayName": "CDN Profile",
+  "moduleDescription": "AVM Resource Module for CDN Profile",
+  "canonicalType": "Microsoft.Cdn/profiles",
+  "owners": [
+    "Poven795909",
+    "didayal-msft"
+  ],
+  "telemetryIdPrefix": "46d3xtrf.res.7dfc03d"
+}
