@@ -19,6 +19,3 @@ resource "azurerm_cdn_frontdoor_custom_domain_association" "association" {
   cdn_frontdoor_custom_domain_id = each.value.id
   cdn_frontdoor_route_ids        = local.custom_domain_routes[each.key]
 }
-
-
-

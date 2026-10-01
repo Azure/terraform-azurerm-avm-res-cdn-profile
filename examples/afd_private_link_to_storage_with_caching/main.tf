@@ -46,11 +46,12 @@ resource "azurerm_virtual_network" "vnet" {
 
 # Create a subnet within the virtual network
 resource "azurerm_subnet" "subnet" {
-  address_prefixes     = ["10.0.0.0/24"]
   name                 = "storage-subnet"
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.0.0/24"]
 }
+
 # Create a private endpoint for the storage account
 resource "azurerm_private_endpoint" "storage_endpoint" {
   location            = azurerm_resource_group.this.location
