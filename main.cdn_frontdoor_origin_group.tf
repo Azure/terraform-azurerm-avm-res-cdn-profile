@@ -4,7 +4,7 @@ resource "azurerm_cdn_frontdoor_origin_group" "origin_groups" {
   cdn_frontdoor_profile_id                                  = azapi_resource.front_door_profile.id
   name                                                      = each.value.name
   restore_traffic_time_to_healed_or_new_endpoint_in_minutes = 10
-  session_affinity_enabled                                  = true
+  session_affinity_enabled                                  = each.value.session_affinity_enabled
 
   dynamic "load_balancing" {
     for_each = each.value.load_balancing

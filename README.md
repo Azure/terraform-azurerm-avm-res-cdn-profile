@@ -994,7 +994,8 @@ Description:   Manages a map of Front Door (standard/premium) Origin groups.
       - `protocol` - (Required) Specifies the protocol to use for health probe. Possible values are Http and Https.
       - `interval_in_seconds` - (Required) Specifies the number of seconds between health probes. Possible values are between 5 and 31536000 seconds (inclusive).
       - `request_type` - (Optional) Specifies the type of health probe request that is made. Possible values are GET and HEAD. Defaults to HEAD.
-      - `path` - (Optional) Specifies the path relative to the origin that is used to determine the health of the origin. Defaults to /.  
+      - `path` - (Optional) Specifies the path relative to the origin that is used to determine the health of the origin. Defaults to /.
+  - `session_affinity_enabled` - (Optional) Specifies whether session affinity should be enabled on this host. Defaults to true.  
   Example Input:
 
   ```terraform
@@ -1016,6 +1017,7 @@ Description:   Manages a map of Front Door (standard/premium) Origin groups.
           successful_samples_required        = 3
         }
       }
+      session_affinity_enabled = false
     }
   }
 ```
@@ -1036,6 +1038,7 @@ map(object({
       sample_size                        = optional(number, 4)
       successful_samples_required        = optional(number, 3)
     }))
+    session_affinity_enabled = optional(bool, true)
   }))
 ```
 
