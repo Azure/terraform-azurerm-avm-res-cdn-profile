@@ -91,13 +91,12 @@ resource "azurerm_monitor_action_group" "example" {
   }
 }
 
-/* This is the module call that shows how to add interfaces for waf alignment
-Locks
-Tags
-Role Assignments
-Diagnostic Settings
-Managed Identity
-*/
+# This is the module call that shows how to add interfaces for waf alignment
+# Locks
+# Tags
+# Role Assignments
+# Diagnostic Settings
+# Managed Identity
 module "azurerm_cdn_frontdoor_profile" {
   source = "../../"
 
