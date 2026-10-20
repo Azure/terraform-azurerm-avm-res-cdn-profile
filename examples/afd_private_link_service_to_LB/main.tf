@@ -16,14 +16,14 @@ provider "azurerm" {
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = "centralindia"
-  name     = "pvtlink-lb-${module.naming.resource_group.name_unique}"
+  name     = "pvtlink-lb-${module.naming.names.resource_group.name_unique}"
 }
 
 # Create a virtual network
@@ -80,12 +80,12 @@ module "azurerm_cdn_frontdoor_profile" {
   source = "../../"
 
   location            = azurerm_resource_group.this.location
-  name                = module.naming.cdn_profile.name_unique
+  name                = module.naming.names.profile_cdn.name_unique
   resource_group_name = azurerm_resource_group.this.name
   enable_telemetry    = var.enable_telemetry
   front_door_endpoints = {
     ep1_key = {
-      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
+      name = "ep1-${module.naming.names.profile_endpoint.name_unique}"
       tags = {
         environment = "avm-demo"
       }
