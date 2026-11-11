@@ -23,14 +23,14 @@ provider "azurerm" {
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = "eastus"
-  name     = "interfaces_${module.naming.resource_group.name_unique}"
+  name     = "interfaces_${module.naming.names.resource_group.name_unique}"
 }
 
 data "azurerm_client_config" "current" {}
@@ -39,20 +39,20 @@ resource "azurerm_storage_account" "storage" {
   account_replication_type      = "ZRS"
   account_tier                  = "Standard"
   location                      = azurerm_resource_group.this.location
-  name                          = module.naming.storage_account.name_unique
+  name                          = module.naming.names.storage_account.name_unique
   resource_group_name           = azurerm_resource_group.this.name
   public_network_access_enabled = false
 }
 
 resource "azurerm_log_analytics_workspace" "workspace" {
   location            = azurerm_resource_group.this.location
-  name                = module.naming.log_analytics_workspace.name_unique
+  name                = module.naming.names.operational_insights_workspace.name_unique
   resource_group_name = azurerm_resource_group.this.name
 }
 
 resource "azurerm_eventhub_namespace" "eventhub_namespace" {
   location                 = azurerm_resource_group.this.location
-  name                     = module.naming.eventhub_namespace.name_unique
+  name                     = module.naming.names.event_hub_namespace.name_unique
   resource_group_name      = azurerm_resource_group.this.name
   sku                      = "Standard"
   auto_inflate_enabled     = true
@@ -81,7 +81,7 @@ resource "azurerm_eventhub_namespace_authorization_rule" "example" {
 
 resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
   location            = azurerm_resource_group.this.location
-  name                = module.naming.user_assigned_identity.name_unique
+  name                = module.naming.names.user_assigned_identity.name_unique
   resource_group_name = azurerm_resource_group.this.name
 }
 
@@ -98,18 +98,17 @@ resource "azurerm_monitor_action_group" "example" {
   }
 }
 
-/* This is the module call that shows how to add interfaces for waf alignment
-Locks
-Tags
-Role Assignments
-Diagnostic Settings
-Managed Identity
-*/
+# This is the module call that shows how to add interfaces for waf alignment
+# Locks
+# Tags
+# Role Assignments
+# Diagnostic Settings
+# Managed Identity
 module "azurerm_cdn_frontdoor_profile" {
   source = "../../"
 
   location            = azurerm_resource_group.this.location
-  name                = module.naming.cdn_profile.name_unique
+  name                = module.naming.names.profile_cdn.name_unique
   resource_group_name = azurerm_resource_group.this.name
   diagnostic_settings = {
     workspaceandstorage_diag = {
@@ -133,7 +132,7 @@ module "azurerm_cdn_frontdoor_profile" {
   enable_telemetry = var.enable_telemetry
   front_door_endpoints = {
     ep1_key = {
-      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
+      name = "ep1-${module.naming.names.profile_endpoint.name_unique}"
       tags = {
         env = "prod"
       }
@@ -502,9 +501,9 @@ Version:
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
-Source: Azure/naming/azurerm
+Source: Azure/avm-utl-naming/azure
 
-Version: 0.3.0
+Version: 0.2.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

@@ -16,20 +16,20 @@ provider "azurerm" {
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = ">=0.3.0"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 resource "azurerm_resource_group" "this" {
   location = "eastus"
-  name     = "ms-cdn-${module.naming.resource_group.name_unique}"
+  name     = "ms-cdn-${module.naming.names.resource_group.name_unique}"
 }
 
 resource "azurerm_storage_account" "storage" {
   account_replication_type      = "ZRS"
   account_tier                  = "Standard"
   location                      = azurerm_resource_group.this.location
-  name                          = module.naming.storage_account.name_unique
+  name                          = module.naming.names.storage_account.name_unique
   resource_group_name           = azurerm_resource_group.this.name
   public_network_access_enabled = false
 }
@@ -46,11 +46,11 @@ module "azurerm_cdn_profile" {
   source = "../../"
 
   location            = azurerm_resource_group.this.location
-  name                = module.naming.cdn_profile.name_unique
+  name                = module.naming.names.profile_cdn.name_unique
   resource_group_name = azurerm_resource_group.this.name
   cdn_endpoints = {
     ep1 = {
-      name                          = "endpoint-${module.naming.cdn_endpoint.name_unique}"
+      name                          = "endpoint-${module.naming.names.profile_endpoint.name_unique}"
       is_http_allowed               = false
       is_https_allowed              = true
       querystring_caching_behaviour = "BypassCaching"
