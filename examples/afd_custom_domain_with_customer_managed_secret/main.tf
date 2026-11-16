@@ -44,11 +44,10 @@ module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
   version = "0.13.1"
 
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.names.key_vault_vault.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  enable_telemetry    = var.enable_telemetry
+  location         = azurerm_resource_group.this.location
+  name             = module.naming.names.key_vault_vault.name_unique
+  tenant_id        = data.azurerm_client_config.current.tenant_id
+  enable_telemetry = var.enable_telemetry
   network_acls = {
     default_action = "Allow"
     bypass         = "AzureServices"
@@ -74,6 +73,7 @@ module "avm_res_keyvault_vault" {
   wait_for_rbac_before_secret_operations = {
     create = "60s"
   }
+  resource_group_name = azurerm_resource_group.this.name
 }
 
 # The below example uses a self signed certificate which is not supported in AFD. Hence use a certificate chain with 2 or more certificates (root CA & sub CA) in real world example.
