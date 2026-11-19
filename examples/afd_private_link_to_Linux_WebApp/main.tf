@@ -16,20 +16,20 @@ provider "azurerm" {
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = "centralindia"
-  name     = "pvtlink-webapp-${module.naming.resource_group.name_unique}"
+  name     = "pvtlink-webapp-${module.naming.names.resource_group.name_unique}"
 }
 
 # Creating App service plan with Standard S1 SKU for testing only. For Production deployment Premium SKU is recommended.
 resource "azurerm_service_plan" "appservice" {
   location            = azurerm_resource_group.this.location
-  name                = "asp-${module.naming.app_service_plan.name_unique}"
+  name                = "asp-${module.naming.names.server_farm.name_unique}"
   os_type             = "Linux"
   resource_group_name = azurerm_resource_group.this.name
   sku_name            = "S1" # Change it to one of PremiumV3 pricing tier for Production deployment. Refer https://learn.microsoft.com/en-us/azure/app-service/overview-hosting-plans#premiumv3-pricing-tier
@@ -38,7 +38,7 @@ resource "azurerm_service_plan" "appservice" {
 # Creating the linux web app
 resource "azurerm_linux_web_app" "webapp" {
   location                      = azurerm_resource_group.this.location
-  name                          = "app-${module.naming.app_service_plan.name_unique}"
+  name                          = "app-${module.naming.names.server_farm.name_unique}"
   resource_group_name           = azurerm_resource_group.this.name
   service_plan_id               = azurerm_service_plan.appservice.id
   https_only                    = true
@@ -63,12 +63,12 @@ module "azurerm_cdn_frontdoor_profile" {
   source = "../../"
 
   location            = azurerm_resource_group.this.location
-  name                = module.naming.cdn_profile.name_unique
+  name                = module.naming.names.profile_cdn.name_unique
   resource_group_name = azurerm_resource_group.this.name
   enable_telemetry    = var.enable_telemetry
   front_door_endpoints = {
     ep1_key = {
-      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
+      name = "ep1-${module.naming.names.profile_endpoint.name_unique}"
       tags = {
         environment = "avm-demo"
       }

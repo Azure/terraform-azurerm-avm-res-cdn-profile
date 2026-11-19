@@ -16,26 +16,26 @@ provider "azurerm" {
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = "eastus"
-  name     = "afd-secret-${module.naming.resource_group.name_unique}"
+  name     = "afd-secret-${module.naming.names.resource_group.name_unique}"
 }
 
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_user_assigned_identity" "identity_for_keyvault" {
   location            = azurerm_resource_group.this.location
-  name                = module.naming.user_assigned_identity.name_unique
+  name                = module.naming.names.user_assigned_identity.name_unique
   resource_group_name = azurerm_resource_group.this.name
 }
 
 resource "azurerm_dns_zone" "dnszone" {
-  name                = "foo-${module.naming.dns_zone.name_unique}.bar"
+  name                = "foo-${module.naming.names.dns_zone.name_unique}.bar"
   resource_group_name = azurerm_resource_group.this.name
 }
 
@@ -45,7 +45,7 @@ module "avm_res_keyvault_vault" {
   version = "0.5.3"
 
   location            = azurerm_resource_group.this.location
-  name                = module.naming.key_vault.name_unique
+  name                = module.naming.names.key_vault_vault.name_unique
   resource_group_name = azurerm_resource_group.this.name
   tenant_id           = data.azurerm_client_config.current.tenant_id
   enable_telemetry    = var.enable_telemetry
@@ -131,12 +131,12 @@ module "azurerm_cdn_frontdoor_profile" {
   source = "../../"
 
   location            = azurerm_resource_group.this.location
-  name                = module.naming.cdn_profile.name_unique
+  name                = module.naming.names.profile_cdn.name_unique
   resource_group_name = azurerm_resource_group.this.name
   enable_telemetry    = var.enable_telemetry
   front_door_endpoints = {
     ep1_key = {
-      name = "ep1-${module.naming.cdn_endpoint.name_unique}"
+      name = "ep1-${module.naming.names.profile_endpoint.name_unique}"
       tags = {
         environment = "avm-demo"
       }
