@@ -75,6 +75,17 @@ resource "azurerm_private_link_service" "pls" {
   }
 }
 
+resource "terraform_data" "private_link_cleanup_delay" {
+  input = azurerm_private_link_service.pls.id
+
+  # Front Door removes its managed private endpoint connection asynchronously after profile deletion.
+  provisioner "local-exec" {
+    when        = destroy
+    command     = "Start-Sleep -Seconds 300"
+    interpreter = ["pwsh", "-NoProfile", "-NonInteractive", "-Command"]
+  }
+}
+
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
   source = "../../"
@@ -264,5 +275,5 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   sku = "Premium_AzureFrontDoor"
 
-  depends_on = [azurerm_private_link_service.pls]
+  depends_on = [terraform_data.private_link_cleanup_delay]
 }
