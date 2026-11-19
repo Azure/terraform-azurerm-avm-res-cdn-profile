@@ -82,6 +82,21 @@ resource "azurerm_private_link_service" "pls" {
   }
 }
 
+resource "terraform_data" "private_link_cleanup" {
+  input = azurerm_private_link_service.pls.id
+
+  # Front Door leaves its managed private endpoint request for the service to remove after profile deletion.
+  provisioner "local-exec" {
+    when = destroy
+
+    command = "remove-private-endpoint-connections.ps1"
+    environment = {
+      PRIVATE_LINK_SERVICE_ID = self.input
+    }
+    interpreter = ["pwsh", "-NoProfile", "-NonInteractive", "-File"]
+  }
+}
+
 # This is the module call
 module "azurerm_cdn_frontdoor_profile" {
   source = "../../"
@@ -271,7 +286,7 @@ module "azurerm_cdn_frontdoor_profile" {
   }
   sku = "Premium_AzureFrontDoor"
 
-  depends_on = [azurerm_private_link_service.pls]
+  depends_on = [terraform_data.private_link_cleanup]
 }
 ```
 
@@ -293,6 +308,7 @@ The following resources are used by this module:
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
+- [terraform_data.private_link_cleanup](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) (resource)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
